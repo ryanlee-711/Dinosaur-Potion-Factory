@@ -1,15 +1,15 @@
 #include "PlayMode.hpp"
 
-#include "LitColorTextureProgram.hpp"
+#include "../starter/LitColorTextureProgram.hpp"
+#include "../starter/DrawLines.hpp"
+#include "../starter/Mesh.hpp"
+#include "../starter/Load.hpp"
+#include "../starter/gl_errors.hpp"
+#include "../starter/data_path.hpp"
+#include "../starter/load_save_png.hpp"
 
-#include "DrawLines.hpp"
-#include "Mesh.hpp"
-#include "Load.hpp"
-#include "gl_errors.hpp"
-#include "data_path.hpp"
-#include "load_save_png.hpp"
 #include "GameMap.hpp"
-#include "Sprites.hpp"
+#include "../rendering/Sprites.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 

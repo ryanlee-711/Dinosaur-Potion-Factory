@@ -1,8 +1,8 @@
-#include "Mode.hpp"
+#include "../starter/Mode.hpp"
+#include "../starter/Scene.hpp"
 
-#include "TextRenderer.hpp"
-#include "Scene.hpp"
-#include "Sprites.hpp"
+#include "../rendering/TextRenderer.hpp"
+#include "../rendering/Sprites.hpp"
 
 #include <glm/glm.hpp>
 

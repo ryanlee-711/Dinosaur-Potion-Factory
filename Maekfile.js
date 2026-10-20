@@ -150,48 +150,48 @@ if (maek.OS === 'windows') {
 // objFileBase (optional): base name object file to produce (if not supplied, set to options.objDir + '/' + cppFile without the extension)
 //returns objFile: objFileBase + a platform-dependant suffix ('.o' or '.obj')
 const game_names = [
-	maek.CPP('PlayMode.cpp'),
-	maek.CPP('main.cpp'),
-	maek.CPP('LitColorTextureProgram.cpp'),
+	maek.CPP('src/main/PlayMode.cpp'),
+	maek.CPP('src/main/main.cpp'),
+	maek.CPP('src/starter/LitColorTextureProgram.cpp'),
 	//maek.CPP('ColorTextureProgram.cpp'),  //not used right now, but you might want it
-	maek.CPP('Sound.cpp'),
-	maek.CPP('Sprites.cpp'),
-	maek.CPP('load_wav.cpp'),
-	maek.CPP('load_opus.cpp'),
+	maek.CPP('src/starter/Sound.cpp'),
+	maek.CPP('src/starter/load_wav.cpp'),
+	maek.CPP('src/starter/load_opus.cpp'),
 
 	// new stuff
-	maek.CPP('TextRenderer.cpp'),
+	maek.CPP('src/rendering/Sprites.cpp'),
+	maek.CPP('src/rendering/TextRenderer.cpp'),
 ];
 
 const common_names = [
-	maek.CPP('data_path.cpp'),
-	maek.CPP('PathFont.cpp'),
-	maek.CPP('PathFont-font.cpp'),
-	maek.CPP('DrawLines.cpp'),
-	maek.CPP('ColorProgram.cpp'),
-	maek.CPP('Scene.cpp'),
-	maek.CPP('Mesh.cpp'),
-	maek.CPP('load_save_png.cpp'),
-	maek.CPP('gl_compile_program.cpp'),
-	maek.CPP('Mode.cpp'),
-	maek.CPP('GL.cpp'),
-	maek.CPP('Load.cpp')
+	maek.CPP('src/starter/data_path.cpp'),
+	maek.CPP('src/starter/PathFont.cpp'),
+	maek.CPP('src/starter/PathFont-font.cpp'),
+	maek.CPP('src/starter/DrawLines.cpp'),
+	maek.CPP('src/starter/ColorProgram.cpp'),
+	maek.CPP('src/starter/Scene.cpp'),
+	maek.CPP('src/starter/Mesh.cpp'),
+	maek.CPP('src/starter/load_save_png.cpp'),
+	maek.CPP('src/starter/gl_compile_program.cpp'),
+	maek.CPP('src/starter/Mode.cpp'),
+	maek.CPP('src/starter/GL.cpp'),
+	maek.CPP('src/starter/Load.cpp')
 ];
 
 const show_meshes_names = [
-	maek.CPP('show-meshes.cpp'),
-	maek.CPP('ShowMeshesProgram.cpp'),
-	maek.CPP('ShowMeshesMode.cpp')
+	maek.CPP('src/starter/show-meshes.cpp'),
+	maek.CPP('src/starter/ShowMeshesProgram.cpp'),
+	maek.CPP('src/starter/ShowMeshesMode.cpp')
 ];
 
 const show_scene_names = [
-	maek.CPP('show-scene.cpp'),
-	maek.CPP('ShowSceneProgram.cpp'),
-	maek.CPP('ShowSceneMode.cpp')
+	maek.CPP('src/starter/show-scene.cpp'),
+	maek.CPP('src/starter/ShowSceneProgram.cpp'),
+	maek.CPP('src/starter/ShowSceneMode.cpp')
 ];
 
 const freetype_test_names = [
-	maek.CPP('freetype-test.cpp')
+	maek.CPP('src/main/freetype-test.cpp')
 ];
 
 //the '[exeFile =] LINK(objFiles, exeFileBase, [, options])' links an array of objects into an executable:

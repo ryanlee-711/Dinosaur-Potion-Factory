@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GL.hpp"
+#include "../starter/GL.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>

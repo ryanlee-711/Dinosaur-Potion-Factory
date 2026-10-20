@@ -7,10 +7,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "gl_errors.hpp"
-#include "read_write_chunk.hpp"
+#include "../starter/gl_errors.hpp"
+#include "../starter/read_write_chunk.hpp"
 
-#include "Scene.hpp"
+#include "../starter/Scene.hpp"
 
 // SharedTeture!
 // Sharing reused textures

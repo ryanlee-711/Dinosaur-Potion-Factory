@@ -1,17 +1,17 @@
 //Mode.hpp declares the "Mode::current" static member variable, which is used to decide where event-handling, updating, and drawing events go:
-#include "Mode.hpp"
+#include "../starter/Mode.hpp"
 
 //The 'PlayMode' mode plays the game:
 #include "PlayMode.hpp"
 
 //For asset loading:
-#include "Load.hpp"
+#include "../starter/Load.hpp"
 
 //GL.hpp will include a non-namespace-polluting set of opengl prototypes:
-#include "GL.hpp"
+#include "../starter/GL.hpp"
 
 //for screenshots:
-#include "load_save_png.hpp"
+#include "../starter/load_save_png.hpp"
 
 //Includes for libSDL:
 #include <SDL3/SDL.h>
