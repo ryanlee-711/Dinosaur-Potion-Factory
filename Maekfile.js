@@ -137,8 +137,6 @@ let copies = [
 ];
 if (maek.OS === 'windows') {
 	copies.push( maek.COPY(`${NEST_LIBS}/SDL3/dist/SDL3.dll`, `dist/SDL3.dll`) );
-	//this one needed because the show-*.exe helpers sit in scenes/:
-	copies.push( maek.COPY(`${NEST_LIBS}/SDL3/dist/SDL3.dll`, `scenes/SDL3.dll`) );
 }
 
 //call rules on the maek object to specify tasks.
@@ -150,17 +148,24 @@ if (maek.OS === 'windows') {
 // objFileBase (optional): base name object file to produce (if not supplied, set to options.objDir + '/' + cppFile without the extension)
 //returns objFile: objFileBase + a platform-dependant suffix ('.o' or '.obj')
 const game_names = [
-	maek.CPP('src/main/PlayMode.cpp'),
+	//game:
 	maek.CPP('src/main/main.cpp'),
-	maek.CPP('src/starter/LitColorTextureProgram.cpp'),
-	//maek.CPP('ColorTextureProgram.cpp'),  //not used right now, but you might want it
+	maek.CPP('src/main/PlayMode.cpp'),
+
+	//world:
+	maek.CPP('src/world/Tilemap.cpp'),
+	maek.CPP('src/world/Player.cpp'),
+
+	//rendering:
+	maek.CPP('src/rendering/Texture.cpp'),
+	maek.CPP('src/rendering/Sprites.cpp'),
+	maek.CPP('src/rendering/PixelCanvas.cpp'),
+	maek.CPP('src/rendering/TextRenderer.cpp'),
+
+	//audio (not used yet):
 	maek.CPP('src/starter/Sound.cpp'),
 	maek.CPP('src/starter/load_wav.cpp'),
 	maek.CPP('src/starter/load_opus.cpp'),
-
-	// new stuff
-	maek.CPP('src/rendering/Sprites.cpp'),
-	maek.CPP('src/rendering/TextRenderer.cpp'),
 ];
 
 const common_names = [
@@ -169,8 +174,7 @@ const common_names = [
 	maek.CPP('src/starter/PathFont-font.cpp'),
 	maek.CPP('src/starter/DrawLines.cpp'),
 	maek.CPP('src/starter/ColorProgram.cpp'),
-	maek.CPP('src/starter/Scene.cpp'),
-	maek.CPP('src/starter/Mesh.cpp'),
+	maek.CPP('src/starter/ColorTextureProgram.cpp'),
 	maek.CPP('src/starter/load_save_png.cpp'),
 	maek.CPP('src/starter/gl_compile_program.cpp'),
 	maek.CPP('src/starter/Mode.cpp'),
@@ -178,34 +182,14 @@ const common_names = [
 	maek.CPP('src/starter/Load.cpp')
 ];
 
-const show_meshes_names = [
-	maek.CPP('src/starter/show-meshes.cpp'),
-	maek.CPP('src/starter/ShowMeshesProgram.cpp'),
-	maek.CPP('src/starter/ShowMeshesMode.cpp')
-];
-
-const show_scene_names = [
-	maek.CPP('src/starter/show-scene.cpp'),
-	maek.CPP('src/starter/ShowSceneProgram.cpp'),
-	maek.CPP('src/starter/ShowSceneMode.cpp')
-];
-
-const freetype_test_names = [
-	maek.CPP('src/main/freetype-test.cpp')
-];
-
 //the '[exeFile =] LINK(objFiles, exeFileBase, [, options])' links an array of objects into an executable:
 // objFiles: array of objects to link
 // exeFileBase: name of executable file to produce
 //returns exeFile: exeFileBase + a platform-dependant suffix (e.g., '.exe' on windows)
 const game_exe = maek.LINK([...game_names, ...common_names], 'dist/game');
-const show_meshes_exe = maek.LINK([...show_meshes_names, ...common_names], 'scenes/show-meshes');
-const show_scene_exe = maek.LINK([...show_scene_names, ...common_names], 'scenes/show-scene');
-
-const freetype_test_exe = maek.LINK([...freetype_test_names], 'freetype-test');
 
 //set the default target to the game (and copy the readme files):
-maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, freetype_test_exe, ...copies];
+maek.TARGETS = [game_exe, ...copies];
 
 //Note that tasks that produce ':abstract targets' are never cached.
 // This is similar to how .PHONY targets behave in make.

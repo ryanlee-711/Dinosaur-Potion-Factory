@@ -1,344 +1,128 @@
 #include "PlayMode.hpp"
 
-#include "../starter/LitColorTextureProgram.hpp"
+#include "GameConfig.hpp"
+
 #include "../starter/DrawLines.hpp"
-#include "../starter/Mesh.hpp"
 #include "../starter/Load.hpp"
-#include "../starter/gl_errors.hpp"
 #include "../starter/data_path.hpp"
-#include "../starter/load_save_png.hpp"
+#include "../starter/gl_errors.hpp"
 
-#include "GameMap.hpp"
-#include "../rendering/Sprites.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
-#include <glm/gtc/type_ptr.hpp>
+#include <cmath>
+#include <string>
 
-#include <algorithm>
-#include <unordered_map>
-#include <list>
-#include <random>
+using GameConfig::TILE_SIZE;
 
-GLuint plane_program2 = 0;
-Load< MeshBuffer > plane_meshes2(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("plane.pnct"));
-	plane_program2 = ret->make_vao_for_program(lit_color_texture_program->program);
-	return ret;
+//Player art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
+// (Placeholder until the sprite/animation system replaces it.)
+static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/player.png"));
 });
+static constexpr int PLAYER_FRAME_W = 16;
+static constexpr int PLAYER_FRAME_H = 24;
 
+PlayMode::PlayMode() : map(data_path("maps/cave.map")) {
+	tileset = std::make_unique< Texture >(data_path(map.tileset_path));
+	map.validate_tileset(*tileset);
 
-Load< Scene > main_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("plane.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = plane_meshes2->lookup(mesh_name);
-
-		scene.drawables.emplace_back(transform);
-		Scene::Drawable &drawable = scene.drawables.back();
-
-		drawable.pipeline = lit_color_texture_program_pipeline;
-
-		drawable.pipeline.vao = plane_program2;
-		drawable.pipeline.type = mesh.type;
-		drawable.pipeline.start = mesh.start;
-		drawable.pipeline.count = mesh.count;
-
-		// force set invisible for existing stuff
-		drawable.blended = true;
-		drawable.pipeline.set_uniforms = []() {
-			glUniform4fv(lit_color_texture_program->TINT_vec4, 1, glm::value_ptr(glm::vec4(0.0f)));
-		};
-
-	});
-});
-
-Load< SharedTexture > rocket_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/rocket.png"));
-});
-
-Load< SharedTexture > asteroid_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/asteroid.png"));
-});
-
-Load< SharedTexture > pea_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/pea.png"));
-});
-
-Load< SharedTexture > star_yellow_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/star_yellow.png"));
-});
-
-Load< SharedTexture > big_star_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/star.png"));
-});
-
-Load< SharedTexture > star_blue_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/star_blue.png"));
-});
-
-Load< SharedTexture > goal_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/goal.png"));
-});
-
-Load< SharedTexture > flame_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/flame.png"));
-});
-
-Load< SharedTexture > smoke_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/smoke.png"));
-});
-
-Load< SharedTexture > congrat_texture(LoadTagDefault, []() -> SharedTexture const * {
-	return new SharedTexture(data_path("assets/congrat.png"));
-});
-
-float cross(glm::vec2 a, glm::vec2 b) {
-	return a.x * b.y - b.x * a.y;
-}
-
-const glm::vec2 GOAL_POS = glm::vec2(50.0f, -10.0f);
-
-PlayMode::PlayMode() : scene(*main_scene), text_renderer("sample", data_path("assets/fonts/NotoSans.ttf")) {
-	//get pointer to camera for convenience:
-	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
-	camera = &scene.cameras.front();
-
-	//construct level.
-	{
-		std::mt19937 mt(GameMap::LEVEL_SEED);
-		for (size_t y = 0; y < GameMap::MAP_H; ++y) {
-			for (size_t x = 0; x < GameMap::MAP_W; ++x) {
-				if (!GameMap::LEVEL_1[y * GameMap::MAP_W + x]) continue;
-				float sprsize = mt() / float(mt.max()) * 1.0f + 5.0f;
-				Sprite2D *spr = add_sprite(*asteroid_texture.value, glm::vec2(0.0f), glm::vec2(sprsize));
-				spr->tint.r = spr->tint.b = mt() / float(mt.max()) * 0.25f + 0.75f;
-				RigidBody *rock = add_body(
-					/* Rock name */ "Rock" + std::to_string(y) + "_" + std::to_string(x),
-					/* Position */ glm::vec2(-60.0f +12.8f * x + 3.6f * mt() / float(mt.max()), -32.0f + 10.5f * y + 3.8f * mt() / float(mt.max())),
-					/*weight*/ 10.5f + 3.0f * mt() / float(mt.max()),
-					/*radius*/ sprsize * 0.75f,
-					spr
-				);
-				rock->rotation = mt() / float(mt.max()) * PI * 2.0f;
-			}
-		}
-	}
-
-	// add a goal
-	{
-		add_sprite(*goal_texture.value, GOAL_POS, glm::vec2(5.0f));
-	}
-
-	//add one cute rocket
-	{
-		std::mt19937 mt(GameMap::LEVEL_SEED | 0x12b34);
-		// const & brings mental damage
-		Sprite2D *spr = add_sprite(*rocket_texture.value, glm::vec2(0.0f), glm::vec2(6.0f));
-		rocket = add_body("Rocket", glm::vec2(-45.0f, 28.0f), 5.0f, 4.0f, spr);
-	}
-
-	//add some random decoration stars
-	{
-		std::mt19937 mt(GameMap::LEVEL_SEED | 0x12b34);
-		for (size_t i = 0; i < 28; ++i) {
-			Sprite2D *spr = add_sprite(
-				*star_blue_texture.value,
-				glm::vec2(-70.0f + mt() / float(mt.max()) * 130.0f, -45.0f + mt() / float(mt.max()) * 80.0f),
-				glm::vec2(2.0f + glm::vec2(mt() / float(mt.max()) * 1.5f)));
-			spr->tint.a = mt() / float(mt.max()) * 0.25f;
-			spr->set_z(3.0f);
-		}
-		for (size_t i = 0; i < 11; ++i) {
-			Sprite2D *spr = add_sprite(
-				*star_yellow_texture.value,
-				glm::vec2(-70.0f + mt() / float(mt.max()) * 130.0f, -45.0f + mt() / float(mt.max()) * 80.0f),
-				glm::vec2(1.0f + glm::vec2(mt() / float(mt.max()) * 1.5f)));
-			spr->tint.a = mt() / float(mt.max()) * 0.25f;
-			spr->set_z(3.0f);
-		}
-	}
-
-	// propulsor? flame
-	flame = add_sprite(*flame_texture.value, glm::vec2(0.0f), glm::vec2(6.0f));
-
-	// z-sort sprites
-	scene.drawables.sort([](Scene::Drawable const &dr1, Scene::Drawable const &dr2) {return dr1.transform->position.z > dr2.transform->position.z;});
+	//stand in the middle of the spawn tile, feet near its bottom:
+	player.position = Tilemap::tile_center(glm::ivec2(map.spawn_tile)) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 }
 
 PlayMode::~PlayMode() {
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-
-	if (evt.type == SDL_EVENT_KEY_DOWN) {
-		if (evt.key.key == SDLK_ESCAPE) {
-			SDL_SetWindowRelativeMouseMode(Mode::window, false);
-			return true;
-		} else if (evt.key.key == SDLK_A) {
-			left.downs += 1;
-			left.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_D) {
-			right.downs += 1;
-			right.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_W) {
-			up.downs += 1;
-			up.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_S) {
-			down.downs += 1;
-			down.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_SPACE) {
-			shoot.downs += 1;
-			shoot.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_R) {
-			rewind.downs += 1;
-			rewind.pressed = true;
-			return true;
-		} else if (evt.key.key == SDLK_1) {
-			framestepping_interval = TIMESTEP;
-			physics_frame_delta = 0.0f;
-			return true;
-		} else if (evt.key.key == SDLK_2) {
-			framestepping_interval = TIMESTEP * 2;
-			physics_frame_delta = 0.0f;
-			return true;
-		} else if (evt.key.key == SDLK_3) {
-			framestepping_interval = TIMESTEP * 5;
-			physics_frame_delta = 0.0f;
-			return true;
-		} else if (evt.key.key == SDLK_4) {
-			framestepping_interval = 0.5f;
-			physics_frame_delta = 0.0f;
-			return true;
-		}
-	} else if (evt.type == SDL_EVENT_KEY_UP) {
-		if (evt.key.key == SDLK_A) {
-			left.pressed = false;
-			return true;
-		} else if (evt.key.key == SDLK_D) {
-			right.pressed = false;
-			return true;
-		} else if (evt.key.key == SDLK_W) {
-			up.pressed = false;
-			return true;
-		} else if (evt.key.key == SDLK_S) {
-			down.pressed = false;
-			return true;
-		} else if (evt.key.key == SDLK_SPACE) {
-			shoot.pressed = false;
-			shoot.downs = 0;
-			return true;
-		} else if (evt.key.key == SDLK_R) {
-			rewind.pressed = false;
-			rewind.downs = 0;
-			return true;
-		} 
+	//one-off key presses go here; held keys (movement) are read in update().
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_F3) {
+		show_debug = !show_debug;
+		return true;
 	}
-
 	return false;
 }
 
 void PlayMode::update(float elapsed) {
-	// --------------------------- AESTHETICS ----------------------------
+	//read held movement keys (scancodes = physical key positions, so WASD works on any keyboard layout):
+	bool const *keys = SDL_GetKeyboardState(nullptr);
+	glm::vec2 direction(0.0f);
+	if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])  direction.x -= 1.0f;
+	if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) direction.x += 1.0f;
+	if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])    direction.y -= 1.0f; //y grows downward
+	if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])  direction.y += 1.0f;
 
-	{ // update body sprites
-
-		for (auto iter = bodies.begin(); iter != bodies.end(); ++iter) {
-			iter->sprite->set_position(iter->position);
-			iter->sprite->set_rotation(iter->rotation);
-		}
-	}
-
-	//reset button press counters:
-	left.downs = 0;
-	right.downs = 0;
-	up.downs = 0;
-	down.downs = 0;
+	player.update(direction, elapsed, map);
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
-	//update camera aspect ratio for drawable:
-	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
+	//--- world, drawn into the low-res canvas ---
+	canvas.resize(drawable_size);
 
-	//set up light type and position for lit_color_texture_program:
-	// TODO: consider using the Light(s) in the scene to do this
-	glUseProgram(lit_color_texture_program->program);
-	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
-	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f,-1.0f)));
-	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
-	glUseProgram(0);
+	//aim the camera at the dwarf's body rather than their feet:
+	camera.follow(player.position - glm::vec2(0.0f, PLAYER_FRAME_H * 0.5f), map.size_px(), canvas.size);
+	glm::vec2 view_min = camera.view_min(canvas.size);
+	glm::vec2 view_max = camera.view_max(canvas.size);
 
-	glClearColor(0.002f, 0.002f, 0.002f, 1.0f);
-	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	canvas.bind();
+	glClearColor(0.05f, 0.04f, 0.06f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
+	batch.begin(camera.world_to_clip(canvas.size));
 
-	GL_ERRORS(); //print any errors produced by this setup code
+	map.draw(batch, *tileset, view_min, view_max);
 
-	scene.draw(*camera);
-
-	{ //use DrawLines to overlay some text:
-		glDisable(GL_DEPTH_TEST);
-		float aspect = float(drawable_size.x) / float(drawable_size.y);
-		DrawLines lines(glm::mat4(
-			1.0f / aspect, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		));
-
-		constexpr float H = 0.09f;
-		std::string text = "A/D to rotate; Hold SPACE then release to fire!";
-		text += " shot=" + std::to_string(bullets_shot) + ", damage=" + std::to_string(damage);
-
-		lines.draw_text(text,
-			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text(text,
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + 0.1f * H + ofs, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+	{ //player:
+		int frame = 0; //down
+		if (player.facing.y < 0) frame = 1;      //up
+		else if (player.facing.x < 0) frame = 2; //left
+		else if (player.facing.x > 0) frame = 3; //right
+		Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
+		//round to whole pixels so the sprite never sits between pixels:
+		glm::vec2 top_left = glm::round(player.position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
+		batch.draw(*player_texture, src, top_left);
 	}
-}
 
-RigidBody::RigidBody() { }
+	if (show_debug) {
+		//solid tiles in red:
+		glm::ivec2 first = glm::max(Tilemap::tile_at_point(view_min), glm::ivec2(0));
+		glm::ivec2 last = glm::min(Tilemap::tile_at_point(view_max), glm::ivec2(map.size) - 1);
+		for (int ty = first.y; ty <= last.y; ++ty) {
+			for (int tx = first.x; tx <= last.x; ++tx) {
+				if (map.is_solid(glm::ivec2(tx, ty))) {
+					batch.fill_rect(Rect{float(tx * TILE_SIZE), float(ty * TILE_SIZE), float(TILE_SIZE), float(TILE_SIZE)},
+						glm::u8vec4(0xff, 0x30, 0x30, 0x50));
+				}
+			}
+		}
+		//tile in front of the player in blue, collision box in yellow:
+		glm::ivec2 ft = player.facing_tile();
+		batch.fill_rect(Rect{float(ft.x * TILE_SIZE), float(ft.y * TILE_SIZE), float(TILE_SIZE), float(TILE_SIZE)},
+			glm::u8vec4(0x40, 0x80, 0xff, 0x60));
+		batch.fill_rect(player.hitbox(), glm::u8vec4(0xff, 0xee, 0x00, 0xb0));
+	}
 
-RigidBody::RigidBody(glm::vec2 position, float mass, float radius, Sprite2D *sprite)
-	: position(position), mass(mass), radius(radius), sprite(sprite) {
-	velocity = glm::vec2(0.0f);
-}
+	batch.end();
 
-RigidBody::~RigidBody() {
-	/* Limitation: it is not cleaning up Sprite2D ref. */
-	velocity = glm::vec2(0.0f);
-}
+	//--- scale the canvas up to the window ---
+	canvas.present(batch, drawable_size);
 
+	//--- full-resolution overlay (UI goes here) ---
+	if (show_debug) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		DrawLines lines(screen_to_clip);
 
-/* Helpers */
+		glm::ivec2 tile = Tilemap::tile_at_point(player.position);
+		std::string text = "tile (" + std::to_string(tile.x) + ", " + std::to_string(tile.y) + ")"
+			+ "  [" + map.type_at(tile).name + "]"
+			+ "  zoom " + std::to_string(canvas.scale) + "x"
+			+ "  canvas " + std::to_string(canvas.size.x) + "x" + std::to_string(canvas.size.y);
 
-Sprite2D* PlayMode::add_sprite(std::string file_path, glm::vec2 position, glm::vec2 scale) {
-	sprites.emplace_back(scene, data_path("assets/rocket.png"));
-	sprites.back().set_position(position);
-	sprites.back().set_scale(scale);
-	sprites.back().set_rotation(0.0f);
-	return &sprites.back();
-}
+		float H = 12.0f * float(canvas.scale) * 0.5f; //text height in screen pixels
+		glm::vec3 anchor(H * 0.5f, H * 1.5f, 0.0f);
+		//dark shadow, then white text on top:
+		lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+	}
 
-Sprite2D* PlayMode::add_sprite(SharedTexture const &shared_texture, glm::vec2 position, glm::vec2 scale) {
-	sprites.emplace_back(scene, shared_texture);
-	sprites.back().set_position(position);
-	sprites.back().set_scale(scale);
-	sprites.back().set_rotation(0.0f);
-	return &sprites.back();
-}
-
-RigidBody* PlayMode::add_body(std::string name, glm::vec2 position, float mass, float radius, Sprite2D *sprite) {
-	bodies.emplace_back(position, mass, radius, sprite);
-	bodies.back().name = name;
-	return &bodies.back();
+	GL_ERRORS();
 }

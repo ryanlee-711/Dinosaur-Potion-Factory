@@ -1,197 +1,138 @@
 #include "Sprites.hpp"
 
-#include "../starter/LitColorTextureProgram.hpp"
-#include "../starter/DrawLines.hpp"
-#include "../starter/Mesh.hpp"
-#include "../starter/Load.hpp"
+#include "../starter/ColorTextureProgram.hpp"
 #include "../starter/gl_errors.hpp"
-#include "../starter/data_path.hpp"
-#include "../starter/load_save_png.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include <algorithm>
-#include <unordered_map>
-#include <list>
+#include <cstddef>
+#include <stdexcept>
 
-GLuint plane_program = 0;
-Load< MeshBuffer > plane_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("plane.pnct"));
-	plane_program = ret->make_vao_for_program(lit_color_texture_program->program);
-	return ret;
-});
+Sprites::Sprites() {
+	vertices.reserve(6 * 1024);
 
-SharedTexture::SharedTexture() {
-	glGenTextures(1, &tex);
-}
+	glGenBuffers(1, &vertex_buffer);
+	glGenVertexArrays(1, &vertex_array);
 
-SharedTexture::SharedTexture(std::string file_path) {
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
+	//describe the Vertex layout to the shader (ColorTextureProgram):
+	glBindVertexArray(vertex_array);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 
-	// get PNG!
-	std::vector<glm::u8vec4> image(0);
-	
-	load_png(file_path, &image_size, &image,  LowerLeftOrigin);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, image_size.x, image_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glVertexAttribPointer(color_texture_program->Position_vec4, 2, GL_FLOAT, GL_FALSE,
+		sizeof(Vertex), (GLvoid *)offsetof(Vertex, position));
+	glEnableVertexAttribArray(color_texture_program->Position_vec4);
+
+	glVertexAttribPointer(color_texture_program->Color_vec4, 4, GL_UNSIGNED_BYTE, GL_TRUE,
+		sizeof(Vertex), (GLvoid *)offsetof(Vertex, color));
+	glEnableVertexAttribArray(color_texture_program->Color_vec4);
+
+	glVertexAttribPointer(color_texture_program->TexCoord_vec2, 2, GL_FLOAT, GL_FALSE,
+		sizeof(Vertex), (GLvoid *)offsetof(Vertex, tex_coord));
+	glEnableVertexAttribArray(color_texture_program->TexCoord_vec2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	//1x1 white texture so fill_rect can go through the same shader:
+	glm::u8vec4 white(0xff);
+	glGenTextures(1, &white_tex);
+	glBindTexture(GL_TEXTURE_2D, white_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-SharedTexture::SharedTexture(std::vector<glm::u8vec4> image, GLsizei w, GLsizei h) {
-	image_size.x = w;
-	image_size.y = h;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	GL_ERRORS();
 }
 
- void SharedTexture::overwrite(std::vector<glm::u8vec4> image, GLsizei w, GLsizei h) {
-	image_size.x = w;
-	image_size.y = h;
-	glBindTexture(GL_TEXTURE_2D, tex);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
+Sprites::~Sprites() {
+	glDeleteTextures(1, &white_tex);
+	glDeleteVertexArrays(1, &vertex_array);
+	glDeleteBuffers(1, &vertex_buffer);
 }
 
-SharedTexture::~SharedTexture() {
-	if (tex != 0) {
-		glDeleteTextures(1, &tex);
+void Sprites::begin(glm::mat4 const &world_to_clip_) {
+	if (in_batch) throw std::runtime_error("Sprites::begin() called twice without end().");
+	in_batch = true;
+	world_to_clip = world_to_clip_;
+	vertices.clear();
+	current_tex = 0;
+}
+
+void Sprites::draw(Texture const &texture, Rect src, Rect dst, glm::u8vec4 tint) {
+	draw_raw(texture.tex, texture.size, src, dst, tint);
+}
+
+void Sprites::draw(Texture const &texture, Rect src, glm::vec2 position, glm::u8vec4 tint) {
+	draw_raw(texture.tex, texture.size, src, Rect{position.x, position.y, src.w, src.h}, tint);
+}
+
+void Sprites::fill_rect(Rect dst, glm::u8vec4 color) {
+	draw_raw(white_tex, glm::uvec2(1), Rect{0.0f, 0.0f, 1.0f, 1.0f}, dst, color);
+}
+
+void Sprites::draw_raw(GLuint tex, glm::uvec2 tex_size, Rect src, Rect dst, glm::u8vec4 tint) {
+	if (!in_batch) throw std::runtime_error("Sprites::draw() called outside begin()/end().");
+
+	//switching textures means the quads so far must be drawn first:
+	if (tex != current_tex) {
+		flush();
+		current_tex = tex;
 	}
+
+	glm::vec2 uv_min = glm::vec2(src.x, src.y) / glm::vec2(tex_size);
+	glm::vec2 uv_max = glm::vec2(src.x + src.w, src.y + src.h) / glm::vec2(tex_size);
+
+	glm::vec2 p_min(dst.x, dst.y);
+	glm::vec2 p_max(dst.x + dst.w, dst.y + dst.h);
+
+	Vertex top_left    { glm::vec2(p_min.x, p_min.y), tint, glm::vec2(uv_min.x, uv_min.y) };
+	Vertex top_right   { glm::vec2(p_max.x, p_min.y), tint, glm::vec2(uv_max.x, uv_min.y) };
+	Vertex bottom_left { glm::vec2(p_min.x, p_max.y), tint, glm::vec2(uv_min.x, uv_max.y) };
+	Vertex bottom_right{ glm::vec2(p_max.x, p_max.y), tint, glm::vec2(uv_max.x, uv_max.y) };
+
+	//two triangles per quad:
+	vertices.emplace_back(top_left);
+	vertices.emplace_back(bottom_left);
+	vertices.emplace_back(bottom_right);
+	vertices.emplace_back(top_left);
+	vertices.emplace_back(bottom_right);
+	vertices.emplace_back(top_right);
 }
 
-Sprite2D::Sprite2D(Scene &scene): scene(scene) {
-	add_drawable_and_transform();
-	is_valid = true;
+void Sprites::end() {
+	if (!in_batch) throw std::runtime_error("Sprites::end() called without begin().");
+	flush();
+	in_batch = false;
 }
 
-void Sprite2D::add_drawable_and_transform() {
-	// initialize with scene, with texture
-	// load mesh and add as drawable, and read sprite file
-	static int sprite_count = 0;
-	Mesh const &mesh = plane_meshes->lookup("Plane");
+void Sprites::flush() {
+	if (vertices.empty()) return;
 
-	// add a new transform
-	scene.transforms.emplace_back();
-	Scene::Transform &xform = scene.transforms.back();
+	//upload this frame's vertices:
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STREAM_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	// Complete the transform and drawable init
-	xform.name = "Sprite_" + std::to_string(sprite_count++);
-	xform.parent = nullptr;
-	xform.position = glm::vec3(0.0f);
-	xform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-	xform.rotation = glm::quat(glm::vec3{0.0f, 0.0f, 0.0f});
+	//2D drawing: no depth test, standard alpha blending:
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	scene.drawables.emplace_back(&xform);
-	Scene::Drawable &drawable_ = scene.drawables.back();
-	drawable = &drawable_;
-	drawable_.pipeline = lit_color_texture_program_pipeline;
-	drawable_.pipeline.vao = plane_program;
-	drawable_.pipeline.type = mesh.type;
-	drawable_.pipeline.start = mesh.start;
-	drawable_.pipeline.count = mesh.count;
-	drawable_.blended = true;
+	glUseProgram(color_texture_program->program);
+	glUniformMatrix4fv(color_texture_program->OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(world_to_clip));
 
-	// transform and drawable
-	transform_iter = --scene.transforms.end();
-	drawable_iter = --scene.drawables.end();
-}
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, current_tex);
 
-Sprite2D::Sprite2D(Scene &scene, std::string file_path): scene(scene) {
-	add_drawable_and_transform();
-	is_valid = true;
+	glBindVertexArray(vertex_array);
+	glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+	glBindVertexArray(0);
 
-	// load texture from PNG file
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-
-	// get PNG!
-	glm::uvec2 image_size;
-	std::vector<glm::u8vec4> image(0);
-	
-	load_png(file_path, &image_size, &image,  LowerLeftOrigin);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, image_size.x, image_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
 
-	drawable->pipeline.textures[0].texture = tex;
-	drawable->pipeline.textures[0].target = GL_TEXTURE_2D;
+	GL_ERRORS();
 
-	// Set uniforms to modulate color
-	drawable->pipeline.set_uniforms = [this]() {
-		glUniform4fv(lit_color_texture_program->TINT_vec4, 1, glm::value_ptr(this->tint));
-		glUniform3f(lit_color_texture_program->LIGHT_DIRECTION_vec3, 0.0f, 0.0f, 0.0f);
-	};
-
-	tint = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	is_valid = true;
-}
-
-Sprite2D::Sprite2D(Scene &scene, SharedTexture const &shared_texture): scene(scene) {
-	add_drawable_and_transform();
-	is_valid = true;
-
-	tex = shared_texture.tex;
-
-	drawable->pipeline.textures[0].texture = tex;
-	drawable->pipeline.textures[0].target = GL_TEXTURE_2D;
-
-	// Set uniforms to modulate color
-	drawable->pipeline.set_uniforms = [this]() {
-		glUniform4fv(lit_color_texture_program->TINT_vec4, 1, glm::value_ptr(this->tint));
-		glUniform3f(lit_color_texture_program->LIGHT_DIRECTION_vec3, 0.0f, 0.0f, 0.0f);
-	};
-
-	tint = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	is_texture_shared = true;
-}
-
-Sprite2D::~Sprite2D() {
-	if (!is_valid) return;
-	// release texture...
-	if (tex != 0 && !is_texture_shared) {
-		glDeleteTextures(1, &tex);
-	}
-	scene.drawables.erase(drawable_iter);
-	scene.transforms.erase(transform_iter);
-
-}
-
-void Sprite2D::set_position(glm::vec2 new_position) {
-	position = new_position;
-	drawable->transform->position.x = position.x;
-	drawable->transform->position.y = position.y;
-}
-
-void Sprite2D::set_scale(glm::vec2 new_scale) {
-	scale = new_scale;
-	drawable->transform->scale.x = scale.x;
-	drawable->transform->scale.y = scale.y;
-}
-
-void Sprite2D::set_rotation(glm::f32 new_rotation) {
-	rotation = new_rotation;
-	drawable->transform->rotation = glm::quat(glm::vec3(0.0f, 0.0f, rotation));
-}
-
-void Sprite2D::set_z(glm::f32 new_z) {
-	z = new_z;
-	drawable->transform->position.z = z;
+	vertices.clear();
 }

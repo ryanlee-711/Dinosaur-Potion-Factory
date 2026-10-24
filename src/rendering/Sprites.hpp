@@ -1,76 +1,64 @@
 #pragma once
 
-#include <algorithm>
-#include <list>
-#include <string.h>
+#include "Texture.hpp"
+#include "../main/Rect.hpp"
+#include "../starter/GL.hpp"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
-#include "../starter/gl_errors.hpp"
-#include "../starter/read_write_chunk.hpp"
+#include <vector>
 
-#include "../starter/Scene.hpp"
+// Draws lots of textured rectangles ("quads") cheaply.
+//
+// Quads are collected into one vertex buffer and sent to the GPU together
+//
+// Usage each frame:
+//   batch.begin(camera.world_to_clip(view_size));
+//   batch.draw(tileset, src_rect, dst_rect);
+//   ...
+//   batch.end();
+//
+// Quads are drawn in the order they are submitted (later = on top)
+struct Sprites {
+	Sprites();
+	~Sprites();
 
-// SharedTeture!
-// Sharing reused textures
-struct SharedTexture {
-	GLuint tex = 0;
-	glm::uvec2 image_size;
+	Sprites(Sprites const &) = delete;
+	Sprites &operator=(Sprites const &) = delete;
 
-	SharedTexture();
-	SharedTexture(std::string file_path);
-	SharedTexture(std::vector<glm::u8vec4> image, GLsizei w, GLsizei h);
-	~SharedTexture();
+	// Start a batch
+	void begin(glm::mat4 const &world_to_clip);
 
-	void overwrite(std::vector<glm::u8vec4> image, GLsizei w, GLsizei h);
-};
+	// Draw part of a texture into dst
+	void draw(Texture const &texture, Rect src, Rect dst, glm::u8vec4 tint = glm::u8vec4(0xff));
 
-// Sprite2D!
-// Managing lifecycle of sprite objects, bound to one Scene.
-// TODO: maybe move the sprites from PlayMode into Sprite2D as a singleton (static)
-// TODO: z-index is not actively sorted, so there should be a callback (sorting) when anything was modified
-struct Sprite2D {
-	Scene::Drawable *drawable = nullptr;
-	std::string name;
-	glm::vec4 tint;
+	// Same as above but with its top-left at 'position'
+	void draw(Texture const &texture, Rect src, glm::vec2 position, glm::u8vec4 tint = glm::u8vec4(0xff));
 
-	bool is_valid = false;
-	bool is_texture_shared = false;
+	// Solid colored rectangle
+	void fill_rect(Rect dst, glm::u8vec4 color);
 
-	Sprite2D(Scene &scene);
-	Sprite2D(Scene &scene, std::string file_path);
-	Sprite2D(Scene &scene, SharedTexture const &shared_texture);
-	virtual ~Sprite2D();
+	// Takes a raw GL texture. A negative src.h flips the image vertically
+	void draw_raw(GLuint tex, glm::uvec2 tex_size, Rect src, Rect dst, glm::u8vec4 tint);
 
-	glm::vec2 get_position() const { return position; };
-	glm::vec2 get_scale() const { return scale; };
-	glm::f32 get_rotation() const { return rotation; };
-	glm::f32 get_z() const { return z; };
-	virtual void set_position(glm::vec2 new_position);
-	virtual void set_scale(glm::vec2 new_scale);
-	virtual void set_rotation(glm::f32 new_rotation);
-	virtual void set_z(glm::f32 new_z);
-
-	// No copy! no move!
-	Sprite2D(Sprite2D const &) = delete;
-	Sprite2D &operator=(Sprite2D const &) = delete;
-	Sprite2D(Sprite2D &) = delete;
-	Sprite2D &operator=(Sprite2D &) = delete;
+	// Send everything left to the GPU. Call once per begin().
+	void end();
 
 private:
-	GLuint tex = 0;
-	// order of applying: scale --> rotation --> position
-	glm::vec2 position {0.0f, 0.0f};  // position offset
-	glm::vec2 scale {1.0f, 1.0f};     // axis-aligned scale
-	glm::f32 rotation {0.0f};   // euler angle
-	glm::f32 z {0.0f}; // z index
+	struct Vertex {
+		glm::vec2 position;
+		glm::u8vec4 color;
+		glm::vec2 tex_coord;
+	};
 
-	// helping with access
-	Scene &scene;
-	std::list<Scene::Drawable>::iterator drawable_iter;
-	std::list<Scene::Transform>::iterator transform_iter;
+	void flush();
 
-	// constructor shared
-	void add_drawable_and_transform();
+	std::vector< Vertex > vertices;
+	GLuint current_tex = 0;
+	glm::mat4 world_to_clip = glm::mat4(1.0f);
+	bool in_batch = false;
+
+	GLuint vertex_buffer = 0;
+	GLuint vertex_array = 0;
+	GLuint white_tex = 0; // 1x1 white pixel
 };
