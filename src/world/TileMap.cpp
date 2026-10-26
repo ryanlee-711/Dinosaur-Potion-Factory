@@ -1,4 +1,4 @@
-#include "Tilemap.hpp"
+#include "TileMap.hpp"
 
 #include "../main/GameConfig.hpp"
 #include "../rendering/Sprites.hpp"

@@ -1,13 +1,24 @@
 #include "Player.hpp"
 
-#include "Tilemap.hpp"
+#include "TileMap.hpp"
 #include "../main/GameConfig.hpp"
+#include "../starter/Load.hpp"
+#include "../starter/data_path.hpp"
 
 #include <cmath>
 
 using GameConfig::TILE_SIZE;
 
-void Player::update(glm::vec2 direction, float elapsed, Tilemap const &map) {
+//Player art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
+// (Placeholder until the sprite/animation system replaces it.)
+static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/player.png"));
+});
+static constexpr int PLAYER_FRAME_W = 16;
+static constexpr int PLAYER_FRAME_H = 24;
+
+void Player::update(FrameInput const &input, float elapsed, Tilemap const &map) {
+	auto direction = input.direction;
 	//diagonal input shouldn't be faster than straight input
 	if (glm::length(direction) > 1.0f) direction = glm::normalize(direction);
 
@@ -51,6 +62,17 @@ void Player::move_axis(int axis, float amount, Tilemap const &map) {
 		float wall = (std::floor(lo / T) + 1.0f) * T; //far edge of the tile we hit
 		position[axis] += (wall - lo);
 	}
+}
+
+void Player::draw(Sprites &batch) const {
+    int frame = 0; //down
+	if (facing.y < 0) frame = 1;      //up
+	else if (facing.x < 0) frame = 2; //left
+	else if (facing.x > 0) frame = 3; //right
+	Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
+	//round to whole pixels so the sprite never sits between pixels:
+	glm::vec2 top_left = glm::round(position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
+	batch.draw(*player_texture, src, top_left);
 }
 
 Rect Player::hitbox() const {

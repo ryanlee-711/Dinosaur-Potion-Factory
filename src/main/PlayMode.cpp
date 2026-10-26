@@ -7,6 +7,8 @@
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
 
+#include "../world/entities/DemoBox.hpp"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cmath>
@@ -14,12 +16,6 @@
 
 using GameConfig::TILE_SIZE;
 
-//Player art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
-// (Placeholder until the sprite/animation system replaces it.)
-static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/player.png"));
-});
-static constexpr int PLAYER_FRAME_W = 16;
 static constexpr int PLAYER_FRAME_H = 24;
 
 PlayMode::PlayMode() : map(data_path("maps/cave.map")) {
@@ -28,6 +24,16 @@ PlayMode::PlayMode() : map(data_path("maps/cave.map")) {
 
 	//stand in the middle of the spawn tile, feet near its bottom:
 	player.position = Tilemap::tile_center(glm::ivec2(map.spawn_tile)) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+
+	// ~~Demo~~
+	// initialize several boxes for demonstration (entities).
+	for (size_t i = 0; i < 4; ++i) {
+		entities.push_back(std::make_unique<DemoBox>());
+		entities.back()->position = glm::vec2(i * 10.0f + 10.0f, i * 20.0f + 20.0f);
+	}
+	// initialize the inventory with two apple and one powder
+	inventory.emplace_back("apple", 2);
+	inventory.emplace_back("apple_powder", 1);
 }
 
 PlayMode::~PlayMode() {
@@ -51,7 +57,13 @@ void PlayMode::update(float elapsed) {
 	if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])    direction.y -= 1.0f; //y grows downward
 	if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])  direction.y += 1.0f;
 
-	player.update(direction, elapsed, map);
+	FrameInput input{direction};
+
+	player.update(input, elapsed, map);
+
+	for (auto &entity : entities) {
+		entity->update(input, elapsed, map);
+	}
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -72,14 +84,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	map.draw(batch, *tileset, view_min, view_max);
 
 	{ //player:
-		int frame = 0; //down
-		if (player.facing.y < 0) frame = 1;      //up
-		else if (player.facing.x < 0) frame = 2; //left
-		else if (player.facing.x > 0) frame = 3; //right
-		Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
-		//round to whole pixels so the sprite never sits between pixels:
-		glm::vec2 top_left = glm::round(player.position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
-		batch.draw(*player_texture, src, top_left);
+		player.draw(batch);
+	}
+
+	{ //entities:
+		for (auto const &entity : entities) {
+			entity->draw(batch);
+		}
 	}
 
 	if (show_debug) {
@@ -123,6 +134,33 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 		lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 	}
+
+	// --- show inventory (using show_debug temporally as condition) ---
+	glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+	ui_batch.begin(screen_to_clip);
+	if (true) {
+		DrawLines lines(screen_to_clip);
+		int idx = 0;
+		const float GAP = 96.0f;
+		const float ANCHOR_X = 200.5f;
+		const float ANCHOR_Y = 1200.5f;
+		for (const auto &[item_id, item_count] : inventory) {
+			if (auto item = Item::get(item_id); item != nullptr) {
+				glm::vec2 top_left = glm::vec2{ANCHOR_X + idx * GAP, ANCHOR_Y};
+				// draw sprite
+				Rect src{0.0f, 0.0f, 16.0f, 16.0f};
+				ui_batch.draw(*item->texture, src, Rect{top_left.x, top_left.y, 16.0f * canvas.scale, 16.0f * canvas.scale});
+				// draw text
+				float H = 12.0f * float(canvas.scale) * 0.5f; //text height in screen pixels
+				glm::vec3 anchor(top_left.x + float(canvas.scale) * 14.0f, top_left.y + float(canvas.scale) * 16.0f, 0.0f);
+				std::string text = std::to_string(item_count);
+				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+				lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			}
+			idx++;
+		}
+	}
+	ui_batch.end();
 
 	GL_ERRORS();
 }

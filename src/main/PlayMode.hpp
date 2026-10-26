@@ -7,7 +7,9 @@
 #include "../rendering/Sprites.hpp"
 #include "../rendering/Texture.hpp"
 #include "../world/Player.hpp"
-#include "../world/Tilemap.hpp"
+#include "../world/TileMap.hpp"
+#include "../world/Entity.hpp"
+#include "../inventory/Item.hpp"
 
 #include <glm/glm.hpp>
 
@@ -15,6 +17,8 @@
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
+	using ItemRecord = std::pair<item_id_t, int>;
+
 	PlayMode();
 	virtual ~PlayMode();
 
@@ -27,10 +31,13 @@ struct PlayMode : Mode {
 	Tilemap map;
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
+	std::vector<std::unique_ptr<Entity>> entities;
+	std::vector<ItemRecord> inventory;
 
 	//----- rendering -----
 	Camera2D camera;
 	Sprites batch;
+	Sprites ui_batch;
 	PixelCanvas canvas;
 
 	bool show_debug = false; // toggled with F3

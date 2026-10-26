@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../main/Rect.hpp"
+#include "Entity.hpp"
 
 #include <glm/glm.hpp>
 
@@ -9,7 +10,8 @@ struct Tilemap;
 // Handles movement and collision, drawing lives in PlayMode for now
 //
 // 'position' is the point under the player (bottom-center of the sprite)
-struct Player {
+struct Player : Entity {
+public:
 	glm::vec2 position = glm::vec2(0.0f);  // world pixels
 	glm::ivec2 facing = glm::ivec2(0, 1);  // last direction moved: (0,1)=down, (0,-1)=up, (+-1,0)=right/left
 	bool moving = false;
@@ -21,9 +23,10 @@ struct Player {
 	static constexpr float HITBOX_H = 6.0f;
 
 	// direction: from input, each axis in [-1, 1]. Moves the player and stops at solid tiles.
-	void update(glm::vec2 direction, float elapsed, Tilemap const &map);
+	void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
 
-	Rect hitbox() const;
+	Rect hitbox() const override;
+	void draw(Sprites &batch) const override;
 
 	// The tile directly in front of the dwarf (for interacting with things later).
 	glm::ivec2 facing_tile() const;

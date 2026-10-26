@@ -155,6 +155,10 @@ const game_names = [
 	//world:
 	maek.CPP('src/world/Tilemap.cpp'),
 	maek.CPP('src/world/Player.cpp'),
+	maek.CPP('src/world/entities/DemoBox.cpp'),
+
+	//items:
+	maek.CPP('src/inventory/Item.cpp'),
 
 	//rendering:
 	maek.CPP('src/rendering/Texture.cpp'),
