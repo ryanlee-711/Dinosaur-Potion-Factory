@@ -18,28 +18,21 @@ struct Texture;
 //   - world coordinates: art pixels, (0,0) is the top-left corner of the map, y grows down
 //   - tile (tx, ty) covers world pixels [tx*TILE_SIZE, (tx+1)*TILE_SIZE)
 struct Tilemap {
-	// What one map character means
-	struct TileType {
-		char symbol = '?';         // character used in the map file
-		uint32_t atlas_index = 0;  // which tile in the tileset image
-		bool solid = false;        // blocks movement?
-		std::string name;          // for debugging / future gameplay hooks
-	};
 
 	// Loads the map
 	explicit Tilemap(std::string const &map_path);
 
 	glm::uvec2 size = glm::uvec2(0);   // in tiles
+	uint32_t num_layers = 0;
 	std::string tileset_path;          // relative to the dist/ folder
-	glm::uvec2 spawn_tile = glm::uvec2(0);
 
-	std::vector< TileType > tile_types;
-	std::vector< uint16_t > tiles;     // row-major, each entry indexes tile_types
+	// each layer is row-major; each entry indexes tile_types
+	std::vector<std::vector< int32_t >> tile_layers;
 
 	// --- queries ---
 	glm::vec2 size_px() const;
 	bool in_bounds(glm::ivec2 tile) const;
-	TileType const &type_at(glm::ivec2 tile) const; // tile must be in bounds
+	int32_t tile_at(glm::ivec2 tile, size_t layer) const; // tile must be in bounds
 	bool is_solid(glm::ivec2 tile) const;            // outside the map counts as solid
 	bool overlaps_solid(Rect const &box) const;      // does a world-space box touch any solid tile?
 

@@ -10,3 +10,4 @@ dist/game.exe
 *.blend[0-9]
 maek-cache.json
 dist/README-*.txt
+output/

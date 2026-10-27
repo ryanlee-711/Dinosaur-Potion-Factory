@@ -18,12 +18,10 @@ using GameConfig::TILE_SIZE;
 
 static constexpr int PLAYER_FRAME_H = 32;
 
-PlayMode::PlayMode() : map(data_path("maps/cave.map")) {
-	tileset = std::make_unique< Texture >(data_path(map.tileset_path));
-	map.validate_tileset(*tileset);
-
+PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
+	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
-	player.position = Tilemap::tile_center(glm::ivec2(map.spawn_tile)) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+	player.position = Tilemap::tile_center(glm::ivec2{10, 10}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
@@ -165,7 +163,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		glm::ivec2 tile = Tilemap::tile_at_point(player.position);
 		std::string text = "tile (" + std::to_string(tile.x) + ", " + std::to_string(tile.y) + ")"
-			+ "  [" + map.type_at(tile).name + "]"
+			+ "  [" + std::to_string(map.tile_at(tile, 0)) + "]"
 			+ "  zoom " + std::to_string(canvas.scale) + "x"
 			+ "  canvas " + std::to_string(canvas.size.x) + "x" + std::to_string(canvas.size.y);
 
