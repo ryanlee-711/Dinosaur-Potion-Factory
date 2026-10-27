@@ -1,0 +1,22 @@
+#pragma once
+
+#include "../main/Rect.hpp"
+
+#include <memory>
+#include <vector>
+
+struct Tilemap;
+struct Entity;
+
+// A read-only view of everything an entity can bump into this frame:
+// the tilemap plus the other entities
+struct World {
+	Tilemap const &map;
+	std::vector< std::unique_ptr< Entity > > const &entities;
+
+	// Appends to 'out' every solid thing 'box' overlaps that 'mover' can't walk through
+	void solids_overlapping(Rect const &box, Entity const &mover, std::vector< Rect > &out) const;
+
+	// True if 'box' overlaps anything solid for 'mover'.
+	bool blocked(Rect const &box, Entity const &mover) const;
+};

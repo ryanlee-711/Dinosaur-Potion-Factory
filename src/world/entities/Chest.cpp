@@ -1,15 +1,20 @@
 #include "Chest.hpp"
+#include "../World.hpp"
+#include "../TileMap.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
 #include <cmath>
+#include <array>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/chest.png"));
 });
 
 
-void Chest::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
+void Chest::update(FrameInput const &input, float elapsed, World const &world) {
+    auto const &entities = world.entities;
+
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
         push_timer = 0.0f;
@@ -34,7 +39,7 @@ void Chest::update(FrameInput const &input, float elapsed, Tilemap const &map, s
         auto type = port->get_port(source_tile);
         if (type != PortType::In && type != PortType::Both) continue;
 
-        for (auto it = inventory.begin(); it != inventory.end(); ++it) {
+        for (auto it = inventory.slots.begin(); it != inventory.slots.end(); ++it) {
             if (it->second <= 0) continue;  // maybe erase this too
 
             int item_sent = port->push_item({it->first, 1});
@@ -42,9 +47,6 @@ void Chest::update(FrameInput const &input, float elapsed, Tilemap const &map, s
 
             it->second -= item_sent;
             push_timer = PUSH_COOLDOWN;
-            if (it->second == 0) {
-                inventory.erase(it);
-            }
             return;
         }
     }
@@ -73,7 +75,7 @@ void Chest::get_occupied(std::vector<glm::ivec2> *ans) const {
 
 void Chest::on_interact(Context &ctx) {
     // should trigger inventory display through some mechanism
-    ctx.flag = Context::InteractionType::OpenInventory;
+    ctx.open_container = &inventory;
 }
 
 auto Chest::get_inventory() -> Inventory* {
@@ -92,18 +94,5 @@ IItemPort::PortType Chest::get_port(glm::ivec2 grid_coord) {
 }
 
 int Chest::push_item(ItemRecord item_record) {
-    for (size_t index = 0; index < inventory.size(); ++index) {
-        if (inventory[index].first == item_record.first) {
-            // no stack size limit, yet.
-            inventory[index].second += item_record.second;
-            return item_record.second;
-        }
-    }
-    if (inventory.size() >= 10) {
-        // at most 10 stacks.
-        return 0;
-    }
-    // add fresh items
-    inventory.emplace_back(item_record);
-    return item_record.second;
+    return item_record.second - inventory.add(item_record.first, item_record.second);
 }

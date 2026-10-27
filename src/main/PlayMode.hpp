@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <string>
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
@@ -31,11 +32,16 @@ struct PlayMode : Mode {
 	Player player;
 	std::vector<std::unique_ptr<Entity>> entities; // TODO: add tilebased query for entities, and use hashmap to speedup lookup.
 	//----- inventory -----
-	Inventory inventory;
-	Inventory *opened_inventory;
+	Inventory inventory;                     // the player's hotbar
+	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
+	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	bool inventory_taking = false;  // switch the flow direction between inventory <-> opened inventory.
 	//----- input -----
 	FrameInput input;
+
+	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
+	std::string message;
+	float message_timer = 0.0f;
 
 	//----- rendering -----
 	Camera2D camera;

@@ -1,4 +1,6 @@
 #include "Pipe.hpp"
+#include "../World.hpp"
+#include "../TileMap.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
@@ -10,12 +12,13 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/machines/pipe.png"));
 });
 
-Pipe::Pipe() : frame(0), base_frame(0) {
+Pipe::Pipe() : inventory(1), frame(0), base_frame(0) {
     in_dir = glm::ivec2{-1, 0};
     out_dir = glm::ivec2(1, 0);
 }
 
-void Pipe::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
+void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
+    auto const &entities = world.entities;
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
         push_timer = 0.0f;
@@ -39,7 +42,7 @@ void Pipe::update(FrameInput const &input, float elapsed, Tilemap const &map, st
     auto type = port->get_port(source_tile);
     if (type != PortType::In && type != PortType::Both) return;
 
-    for (auto it = inventory.begin(); it != inventory.end(); ++it) {
+    for (auto it = inventory.slots.begin(); it != inventory.slots.end(); ++it) {
         if (it->second <= 0) continue;  // maybe erase this too
 
         int item_sent = port->push_item({it->first, 1});
@@ -47,7 +50,6 @@ void Pipe::update(FrameInput const &input, float elapsed, Tilemap const &map, st
 
         it->second -= item_sent;
         if (it->second == 0) {
-            inventory.erase(it);
             frame = base_frame;  // reset sprite
         }
         return;
@@ -94,13 +96,10 @@ IItemPort::PortType Pipe::get_port(glm::ivec2 grid_coord) {
 }
 
 int Pipe::push_item(ItemRecord item_record) {
-    if (inventory.size()) {
-        return 0;
+
+    int val = inventory.add(item_record.first, item_record.second);
+    if (item_record.second - val) {
+        push_timer = PUSH_COOLDOWN;
     }
-    // allow any stack size, but only one item on the belt.
-    inventory.emplace_back(item_record);
-    // set timer for conveying
-    push_timer = PUSH_COOLDOWN;
-    frame = base_frame + 6;
-    return item_record.second;
+    return item_record.second - val;
 }

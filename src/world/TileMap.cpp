@@ -89,6 +89,14 @@ glm::vec2 Tilemap::tile_center(glm::ivec2 tile) {
 	return (glm::vec2(tile) + 0.5f) * float(TILE_SIZE);
 }
 
+glm::vec2 Tilemap::tile_base(glm::ivec2 tile) {
+	return glm::vec2((float(tile.x) + 0.5f) * float(TILE_SIZE), float(tile.y + 1) * float(TILE_SIZE));
+}
+
+Rect Tilemap::tile_rect(glm::ivec2 tile) {
+	return Rect{float(tile.x * TILE_SIZE), float(tile.y * TILE_SIZE), float(TILE_SIZE), float(TILE_SIZE)};
+}
+
 void Tilemap::validate_tileset(Texture const &tileset) const {
 
 }

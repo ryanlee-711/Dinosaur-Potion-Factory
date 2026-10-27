@@ -14,7 +14,7 @@ public:
     ~Crusher() = default;
 
     // Entity
-    void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) override;
+    void update(FrameInput const &input, float elapsed, World const &world) override;
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;

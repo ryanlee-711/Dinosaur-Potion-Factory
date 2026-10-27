@@ -1,4 +1,6 @@
 #include "Cauldron.hpp"
+#include "../World.hpp"
+#include "../TileMap.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
@@ -9,16 +11,15 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 });
 
 
-Cauldron::Cauldron() {
-    inventory.emplace_back(ItemRecord{"nil", 0});  // IN 1
-    inventory.emplace_back(ItemRecord{"nil", 0});  // IN 2
-    inventory.emplace_back(ItemRecord{"nil", 0});  // OUT
+Cauldron::Cauldron() : inventory(3) {
+
 }
 
-void Cauldron::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
+void Cauldron::update(FrameInput const &input, float elapsed, World const &world) {
+    auto const &entities = world.entities;
 
     // Processing
-    if (inventory[0].second > 0 && inventory[1].second >= 2) {
+    if (inventory.slots[0].second > 0 && inventory.slots[1].second >= 2) {
         processing_timer -= elapsed;
     } else {
         processing_timer = BREW_COOLDOWN;
@@ -26,22 +27,22 @@ void Cauldron::update(FrameInput const &input, float elapsed, Tilemap const &map
     
     if (processing_timer <= 0.0f) {
         // Two apple powder + 1 water bottle
-        if (inventory[0].first == "water_bottle" && inventory[0].second > 0 
-            && inventory[1].first != "nil" && inventory[1].second >= 2 
-            && (inventory[2].first == "nil" || inventory[2].first == "ale")) {
-            inventory[0].second--;
-            inventory[1].second -= 2;
+        if (inventory.slots[0].first == "water_bottle" && inventory.slots[0].second > 0
+            && inventory.slots[1].first != "" && inventory.slots[1].second >= 2
+            && (inventory.slots[2].first == "" || inventory.slots[2].first == "ale")) {
+            inventory.slots[0].second--;
+            inventory.slots[1].second -= 2;
 
-            if (inventory[2].first == "nil") {
-                inventory[2].first = "ale";  // hardcoding the only recipe now
-                inventory[2].second = 0;
+            if (inventory.slots[2].first == "") {
+                inventory.slots[2].first = "ale";  // hardcoding the only recipe now
+                inventory.slots[2].second = 0;
             }
-            inventory[2].second++;
-            if (inventory[0].second == 0) {
-                inventory[0].first = "nil";
+            inventory.slots[2].second++;
+            if (inventory.slots[0].second == 0) {
+                inventory.slots[0].first = "";
             }
-            if (inventory[1].second == 0) {
-                inventory[1].first = "nil";
+            if (inventory.slots[1].second == 0) {
+                inventory.slots[1].first = "";
             }
 
             processing_timer = BREW_COOLDOWN;
@@ -71,14 +72,14 @@ void Cauldron::update(FrameInput const &input, float elapsed, Tilemap const &map
     auto type = port->get_port(source_tile);
     if (type != PortType::In && type != PortType::Both) return;
 
-    if (inventory[2].second <= 0) return;
-    int item_sent = port->push_item({inventory[2].first, 1});
+    if (inventory.slots[2].second <= 0) return;
+    int item_sent = port->push_item({inventory.slots[2].first, 1});
 
     if (item_sent != 0) {
-        inventory[2].second -= item_sent;
-        if (inventory[2].second <= 0) {
-            inventory[2].first = "nil";
-            inventory[2].second = 0;
+        inventory.slots[2].second -= item_sent;
+        if (inventory.slots[2].second <= 0) {
+            inventory.slots[2].first = "";
+            inventory.slots[2].second = 0;
         }
         push_timer = PUSH_COOLDOWN;
     }
@@ -106,7 +107,7 @@ void Cauldron::get_occupied(std::vector<glm::ivec2> *ans) const {
 
 void Cauldron::on_interact(Context &ctx) {
     // should trigger inventory display through some mechanism
-    ctx.flag = Context::InteractionType::OpenInventory;
+    ctx.open_container = &inventory;
 }
 
 auto Cauldron::get_inventory() -> Inventory* {
@@ -132,19 +133,12 @@ IItemPort::PortType Cauldron::get_port(glm::ivec2 grid_coord) {
 
 int Cauldron::push_item(ItemRecord item_record) {
 
-    if (item_record.second == 0) {
+    if (item_record.second <= 0) {
         return 0;
     }
-    if (item_record.first == "water_bottle") {
-        inventory[0].first = "water_bottle";
-        inventory[0].second += 1;
-        return 1;
-    }
-    if (inventory[1].first == item_record.first || inventory[1].first == "nil") {
-        inventory[1].first = item_record.first;
-        inventory[1].second += 1;
-        return 1;
-    }
 
-    return 0;
+    if (item_record.first == "water_bottle") {
+        return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
+    }
+    return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 1, 2);
 }

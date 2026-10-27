@@ -6,9 +6,11 @@
 #include "../main/GameConfig.hpp"
 
 #include <glm/glm.hpp>
+#include <memory>
+#include <vector>
 
 
-struct Tilemap;
+struct World;
 
 struct FrameInput {
     struct Button {
@@ -21,24 +23,28 @@ struct FrameInput {
     Button numkeys[10];
 };
 
-// Entity - ABC for in-game objects that could hold data.
-// We can later switch to ECS; for the time being, inheritance is easier to implement.
 struct Entity {
-	glm::vec2 position = glm::vec2(0.0f);  // world pixels
-    uint32_t collision_mask = 0x1;
+	glm::vec2 position = glm::vec2(0.0f);  // world pixels, see POSITION RULE above
 
-    virtual ~Entity() = default;
+	// Two entities block each other when (a.collision_mask & b.collision_mask) != 0.
+	// Default 0x1 = solid. Set to 0 for things you can walk through
+	uint32_t collision_mask = 0x1;
 
-	virtual void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) = 0;
+	// Set to true to delete this entity (picked up, harvested away, destroyed by a potion...).
+	// PlayMode erases removed entities once per frame, after everything has updated
+	bool removed = false;
+
+	virtual ~Entity() = default;
+
+	virtual void update(FrameInput const &input, float elapsed, World const &world) = 0;
 	virtual Rect hitbox() const = 0;
-    virtual void draw(Sprites &batch) const = 0;
-    virtual void get_occupied(std::vector<glm::ivec2> *ans) const = 0;
-};
+	virtual void draw(Sprites &batch) const = 0;
+	virtual void get_occupied(std::vector<glm::ivec2> *ans) const = 0;
 
-inline auto world_to_grid(glm::vec2 world_pos) -> glm::ivec2 {
-    world_pos /= GameConfig::TILE_SIZE;
-    return glm::ivec2(static_cast<int>(world_pos.x), static_cast<int>(world_pos.y));
-}
+	bool blocks(Entity const &other) const {
+		return (collision_mask & other.collision_mask) != 0;
+	}
+};
 
 inline auto entity_at(std::vector<std::unique_ptr<Entity>> const &entities, glm::ivec2 tile) -> Entity* {
     for (auto const &entity : entities) {

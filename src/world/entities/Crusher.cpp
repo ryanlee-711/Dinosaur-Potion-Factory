@@ -1,4 +1,6 @@
 #include "Crusher.hpp"
+#include "../World.hpp"
+#include "../TileMap.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
@@ -9,26 +11,25 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 });
 
 
-Crusher::Crusher() {
-    inventory.emplace_back(ItemRecord{"nil", 0});
-    inventory.emplace_back(ItemRecord{"nil", 0});
+Crusher::Crusher() : inventory(2) {
 }
 
-void Crusher::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
+void Crusher::update(FrameInput const &input, float elapsed, World const &world) {
+    auto const &entities = world.entities;
 
     // Processing
     processing_timer -= elapsed;
     if (processing_timer <= 0.0f) {
-        if (inventory[0].first != "nil" && inventory[0].second > 0) {
-            inventory[0].second--;
+        if (inventory.slots[0].first != "" && inventory.slots[0].second > 0) {
+            inventory.slots[0].second--;
 
-            if (inventory[1].first == "nil") {
-                inventory[1].first = "apple_powder";  // hardcoding the only recipe now
-                inventory[1].second = 0;
+            if (inventory.slots[1].first == "") {
+                inventory.slots[1].first = "apple_powder";  // hardcoding the only recipe now
+                inventory.slots[1].second = 0;
             }
-            inventory[1].second++;
-            if (inventory[0].second == 0) {
-                inventory[0].first = "nil";
+            inventory.slots[1].second++;
+            if (inventory.slots[0].second == 0) {
+                inventory.slots[0].first = "";
             }
             processing_timer = CRUSH_COOLDOWN;
         }
@@ -57,14 +58,14 @@ void Crusher::update(FrameInput const &input, float elapsed, Tilemap const &map,
     auto type = port->get_port(source_tile);
     if (type != PortType::In && type != PortType::Both) return;
 
-    if (inventory[1].second <= 0) return;
-    int item_sent = port->push_item({inventory[1].first, 1});
+    if (inventory.slots[1].second <= 0) return;
+    int item_sent = port->push_item({inventory.slots[1].first, 1});
 
     if (item_sent != 0) {
-        inventory[1].second -= item_sent;
-        if (inventory[1].second <= 0) {
-            inventory[1].first = "nil";
-            inventory[1].second = 0;
+        inventory.slots[1].second -= item_sent;
+        if (inventory.slots[1].second <= 0) {
+            inventory.slots[1].first = "";
+            inventory.slots[1].second = 0;
         }
         push_timer = PUSH_COOLDOWN;
     }
@@ -92,7 +93,7 @@ void Crusher::get_occupied(std::vector<glm::ivec2> *ans) const {
 
 void Crusher::on_interact(Context &ctx) {
     // should trigger inventory display through some mechanism
-    ctx.flag = Context::InteractionType::OpenInventory;
+    ctx.open_container = &inventory;
 }
 
 auto Crusher::get_inventory() -> Inventory* {
@@ -112,14 +113,9 @@ IItemPort::PortType Crusher::get_port(glm::ivec2 grid_coord) {
 
 int Crusher::push_item(ItemRecord item_record) {
 
-    if (inventory[0].first == "nil") {
-        inventory[0].first = item_record.first;
-        processing_timer = CRUSH_COOLDOWN;
+    if (item_record.second <= 0) {
+        return 0;
     }
 
-    if (inventory[0].first == item_record.first) {
-        inventory[0].second += 1;
-        return 1;
-    }
-    return 0;
+    return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
 }
