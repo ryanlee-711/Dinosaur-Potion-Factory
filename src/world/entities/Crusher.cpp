@@ -4,6 +4,7 @@
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
@@ -16,6 +17,9 @@ Crusher::Crusher() : inventory(2) {
 
 void Crusher::update(FrameInput const &input, float elapsed, World const &world) {
     auto const &entities = world.entities;
+
+    // update frame animation
+    frame = 3 - std::clamp(static_cast<int>(std::round(std::abs((processing_timer - CRUSH_COOLDOWN / 2.0f) * 6.0f))), 0, 3);
 
     // Processing
     processing_timer -= elapsed;
@@ -74,7 +78,7 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
 }
 
 void Crusher::draw(Sprites &batch) const {
-    Rect src{0.0f, 0.0f, 32.0f, 48.0f};
+    Rect src{32.0f * frame, 0.0f, 32.0f, 48.0f};
     //round to whole pixels so the sprite never sits between pixels:
     glm::vec2 top_left = glm::round(position);
     batch.draw(*box_texture, src, top_left - glm::vec2(0.0f, 32.0f));
@@ -116,6 +120,8 @@ int Crusher::push_item(ItemRecord item_record) {
     if (item_record.second <= 0) {
         return 0;
     }
-
+    if (inventory.get_slot_count(0) <= 0) {
+        processing_timer = CRUSH_COOLDOWN;
+    }
     return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
 }

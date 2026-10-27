@@ -432,7 +432,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		// draw inventory direction indicator
 		ui_batch.draw(
 			*arrow_texture, Rect{inventory_taking ? 16.0f : 0.0f, 0.0f, 16.0f, 16.0f},
-			Rect{600.0f, 1320.0f, 16.0f * canvas.scale, 16.0f * canvas.scale}
+			Rect{hotbar_top_left.x - slot, hotbar_top_left.y, 16.0f * canvas.scale, 16.0f * canvas.scale}
 		);
 
 		ui_batch.end();

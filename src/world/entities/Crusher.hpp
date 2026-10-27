@@ -36,4 +36,5 @@ private:
     const float CRUSH_COOLDOWN = 3.0f;
     float push_timer = 0.0f;
     float processing_timer = 0.0f;
+    size_t frame = 0;
 };
