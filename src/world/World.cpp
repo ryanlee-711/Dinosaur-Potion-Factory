@@ -19,6 +19,7 @@ void World::solids_overlapping(Rect const &box, Entity const &mover, std::vector
 	//solid entities:
 	for (auto const &entity : entities) {
 		if (entity.get() == &mover) continue;
+		if (entity->removed) continue;
 		if (!entity->blocks(mover)) continue;
 		Rect r = entity->hitbox();
 		if (r.overlaps(box)) out.emplace_back(r);

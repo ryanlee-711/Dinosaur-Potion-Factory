@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <string>
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
@@ -30,9 +31,14 @@ struct PlayMode : Mode {
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
 	std::vector<std::unique_ptr<Entity>> entities;
-	Inventory inventory;
-	Inventory *opened_inventory;
+	Inventory inventory;                     // the player's hotbar
+	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
+	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	FrameInput input;
+
+	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
+	std::string message;
+	float message_timer = 0.0f;
 
 	//----- rendering -----
 	Camera2D camera;

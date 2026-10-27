@@ -160,6 +160,7 @@ const game_names = [
 
 	//items:
 	maek.CPP('src/inventory/Item.cpp'),
+	maek.CPP('src/inventory/Inventory.cpp'),
 
 	//rendering:
 	maek.CPP('src/rendering/Texture.cpp'),

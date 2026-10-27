@@ -33,8 +33,8 @@ auto DemoBox::hitbox() const -> Rect {
 }
 
 void DemoBox::on_interact(Context &ctx) {
-    // should trigger inventory display through some mechanism
-    ctx.flag = Context::InteractionType::OpenInventory;
+    //a chest's interaction is just: show what's inside
+    ctx.open_container = &inventory;
 }
 
 auto DemoBox::get_inventory() -> Inventory* {

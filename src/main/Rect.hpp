@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 // An axis-aligned rectangle in pixels. (x, y) is the TOP-left corner and y grows down
 struct Rect {
@@ -15,6 +16,13 @@ struct Rect {
 	bool overlaps(Rect const &o) const {
 		return x < o.x + o.w && o.x < x + w
 		    && y < o.y + o.h && o.y < y + h;
+	}
+
+	// Shortest distance between the two rectangles' edges (0 if they touch or overlap).
+	float distance_to(Rect const &o) const {
+		float dx = std::max({0.0f, o.x - (x + w), x - (o.x + o.w)});
+		float dy = std::max({0.0f, o.y - (y + h), y - (o.y + o.h)});
+		return std::sqrt(dx * dx + dy * dy);
 	}
 
 	// Area shared by the two rectangles (0 if they don't overlap).

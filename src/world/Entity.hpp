@@ -27,6 +27,10 @@ struct Entity {
 	// Default 0x1 = solid. Set to 0 for things you can walk through
 	uint32_t collision_mask = 0x1;
 
+	// Set to true to delete this entity (picked up, harvested away, destroyed by a potion...).
+	// PlayMode erases removed entities once per frame, after everything has updated
+	bool removed = false;
+
 	virtual ~Entity() = default;
 
 	virtual void update(FrameInput const &input, float elapsed, World const &world) = 0;

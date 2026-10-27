@@ -10,7 +10,6 @@
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
 #include "../world/entities/DemoBox.hpp"
-
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
@@ -22,11 +21,18 @@ using GameConfig::TILE_SIZE;
 
 static constexpr int PLAYER_FRAME_H = 32;
 
+//How long an interaction message (e.g. "Your bag is full") stays on screen, in seconds.
+static constexpr float MESSAGE_SECONDS = 2.5f;
+
+//An open container panel closes by itself once the dwarf's feet are farther than this
+static constexpr float CONTAINER_CLOSE_DISTANCE = float(GameConfig::TILE_SIZE);
+
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
 	Entity *best = nullptr;
 	float best_area = 0.0f;
 	for (auto const &entity : entities) {
+		if (entity->removed) continue;
 		if (dynamic_cast< IInteractable * >(entity.get()) == nullptr) continue;
 		float area = reach.overlap_area(entity->hitbox());
 		if (area > best_area) {
@@ -38,14 +44,11 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 }
 
 //----- inventory UI -----
-//Slots shown per inventory row.
-static constexpr int INVENTORY_SLOTS = 11;
-
 //Draws one row of inventory slots plus the items in them.
 // top_left: screen pixels; slot: slot size in screen pixels; step: distance from one slot's left edge to the next
 static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const &inventory,
                                glm::vec2 top_left, float slot, float step) {
-	for (int i = 0; i < INVENTORY_SLOTS; i++) {
+	for (size_t i = 0; i < inventory.size(); i++) {
 		glm::vec2 corner = top_left + glm::vec2(float(i) * step, 0.0f);
 		float border = 0.05f * slot;
 		batch.fill_rect(Rect{corner.x - border, corner.y - border, slot + 2.0f * border, slot + 2.0f * border},
@@ -58,7 +61,7 @@ static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const
 	float text_h = slot * 0.375f; //count text height in screen pixels
 	int i = 0;
 	for (auto const &[item_id, item_count] : inventory) {
-		if (i >= INVENTORY_SLOTS) break;
+		if (item_count == 0) { i++; continue; } //empty slot
 		if (Item const *item = Item::get(item_id); item != nullptr) {
 			glm::vec2 corner = top_left + glm::vec2(float(i) * step, 0.0f);
 			batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, Rect{corner.x, corner.y, slot, slot});
@@ -85,9 +88,8 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 		entities.back()->position = Tilemap::tile_base(glm::ivec2{i + 2, 17});
 	}
 	// initialize the inventory with two apple and one powder
-	opened_inventory = nullptr;
-	inventory.emplace_back("apple", 2);
-	inventory.emplace_back("apple_powder", 1);
+	inventory.add("apple", 2);
+	inventory.add("apple_powder", 1);
 }
 
 PlayMode::~PlayMode() {
@@ -123,27 +125,53 @@ void PlayMode::update(float elapsed) {
 	// Update player
 	player.update(input, elapsed, world);
 
+	// Close panel if walked away
+	if (opened_entity != nullptr
+	 && player.hitbox().distance_to(opened_entity->hitbox()) > CONTAINER_CLOSE_DISTANCE) {
+		opened_inventory = nullptr;
+		opened_entity = nullptr;
+	}
+
 	// Handle interact (only on the first frame E is down):
 	if (input.interact.downs == 1) {
 		if (opened_inventory != nullptr) {
 			//E again closes whatever is open
 			opened_inventory = nullptr;
+			opened_entity = nullptr;
 		} else if (Entity *entity = find_interact_target(player.interact_box(), entities)) {
+			//the entity decides what happens, we just act on what it asks for:
 			auto *target = dynamic_cast< IInteractable * >(entity);
-			IInteractable::Context ctx;
-			ctx.flag = IInteractable::Context::InteractionType::None;
+			IInteractable::Context ctx{player, inventory};
 			target->on_interact(ctx);
-			if (ctx.flag == IInteractable::Context::InteractionType::OpenInventory) {
-				if (auto *holder = dynamic_cast< IInventoryHolder * >(entity)) {
-					opened_inventory = holder->get_inventory();
-				}
+			if (ctx.open_container != nullptr) {
+				opened_inventory = ctx.open_container;
+				opened_entity = entity;
+			}
+			if (!ctx.message.empty()) {
+				message = ctx.message;
+				message_timer = MESSAGE_SECONDS;
 			}
 		}
 	}
 
 	// Update entities
 	for (auto &entity : entities) {
+		if (entity->removed) continue;
 		entity->update(input, elapsed, world);
+	}
+
+	// Remove entities that asked to be removed this frame.
+	if (opened_entity != nullptr && opened_entity->removed) {
+		//its panel is open: close it before the inventory it points at is deleted
+		opened_inventory = nullptr;
+		opened_entity = nullptr;
+	}
+	std::erase_if(entities, [](std::unique_ptr< Entity > const &entity) { return entity->removed; });
+
+	// Count down the on-screen message
+	if (message_timer > 0.0f) {
+		message_timer -= elapsed;
+		if (message_timer <= 0.0f) message.clear();
 	}
 
 	// clear input direction
@@ -230,19 +258,27 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		float slot = 16.0f * float(canvas.scale);
 		float step = slot * 1.2f; //slot size + gap
-		float row_width = step * float(INVENTORY_SLOTS - 1) + slot;
-		//center horizontally
-		float row_x = std::floor((screen.x - row_width) * 0.5f);
+		auto centered_x = [&](size_t slots) {
+			float row_width = step * float(slots - 1) + slot;
+			return std::floor((screen.x - row_width) * 0.5f);
+		};
 
-		glm::vec2 hotbar_top_left(row_x, std::floor(screen.y - slot * 1.5f));
-		//opened container (chest): centered vertically in the window
-		glm::vec2 container_top_left(row_x, std::floor((screen.y - slot) * 0.5f));
+		glm::vec2 hotbar_top_left(centered_x(inventory.size()), std::floor(screen.y - slot * 1.5f));
 
 		DrawLines lines(screen_to_clip);
 		ui_batch.begin(screen_to_clip);
 		draw_inventory_row(ui_batch, lines, inventory, hotbar_top_left, slot, step);
 		if (opened_inventory != nullptr) {
+			//opened container (chest): centered in the window
+			glm::vec2 container_top_left(centered_x(opened_inventory->size()), std::floor((screen.y - slot) * 0.5f));
 			draw_inventory_row(ui_batch, lines, *opened_inventory, container_top_left, slot, step);
+		}
+		if (!message.empty()) {
+			//interaction message, just above the hotbar's left end:
+			float text_h = slot * 0.4f;
+			glm::vec3 anchor(hotbar_top_left.x, hotbar_top_left.y - slot * 0.35f, 0.0f);
+			lines.draw_text(message, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+			lines.draw_text(message, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 		}
 		ui_batch.end();
 	}

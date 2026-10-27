@@ -5,8 +5,10 @@
  */
 
 #include <glm/glm.hpp>
-
+#include <string>
 #include "../inventory/Item.hpp"
+
+struct Player;
 
 struct IInventoryHolder {
     /*
@@ -22,16 +24,21 @@ struct IInventoryHolder {
 
 struct IInteractable {
     /*
-     * Entities that can be interacted with (clicked?)
-     * uses `on_interact()` as callback.
+     * Entities that can be interacted with (E / Space while facing them).
+     * Each entity decides for itself what happens, inside `on_interact()`:
      *
+     * The Context gives the entity what it needs to act (inputs), and lets it
+     * ask PlayMode for things only PlayMode can do (outputs).
      */
     struct Context {
-        enum class InteractionType {
-            None,
-            OpenInventory,
-            Locked,
-        } flag;
+        // --- inputs: what the entity can use ---
+        Player &player;                  // who interacted (position, facing, ...)
+        Inventory &player_inventory;     // add or remove items the player carries
+
+        // --- outputs: set these to ask PlayMode to do something afterwards ---
+        Inventory *open_container = nullptr; // show this inventory as an open panel (chests, cauldron contents...)
+        std::string message;                 // short text to show the player, e.g. "Your bag is full"
+        // Add more as we go
     };
 
     virtual ~IInteractable() = default;
