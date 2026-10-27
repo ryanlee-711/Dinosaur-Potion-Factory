@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath>
 
 // A 2D camera for the world
 struct Camera2D {
@@ -16,6 +17,8 @@ struct Camera2D {
 			} else {
 				center[axis] = glm::clamp(target[axis], half[axis], world_size[axis] - half[axis]);
 			}
+			// snap
+			center[axis] = std::round(center[axis]);
 		}
 	}
 
