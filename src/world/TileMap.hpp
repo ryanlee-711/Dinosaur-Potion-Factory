@@ -38,6 +38,10 @@ struct Tilemap {
 
 	static glm::ivec2 tile_at_point(glm::vec2 world_px);
 	static glm::vec2 tile_center(glm::ivec2 tile);
+	// Bottom-center of a tile: the 'position' to give an entity that stands on that tile
+	static glm::vec2 tile_base(glm::ivec2 tile);
+	// The world-pixel rectangle a tile covers
+	static Rect tile_rect(glm::ivec2 tile);
 
 	// Throws if any tile type points past the end of the tileset image
 	void validate_tileset(Texture const &tileset) const;

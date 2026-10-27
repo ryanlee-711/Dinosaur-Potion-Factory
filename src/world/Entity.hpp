@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 
-struct Tilemap;
+struct World;
 
 struct FrameInput {
     struct Button {
@@ -20,20 +20,20 @@ struct FrameInput {
     Button interact;
 };
 
-// Entity - ABC for in-game objects that could hold data.
-// We can later switch to ECS; for the time being, inheritance is easier to implement.
 struct Entity {
-	glm::vec2 position = glm::vec2(0.0f);  // world pixels
-    uint32_t collision_mask = 0x1;
+	glm::vec2 position = glm::vec2(0.0f);  // world pixels, see POSITION RULE above
 
-    virtual ~Entity() = default;
+	// Two entities block each other when (a.collision_mask & b.collision_mask) != 0.
+	// Default 0x1 = solid. Set to 0 for things you can walk through
+	uint32_t collision_mask = 0x1;
 
-	virtual void update(FrameInput const &input, float elapsed, Tilemap const &map) = 0;
+	virtual ~Entity() = default;
+
+	virtual void update(FrameInput const &input, float elapsed, World const &world) = 0;
 	virtual Rect hitbox() const = 0;
-    virtual void draw(Sprites &batch) const = 0;
-};
+	virtual void draw(Sprites &batch) const = 0;
 
-inline auto world_to_grid(glm::vec2 world_pos) -> glm::ivec2 {
-    world_pos /= GameConfig::TILE_SIZE;
-    return glm::ivec2(static_cast<int>(world_pos.x), static_cast<int>(world_pos.y));
-}
+	bool blocks(Entity const &other) const {
+		return (collision_mask & other.collision_mask) != 0;
+	}
+};

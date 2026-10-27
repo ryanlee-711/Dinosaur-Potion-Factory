@@ -5,11 +5,11 @@
 
 #include <glm/glm.hpp>
 
-struct Tilemap;
+struct World;
 
-// Handles movement and collision, drawing lives in PlayMode for now
+// The dwarf: movement, collision and drawing.
 //
-// 'position' is the point under the player (bottom-center of the sprite)
+// 'position' is the point under the player's feet (bottom-center of the sprite),
 struct Player : Entity {
 public:
 	glm::ivec2 facing = glm::ivec2(0, 1);  // last direction moved: (0,1)=down, (0,-1)=up, (+-1,0)=right/left
@@ -21,15 +21,22 @@ public:
 	static constexpr float HITBOX_W = 10.0f;
 	static constexpr float HITBOX_H = 6.0f;
 
-	// direction: from input, each axis in [-1, 1]. Moves the player and stops at solid tiles.
-	void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
+	// How far in front of the feet the dwarf can reach to interact (pixels).
+	static constexpr float REACH = 8.0f;
+
+	// Moves the player by input.direction and stops at solid tiles and solid entities.
+	void update(FrameInput const &input, float elapsed, World const &world) override;
 
 	Rect hitbox() const override;
 	void draw(Sprites &batch) const override;
 
-	// The tile directly in front of the dwarf (for interacting with things later).
+	// The area right in front of the feet, in the facing direction.
+	// Whatever entity this overlaps is what pressing E interacts with.
+	Rect interact_box() const;
+
+	// The tile directly in front of the dwarf (for tile-based things later, like placing machines).
 	glm::ivec2 facing_tile() const;
 
 private:
-	void move_axis(int axis, float amount, Tilemap const &map);
+	void move_axis(int axis, float amount, World const &world);
 };

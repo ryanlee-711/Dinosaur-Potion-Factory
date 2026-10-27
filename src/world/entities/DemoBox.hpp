@@ -15,7 +15,7 @@ public:
     ~DemoBox() = default;
 
     // Entity
-    void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
+    void update(FrameInput const &input, float elapsed, World const &world) override;
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
 

@@ -7,16 +7,35 @@
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
 
+#include "../world/Components.hpp"
+#include "../world/World.hpp"
 #include "../world/entities/DemoBox.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
+#include <vector>
 
 using GameConfig::TILE_SIZE;
 
 static constexpr int PLAYER_FRAME_H = 32;
+
+//The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
+static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
+	Entity *best = nullptr;
+	float best_area = 0.0f;
+	for (auto const &entity : entities) {
+		if (dynamic_cast< IInteractable * >(entity.get()) == nullptr) continue;
+		float area = reach.overlap_area(entity->hitbox());
+		if (area > best_area) {
+			best_area = area;
+			best = entity.get();
+		}
+	}
+	return best;
+}
 
 //----- inventory UI -----
 //Slots shown per inventory row.
@@ -60,9 +79,10 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
-	for (size_t i = 0; i < 4; ++i) {
+	for (int i = 0; i < 4; i++) {
 		entities.push_back(std::make_unique<DemoBox>());
-		entities.back()->position = glm::vec2((i + 2.5) * TILE_SIZE, 17.5 * TILE_SIZE);
+		//stand each box on a tile, in a row along tile row 17:
+		entities.back()->position = Tilemap::tile_base(glm::ivec2{i + 2, 17});
 	}
 	// initialize the inventory with two apple and one powder
 	opened_inventory = nullptr;
@@ -97,43 +117,33 @@ void PlayMode::update(float elapsed) {
 		input.interact.downs = 0;
 	}
 
+	//everything entities can collide with this frame:
+	World world{map, entities};
+
 	// Update player
-	player.update(input, elapsed, map);
+	player.update(input, elapsed, world);
 
-
-	// Handle interact here
-	while (input.interact.downs == 1) {
+	// Handle interact (only on the first frame E is down):
+	if (input.interact.downs == 1) {
 		if (opened_inventory != nullptr) {
+			//E again closes whatever is open
 			opened_inventory = nullptr;
-			break;
-		}
-
-		auto interacted_tile = player.facing_tile();
-		for (auto &entity : entities) {
-			auto grid_pos = world_to_grid(entity->position - glm::vec2{0.0f, 8.0f});
-			if (grid_pos != interacted_tile) {
-				continue;
-			}
-			// found
-			if (auto* target = dynamic_cast<IInteractable*>(entity.get())) {
-				IInteractable::Context ctx;
-				ctx.flag = IInteractable::Context::InteractionType::None;
-				target->on_interact(ctx);
-				if (ctx.flag != IInteractable::Context::InteractionType::OpenInventory) {
-					continue;
-				}
-				// Is an Open inventory call
-				if (auto* inv_target = dynamic_cast<IInventoryHolder*>(entity.get())) {
-					opened_inventory = inv_target->get_inventory();
+		} else if (Entity *entity = find_interact_target(player.interact_box(), entities)) {
+			auto *target = dynamic_cast< IInteractable * >(entity);
+			IInteractable::Context ctx;
+			ctx.flag = IInteractable::Context::InteractionType::None;
+			target->on_interact(ctx);
+			if (ctx.flag == IInteractable::Context::InteractionType::OpenInventory) {
+				if (auto *holder = dynamic_cast< IInventoryHolder * >(entity)) {
+					opened_inventory = holder->get_inventory();
 				}
 			}
 		}
-		break;
 	}
 
 	// Update entities
 	for (auto &entity : entities) {
-		entity->update(input, elapsed, map);
+		entity->update(input, elapsed, world);
 	}
 
 	// clear input direction
@@ -157,12 +167,15 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	map.draw(batch, *tileset, view_min, view_max);
 
-	{ //player:
-		player.draw(batch);
-	}
-
-	{ //entities:
-		for (auto const &entity : entities) {
+	{ //player + entities, sorted so whatever stands lower on screen (bigger position.y) draws on top
+		std::vector< Entity const * > sorted;
+		sorted.reserve(entities.size() + 1);
+		sorted.emplace_back(&player);
+		for (auto const &entity : entities) sorted.emplace_back(entity.get());
+		std::stable_sort(sorted.begin(), sorted.end(), [](Entity const *a, Entity const *b) {
+			return a->position.y < b->position.y;
+		});
+		for (Entity const *entity : sorted) {
 			entity->draw(batch);
 		}
 	}
@@ -174,15 +187,16 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		for (int ty = first.y; ty <= last.y; ++ty) {
 			for (int tx = first.x; tx <= last.x; ++tx) {
 				if (map.is_solid(glm::ivec2(tx, ty))) {
-					batch.fill_rect(Rect{float(tx * TILE_SIZE), float(ty * TILE_SIZE), float(TILE_SIZE), float(TILE_SIZE)},
-						glm::u8vec4(0xff, 0x30, 0x30, 0x50));
+					batch.fill_rect(Tilemap::tile_rect(glm::ivec2(tx, ty)), glm::u8vec4(0xff, 0x30, 0x30, 0x50));
 				}
 			}
 		}
-		//tile in front of the player in blue, collision box in yellow:
-		glm::ivec2 ft = player.facing_tile();
-		batch.fill_rect(Rect{float(ft.x * TILE_SIZE), float(ft.y * TILE_SIZE), float(TILE_SIZE), float(TILE_SIZE)},
-			glm::u8vec4(0x40, 0x80, 0xff, 0x60));
+		//entity hitboxes in orange (solid ones block the player):
+		for (auto const &entity : entities) {
+			batch.fill_rect(entity->hitbox(), glm::u8vec4(0xff, 0x90, 0x20, 0x70));
+		}
+		//the dwarf's reach (what E interacts with) in blue, collision box in yellow:
+		batch.fill_rect(player.interact_box(), glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
 		batch.fill_rect(player.hitbox(), glm::u8vec4(0xff, 0xee, 0x00, 0xb0));
 	}
 
