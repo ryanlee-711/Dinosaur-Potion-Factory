@@ -19,8 +19,8 @@ public:
 	static constexpr float WALK_SPEED = 80.0f; // pixels per second (5 tiles/second)
 
 	// Collision box around the feet. Smaller than the sprite on purpose so only the feet collide
-	static constexpr float HITBOX_W = 10.0f;
-	static constexpr float HITBOX_H = 6.0f;
+	static constexpr float HITBOX_W = 14.0f;
+	static constexpr float HITBOX_H = 14.0f;
 
 	// direction: from input, each axis in [-1, 1]. Moves the player and stops at solid tiles.
 	void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) override;

@@ -10,6 +10,8 @@
 // Make macro for this?
 #include "../world/entities/Chest.hpp"
 #include "../world/entities/Pipe.hpp"
+#include "../world/entities/Crusher.hpp"
+#include "../world/entities/Cauldron.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -32,18 +34,44 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
-	for (size_t i = 0; i < 4; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		entities.push_back(std::make_unique<Chest>());
 		entities.back()->position = glm::vec2((3 * i + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+	}
+
+	for (size_t i = 0; i < 4; ++i) {
 		entities.push_back(std::make_unique<Pipe>());
 		entities.back()->position = glm::vec2((3 * i + 19.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
 	}
+
+	{
+		entities.push_back(std::make_unique<Crusher>());
+		entities.back()->position = glm::vec2((3 * 2 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+
+		entities.push_back(std::make_unique<Cauldron>());
+		entities.back()->position = glm::vec2((3 * 3 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+
+		entities.push_back(std::make_unique<Chest>());
+		entities.back()->position = glm::vec2((3 * 4 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+	}
+	{
+		entities.push_back(std::make_unique<Chest>());
+		entities.back()->position = glm::vec2((3 * 3 + 16.0f) * TILE_SIZE, 15.0f * TILE_SIZE);
+
+		entities.push_back(std::make_unique<Pipe>());
+		entities.back()->position = glm::vec2((3 * 3 + 17.0f) * TILE_SIZE, 16.0f * TILE_SIZE);
+		if (auto* pipe = dynamic_cast<Pipe*>(entities.back().get())) {
+			pipe->configure(1);
+		}
+	}
+
 
 
 	// initialize the inventory with two apple and one powder
 	opened_inventory = nullptr;
 	inventory.emplace_back("apple", 20);
 	inventory.emplace_back("apple_powder", 10);
+	inventory.emplace_back("water_bottle", 10);
 }
 
 PlayMode::~PlayMode() {
@@ -203,13 +231,26 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	map.draw(batch, *tileset, view_min, view_max);
 
-	{ //player:
-		player.draw(batch);
-	}
+	{// not optimized but works now
+		std::vector<std::pair<float, Entity const*>> y_sorted_entities;
 
-	{ //entities:
+		y_sorted_entities.emplace_back(player.position.y, &player);
+
 		for (auto const &entity : entities) {
-			entity->draw(batch);
+			// Most entities used top-left instead of foot for coords; for y-sorting, we need foot position
+			Rect box = entity->hitbox();
+			y_sorted_entities.emplace_back(box.y + box.h, entity.get());
+		}
+
+		std::stable_sort(
+			y_sorted_entities.begin(),
+			y_sorted_entities.end(),
+			[](auto const &a, auto const &b) {
+				return a.first < b.first;
+			}
+		);
+		for (auto const &entry : y_sorted_entities) {
+			entry.second->draw(batch);
 		}
 	}
 

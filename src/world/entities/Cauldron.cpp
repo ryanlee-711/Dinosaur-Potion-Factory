@@ -1,0 +1,150 @@
+#include "Cauldron.hpp"
+#include "../../starter/Load.hpp"
+#include "../../starter/data_path.hpp"
+
+#include <cmath>
+
+static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/cauldron.png"));
+});
+
+
+Cauldron::Cauldron() {
+    inventory.emplace_back(ItemRecord{"nil", 0});  // IN 1
+    inventory.emplace_back(ItemRecord{"nil", 0});  // IN 2
+    inventory.emplace_back(ItemRecord{"nil", 0});  // OUT
+}
+
+void Cauldron::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
+
+    // Processing
+    if (inventory[0].second > 0 && inventory[1].second >= 2) {
+        processing_timer -= elapsed;
+    } else {
+        processing_timer = BREW_COOLDOWN;
+    }
+    
+    if (processing_timer <= 0.0f) {
+        // Two apple powder + 1 water bottle
+        if (inventory[0].first == "water_bottle" && inventory[0].second > 0 
+            && inventory[1].first != "nil" && inventory[1].second >= 2 
+            && (inventory[2].first == "nil" || inventory[2].first == "ale")) {
+            inventory[0].second--;
+            inventory[1].second -= 2;
+
+            if (inventory[2].first == "nil") {
+                inventory[2].first = "ale";  // hardcoding the only recipe now
+                inventory[2].second = 0;
+            }
+            inventory[2].second++;
+            if (inventory[0].second == 0) {
+                inventory[0].first = "nil";
+            }
+            if (inventory[1].second == 0) {
+                inventory[1].first = "nil";
+            }
+
+            processing_timer = BREW_COOLDOWN;
+        }
+    }
+
+    push_timer -= elapsed;
+    if (push_timer <= 0.0f) {
+        push_timer = 0.0f;
+    } else {
+        return;
+    }
+
+    // push item to the right
+    auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+
+    auto source_tile = origin + glm::ivec2(1, 0);
+    auto target_tile = origin + glm::ivec2{2, 0};
+
+    Entity *target = entity_at(entities, target_tile);
+    if (!target || target == this) return;
+
+    // get IItemPort!
+    auto *port = dynamic_cast<IItemPort*>(target);
+    if (!port) return;
+
+    auto type = port->get_port(source_tile);
+    if (type != PortType::In && type != PortType::Both) return;
+
+    if (inventory[2].second <= 0) return;
+    int item_sent = port->push_item({inventory[2].first, 1});
+
+    if (item_sent != 0) {
+        inventory[2].second -= item_sent;
+        if (inventory[2].second <= 0) {
+            inventory[2].first = "nil";
+            inventory[2].second = 0;
+        }
+        push_timer = PUSH_COOLDOWN;
+    }
+
+    return;
+}
+
+void Cauldron::draw(Sprites &batch) const {
+    Rect src{0.0f, 0.0f, 32.0f, 80.0f};
+    //round to whole pixels so the sprite never sits between pixels:
+    glm::vec2 top_left = glm::round(position);
+    batch.draw(*box_texture, src, top_left - glm::vec2(0.0f, 64.0f));
+
+}
+
+auto Cauldron::hitbox() const -> Rect {
+    return Rect{position.x, position.y, 32.0f, 16.0f};
+}
+
+void Cauldron::get_occupied(std::vector<glm::ivec2> *ans) const {
+    auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+	ans->emplace_back(tile);
+    ans->emplace_back(tile + glm::ivec2{1, 0});
+}
+
+void Cauldron::on_interact(Context &ctx) {
+    // should trigger inventory display through some mechanism
+    ctx.flag = Context::InteractionType::OpenInventory;
+}
+
+auto Cauldron::get_inventory() -> Inventory* {
+    return &inventory;
+}
+
+IItemPort::PortType Cauldron::get_port(glm::ivec2 grid_coord) {
+    auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+    if (grid_coord == tile + glm::ivec2{-1, 0}) {
+        return IItemPort::PortType::In;
+    }
+    if (grid_coord == tile + glm::ivec2{0, 1}) {
+        return IItemPort::PortType::In;
+    }
+    if (grid_coord == tile + glm::ivec2{0, -1}) {
+        return IItemPort::PortType::In;
+    }
+    if (grid_coord == tile + glm::ivec2{2, 0}) {
+        return IItemPort::PortType::Out;
+    }
+    return IItemPort::PortType::None;
+}
+
+int Cauldron::push_item(ItemRecord item_record) {
+
+    if (item_record.second == 0) {
+        return 0;
+    }
+    if (item_record.first == "water_bottle") {
+        inventory[0].first = "water_bottle";
+        inventory[0].second += 1;
+        return 1;
+    }
+    if (inventory[1].first == item_record.first || inventory[1].first == "nil") {
+        inventory[1].first = item_record.first;
+        inventory[1].second += 1;
+        return 1;
+    }
+
+    return 0;
+}

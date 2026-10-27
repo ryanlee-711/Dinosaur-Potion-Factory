@@ -27,6 +27,20 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
             std::make_unique<Texture>(data_path("assets/test/apple_powder.png"))
         });
 
+        items->emplace("water_bottle", Item{
+            "water_bottle",
+            "Water Bottle",
+            "Just water",
+            std::make_unique<Texture>(data_path("assets/test/bottle.png"))
+        });
+
+        items->emplace("ale", Item{
+            "ale",
+            "Ale",
+            "Non-alchohol drink",
+            std::make_unique<Texture>(data_path("assets/test/ale.png"))
+        });
+
         return items.release();
     }
 );

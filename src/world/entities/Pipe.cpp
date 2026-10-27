@@ -10,7 +10,7 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/machines/pipe.png"));
 });
 
-Pipe::Pipe() : frame(0) {
+Pipe::Pipe() : frame(0), base_frame(0) {
     in_dir = glm::ivec2{-1, 0};
     out_dir = glm::ivec2(1, 0);
 }
@@ -27,7 +27,7 @@ void Pipe::update(FrameInput const &input, float elapsed, Tilemap const &map, st
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 
     auto source_tile = origin + glm::ivec2(0, 0);
-    auto target_tile = origin + glm::ivec2{1, 0};
+    auto target_tile = origin + out_dir;
 
     Entity *target = entity_at(entities, target_tile);
     if (!target || target == this) return;
@@ -48,7 +48,7 @@ void Pipe::update(FrameInput const &input, float elapsed, Tilemap const &map, st
         it->second -= item_sent;
         if (it->second == 0) {
             inventory.erase(it);
-            frame = 0;
+            frame = base_frame;  // reset sprite
         }
         return;
     }
@@ -101,6 +101,6 @@ int Pipe::push_item(ItemRecord item_record) {
     inventory.emplace_back(item_record);
     // set timer for conveying
     push_timer = PUSH_COOLDOWN;
-    frame = 6;
+    frame = base_frame + 6;
     return item_record.second;
 }

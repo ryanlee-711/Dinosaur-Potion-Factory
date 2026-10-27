@@ -21,31 +21,34 @@ void Chest::update(FrameInput const &input, float elapsed, Tilemap const &map, s
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 
     auto source_tile = origin + glm::ivec2(1, 0);
-    auto target_tile = origin + glm::ivec2{2, 0};
 
-    Entity *target = entity_at(entities, target_tile);
-    if (!target || target == this) return;
+    for (auto delta : std::array<glm::ivec2, 3>{glm::ivec2{2, 0}, glm::ivec2{1, 1}, glm::ivec2{1, -1}}) {
+        auto target_tile = origin + delta;
+        Entity *target = entity_at(entities, target_tile);
+        if (!target || target == this) continue;
 
-    // get IItemPort!
-    auto *port = dynamic_cast<IItemPort*>(target);
-    if (!port) return;
+        // get IItemPort!
+        auto *port = dynamic_cast<IItemPort*>(target);
+        if (!port) continue;
 
-    auto type = port->get_port(source_tile);
-    if (type != PortType::In && type != PortType::Both) return;
+        auto type = port->get_port(source_tile);
+        if (type != PortType::In && type != PortType::Both) continue;
 
-    for (auto it = inventory.begin(); it != inventory.end(); ++it) {
-        if (it->second <= 0) continue;  // maybe erase this too
+        for (auto it = inventory.begin(); it != inventory.end(); ++it) {
+            if (it->second <= 0) continue;  // maybe erase this too
 
-        int item_sent = port->push_item({it->first, 1});
-        if (item_sent == 0) continue;
+            int item_sent = port->push_item({it->first, 1});
+            if (item_sent == 0) continue;
 
-        it->second -= item_sent;
-        push_timer = PUSH_COOLDOWN;
-        if (it->second == 0) {
-            inventory.erase(it);
+            it->second -= item_sent;
+            push_timer = PUSH_COOLDOWN;
+            if (it->second == 0) {
+                inventory.erase(it);
+            }
+            return;
         }
-        return;
     }
+    
 
     return;
 }

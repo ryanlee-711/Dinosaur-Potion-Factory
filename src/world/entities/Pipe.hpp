@@ -28,12 +28,26 @@ public:
     PortType get_port(glm::ivec2 grid_coord) override;
     int push_item(ItemRecord item_record) override;
 
+    // Pipe
+    void configure(size_t mode) {
+        base_frame = mode;
+        frame = base_frame;
+        if (mode > 0) {
+            in_dir = glm::vec2{0, -1};
+            out_dir = glm::vec2{0, 1};
+        } else {
+            in_dir = glm::vec2{-1, 0};
+            out_dir = glm::vec2{1, 0};
+        }
+    }
+
 
 private:
     Inventory inventory;
     glm::ivec2 in_dir;
     glm::ivec2 out_dir;
     size_t frame;
+    size_t base_frame;
     
     const float PUSH_COOLDOWN = 0.2f;
     float push_timer = 0.0f;
