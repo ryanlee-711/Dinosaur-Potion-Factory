@@ -12,10 +12,10 @@ using GameConfig::TILE_SIZE;
 //Player art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
 // (Placeholder until the sprite/animation system replaces it.)
 static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/player.png"));
+	return new Texture(data_path("assets/dwarf.png"));
 });
-static constexpr int PLAYER_FRAME_W = 16;
-static constexpr int PLAYER_FRAME_H = 24;
+static constexpr int PLAYER_FRAME_W = 32;
+static constexpr int PLAYER_FRAME_H = 32;
 
 void Player::update(FrameInput const &input, float elapsed, Tilemap const &map) {
 	auto direction = input.direction;

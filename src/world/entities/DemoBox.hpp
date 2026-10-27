@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Entity.hpp"
+#include "../Components.hpp"
 #include "../../main/Rect.hpp"
 #include "../../rendering/Sprites.hpp"
 
@@ -8,14 +9,23 @@
 
 #include "../../rendering/Texture.hpp"
 
-struct DemoBox : Entity {
-
+class DemoBox : public Entity, public IInteractable, public IInventoryHolder {
+    /* Chest implementation for demo. */
+public:
     ~DemoBox() = default;
 
+    // Entity
     void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
-	Rect hitbox() const override;
+	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
 
-private:
+    // IInteractable
+    void on_interact(Context &ctx) override;
 
+    // IInventoryHolder
+    auto get_inventory() -> Inventory* override;
+
+
+private:
+    Inventory inventory;
 };

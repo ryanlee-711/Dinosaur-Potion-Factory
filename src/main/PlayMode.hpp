@@ -17,8 +17,6 @@
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
-	using ItemRecord = std::pair<item_id_t, int>;
-
 	PlayMode();
 	virtual ~PlayMode();
 
@@ -32,7 +30,9 @@ struct PlayMode : Mode {
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
 	std::vector<std::unique_ptr<Entity>> entities;
-	std::vector<ItemRecord> inventory;
+	Inventory inventory;
+	Inventory *opened_inventory;
+	FrameInput input;
 
 	//----- rendering -----
 	Camera2D camera;

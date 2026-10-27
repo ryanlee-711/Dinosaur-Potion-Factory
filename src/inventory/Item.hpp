@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <unordered_map>
 
@@ -5,6 +7,8 @@
 #include "../main/Rect.hpp"
 
 typedef std::string item_id_t;
+using ItemRecord = std::pair<item_id_t, int>;
+using Inventory = std::vector<ItemRecord>;
 
 struct Item {
     using ItemRegistry = std::unordered_map<std::string, Item>;
@@ -18,3 +22,4 @@ struct Item {
 private:
     static const ItemRegistry registry;
 };
+

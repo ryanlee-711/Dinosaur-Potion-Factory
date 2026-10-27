@@ -3,6 +3,7 @@
 #include "../main/Rect.hpp"
 #include "../rendering/Sprites.hpp"
 #include "../starter/Mode.hpp"
+#include "../main/GameConfig.hpp"
 
 #include <glm/glm.hpp>
 
@@ -31,3 +32,8 @@ struct Entity {
 	virtual Rect hitbox() const = 0;
     virtual void draw(Sprites &batch) const = 0;
 };
+
+inline auto world_to_grid(glm::vec2 world_pos) -> glm::ivec2 {
+    world_pos /= GameConfig::TILE_SIZE;
+    return glm::ivec2(static_cast<int>(world_pos.x), static_cast<int>(world_pos.y));
+}

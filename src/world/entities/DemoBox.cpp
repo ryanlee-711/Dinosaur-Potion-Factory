@@ -5,7 +5,7 @@
 #include <cmath>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/player.png"));
+	return new Texture(data_path("assets/test/box.png"));
 });
 
 
@@ -23,5 +23,14 @@ void DemoBox::draw(Sprites &batch) const {
 }
 
 auto DemoBox::hitbox() const -> Rect {
-    return Rect();
+    return Rect{position.x, position.y + 8.0f, 16.0f, 16.0f};
+}
+
+void DemoBox::on_interact(Context &ctx) {
+    // should trigger inventory display through some mechanism
+    ctx.flag = Context::InteractionType::OpenInventory;
+}
+
+auto DemoBox::get_inventory() -> Inventory* {
+    return &inventory;
 }
