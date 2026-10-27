@@ -156,6 +156,7 @@ const game_names = [
 	maek.CPP('src/world/Tilemap.cpp'),
 	maek.CPP('src/world/Player.cpp'),
 	maek.CPP('src/world/entities/Chest.cpp'),
+	maek.CPP('src/world/entities/Pipe.cpp'),
 
 	//items:
 	maek.CPP('src/inventory/Item.cpp'),

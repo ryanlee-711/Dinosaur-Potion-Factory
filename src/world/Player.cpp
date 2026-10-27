@@ -17,7 +17,7 @@ static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
 static constexpr int PLAYER_FRAME_W = 32;
 static constexpr int PLAYER_FRAME_H = 32;
 
-void Player::update(FrameInput const &input, float elapsed, Tilemap const &map) {
+void Player::update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) {
 	auto direction = input.direction;
 	//diagonal input shouldn't be faster than straight input
 	if (glm::length(direction) > 1.0f) direction = glm::normalize(direction);

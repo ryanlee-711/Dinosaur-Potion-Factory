@@ -7,16 +7,23 @@
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
 
+// Make macro for this?
 #include "../world/entities/Chest.hpp"
+#include "../world/entities/Pipe.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 
 using GameConfig::TILE_SIZE;
 
 static constexpr int PLAYER_FRAME_H = 32;
+
+static Load< Texture > arrow_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/ui/arrows.png"));
+});
 
 PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
@@ -27,12 +34,16 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	// initialize several boxes for demonstration (entities).
 	for (size_t i = 0; i < 4; ++i) {
 		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((2 * i + 2.5) * TILE_SIZE, 17.5 * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * i + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+		entities.push_back(std::make_unique<Pipe>());
+		entities.back()->position = glm::vec2((3 * i + 19.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
 	}
+
+
 	// initialize the inventory with two apple and one powder
 	opened_inventory = nullptr;
-	inventory.emplace_back("apple", 2);
-	inventory.emplace_back("apple_powder", 1);
+	inventory.emplace_back("apple", 20);
+	inventory.emplace_back("apple_powder", 10);
 }
 
 PlayMode::~PlayMode() {
@@ -61,12 +72,38 @@ void PlayMode::update(float elapsed) {
 		input.interact.pressed = false;
 		input.interact.downs = 0;
 	}
+	if (keys[SDL_SCANCODE_TAB]) {
+		input.tab.pressed = true;
+		input.tab.downs += 1;
+	} else {
+		input.tab.pressed = false;
+		input.tab.downs = 0;
+	}
+	{//K0...K9
+		const SDL_Scancode scancodes[10] = {
+			SDL_SCANCODE_0, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
+			SDL_SCANCODE_5, SDL_SCANCODE_6, SDL_SCANCODE_7, SDL_SCANCODE_8, SDL_SCANCODE_9,
+		};
+		for (size_t index = 0; index < 10; ++index) {
+			if (keys[scancodes[index]]) {
+				input.numkeys[index].pressed = true;
+				input.numkeys[index].downs += 1;
+			} else {
+				input.numkeys[index].pressed = false;
+				input.numkeys[index].downs = 0;
+			}
+		}
+	}
 	
 	// Update player
-	player.update(input, elapsed, map);
+	player.update(input, elapsed, map, entities);
 	
 	
 	// Handle interact here
+	if (input.tab.downs == 1) {
+		// flip
+		inventory_taking = !inventory_taking;
+	}
 	while (input.interact.downs == 1) {
 		if (opened_inventory != nullptr) {
 			opened_inventory = nullptr;
@@ -75,10 +112,18 @@ void PlayMode::update(float elapsed) {
 
 		auto interacted_tile = player.facing_tile();
 		for (auto &entity : entities) {
-			auto grid_pos = world_to_grid(entity->position - glm::vec2{0.0f, 8.0f});
-			if (grid_pos != interacted_tile) {
-				continue;
+			std::vector<glm::ivec2> occupied;
+			entity->get_occupied(&occupied);
+
+			bool found = false;
+			for (auto tile : occupied) {
+				if (interacted_tile == tile) {
+					found = true;
+					break;
+				}
 			}
+			if (!found) continue;
+
 			// found
 			if (auto* target = dynamic_cast<IInteractable*>(entity.get())) {
 				IInteractable::Context ctx;
@@ -96,10 +141,45 @@ void PlayMode::update(float elapsed) {
 		}
 		break;
 	}
+	// transport items
+	if (opened_inventory != nullptr && opened_inventory != &inventory) {
+		Inventory &source = inventory_taking ? *opened_inventory : inventory;
+		Inventory &destination = inventory_taking ? inventory : *opened_inventory;
+
+		for (size_t raw_index = 0; raw_index < 10; ++raw_index) {
+			size_t index = (raw_index + 9) % 10;
+			if (input.numkeys[raw_index].downs != 1) continue;
+			if (index >= source.size()) continue;
+			if (source[index].second <= 0) continue;
+
+			const auto item_id = source[index].first;
+
+			auto existing = std::find_if(
+				destination.begin(), destination.end(),
+				[&](ItemRecord const &record) {
+					return record.first == item_id;
+				}
+			);
+
+			if (existing != destination.end()) {
+				existing->second += 1;
+			} else {
+				if (destination.size() >= 10) continue;
+				destination.emplace_back(item_id, 1);
+			}
+
+			source[index].second -= 1;
+			if (source[index].second == 0) {
+				source.erase(source.begin() + index);
+			}
+
+			break;
+		}
+	}
 
 	// Update entities
 	for (auto &entity : entities) {
-		entity->update(input, elapsed, map);
+		entity->update(input, elapsed, map, entities);
 	}
 
 	// clear input direction
@@ -221,6 +301,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		const float ANCHOR_X = 800.5f;
 		const float ANCHOR_Y = 800.5f;
 
+		// draw inventory direction indicator
+		ui_batch.draw(
+			*arrow_texture, Rect{inventory_taking ? 16.0f : 0.0f, 0.0f, 16.0f, 16.0f},
+			Rect{ANCHOR_X - GAP, ANCHOR_Y, 16.0f * canvas.scale, 16.0f * canvas.scale}
+		);
 		// draw inventory background
 		for (size_t j = 0; j <= 10; ++j) {
 			glm::vec2 top_left = glm::vec2{ANCHOR_X + j * GAP, ANCHOR_Y};

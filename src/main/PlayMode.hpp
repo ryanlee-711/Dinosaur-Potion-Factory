@@ -30,8 +30,11 @@ struct PlayMode : Mode {
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
 	std::vector<std::unique_ptr<Entity>> entities; // TODO: add tilebased query for entities, and use hashmap to speedup lookup.
+	//----- inventory -----
 	Inventory inventory;
 	Inventory *opened_inventory;
+	bool inventory_taking = false;  // switch the flow direction between inventory <-> opened inventory.
+	//----- input -----
 	FrameInput input;
 
 	//----- rendering -----

@@ -17,7 +17,8 @@ struct FrameInput {
 	};
 
     glm::vec2 direction;
-    Button interact;
+    Button interact, tab;
+    Button numkeys[10];
 };
 
 // Entity - ABC for in-game objects that could hold data.
@@ -28,7 +29,7 @@ struct Entity {
 
     virtual ~Entity() = default;
 
-	virtual void update(FrameInput const &input, float elapsed, Tilemap const &map) = 0;
+	virtual void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) = 0;
 	virtual Rect hitbox() const = 0;
     virtual void draw(Sprites &batch) const = 0;
     virtual void get_occupied(std::vector<glm::ivec2> *ans) const = 0;

@@ -23,7 +23,7 @@ public:
 	static constexpr float HITBOX_H = 6.0f;
 
 	// direction: from input, each axis in [-1, 1]. Moves the player and stops at solid tiles.
-	void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
+	void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) override;
 
 	Rect hitbox() const override;
 	void draw(Sprites &batch) const override;

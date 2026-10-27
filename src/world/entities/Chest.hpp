@@ -7,15 +7,13 @@
 
 #include <glm/glm.hpp>
 
-#include "../../rendering/Texture.hpp"
-
-class Chest : public Entity, public IInteractable, public IInventoryHolder {
+class Chest : public Entity, public IInteractable, public IInventoryHolder, public IItemPort {
     /* Chest implementation for demo. */
 public:
     ~Chest() = default;
 
     // Entity
-    void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
+    void update(FrameInput const &input, float elapsed, Tilemap const &map, std::vector<std::unique_ptr<Entity>> const &entities) override;
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
@@ -26,7 +24,13 @@ public:
     // IInventoryHolder
     auto get_inventory() -> Inventory* override;
 
+    // IItemPort
+    PortType get_port(glm::ivec2 grid_coord) override;
+    int push_item(ItemRecord item_record) override;
+
 
 private:
     Inventory inventory;
+    const float PUSH_COOLDOWN = 1.0f;
+    float push_timer = 0.0f;
 };

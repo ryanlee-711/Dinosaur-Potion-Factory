@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Defining components (capabilities, or Interfaces) for entities.
  *
