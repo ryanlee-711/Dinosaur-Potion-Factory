@@ -153,7 +153,7 @@ const game_names = [
 	maek.CPP('src/main/PlayMode.cpp'),
 
 	//world:
-	maek.CPP('src/world/Tilemap.cpp'),
+	maek.CPP('src/world/TileMap.cpp'),
 	maek.CPP('src/world/Player.cpp'),
 	maek.CPP('src/world/entities/DemoBox.cpp'),
 

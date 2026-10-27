@@ -18,6 +18,41 @@ using GameConfig::TILE_SIZE;
 
 static constexpr int PLAYER_FRAME_H = 32;
 
+//----- inventory UI -----
+//Slots shown per inventory row.
+static constexpr int INVENTORY_SLOTS = 11;
+
+//Draws one row of inventory slots plus the items in them.
+// top_left: screen pixels; slot: slot size in screen pixels; step: distance from one slot's left edge to the next
+static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const &inventory,
+                               glm::vec2 top_left, float slot, float step) {
+	for (int i = 0; i < INVENTORY_SLOTS; i++) {
+		glm::vec2 corner = top_left + glm::vec2(float(i) * step, 0.0f);
+		float border = 0.05f * slot;
+		batch.fill_rect(Rect{corner.x - border, corner.y - border, slot + 2.0f * border, slot + 2.0f * border},
+			glm::u8vec4(0x66, 0x66, 0x66, 0xff));
+		batch.fill_rect(Rect{corner.x, corner.y, slot, slot},
+			glm::u8vec4(0x22, 0x22, 0x22, 0x80));
+	}
+
+	//items: icon scaled to fill the slot, count in the bottom-right corner
+	float text_h = slot * 0.375f; //count text height in screen pixels
+	int i = 0;
+	for (auto const &[item_id, item_count] : inventory) {
+		if (i >= INVENTORY_SLOTS) break;
+		if (Item const *item = Item::get(item_id); item != nullptr) {
+			glm::vec2 corner = top_left + glm::vec2(float(i) * step, 0.0f);
+			batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, Rect{corner.x, corner.y, slot, slot});
+
+			glm::vec3 anchor(corner.x + slot * 0.875f, corner.y + slot, 0.0f);
+			std::string text = std::to_string(item_count);
+			lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+			lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+		}
+		i++;
+	}
+}
+
 PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
@@ -61,11 +96,11 @@ void PlayMode::update(float elapsed) {
 		input.interact.pressed = false;
 		input.interact.downs = 0;
 	}
-	
+
 	// Update player
 	player.update(input, elapsed, map);
-	
-	
+
+
 	// Handle interact here
 	while (input.interact.downs == 1) {
 		if (opened_inventory != nullptr) {
@@ -174,82 +209,29 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 	}
 
-	// --- show inventory (using show_debug temporally as condition) ---
-	glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
-	ui_batch.begin(screen_to_clip);
-	if (true) {
+	//--- inventory UI (screen pixels, laid out from the window size) ---
+	{
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		glm::vec2 screen = glm::vec2(drawable_size);
+
+		float slot = 16.0f * float(canvas.scale);
+		float step = slot * 1.2f; //slot size + gap
+		float row_width = step * float(INVENTORY_SLOTS - 1) + slot;
+		//center horizontally
+		float row_x = std::floor((screen.x - row_width) * 0.5f);
+
+		glm::vec2 hotbar_top_left(row_x, std::floor(screen.y - slot * 1.5f));
+		//opened container (chest): centered vertically in the window
+		glm::vec2 container_top_left(row_x, std::floor((screen.y - slot) * 0.5f));
+
 		DrawLines lines(screen_to_clip);
-		int idx = 0;
-		const float GAP = 96.0f;
-		const float ANCHOR_X = 800.5f;
-		const float ANCHOR_Y = 1200.5f;
-
-		// draw inventory background
-		for (size_t j = 0; j <= 10; ++j) {
-			glm::vec2 top_left = glm::vec2{ANCHOR_X + j * GAP, ANCHOR_Y};
-			float slot_size = 16.0f * canvas.scale;
-			ui_batch.fill_rect(Rect{float(top_left.x) - 0.05f * slot_size, float(top_left.y) - 0.05f * slot_size, slot_size * 1.1f, slot_size * 1.1f},
-					glm::u8vec4(0x66, 0x66, 0x66, 0xff));
-			ui_batch.fill_rect(Rect{float(top_left.x), float(top_left.y), slot_size, slot_size},
-					glm::u8vec4(0x22, 0x22, 0x22, 0x80));
+		ui_batch.begin(screen_to_clip);
+		draw_inventory_row(ui_batch, lines, inventory, hotbar_top_left, slot, step);
+		if (opened_inventory != nullptr) {
+			draw_inventory_row(ui_batch, lines, *opened_inventory, container_top_left, slot, step);
 		}
-
-		// draw inventory text and sprites
-		for (const auto &[item_id, item_count] : inventory) {
-			if (auto item = Item::get(item_id); item != nullptr) {
-				glm::vec2 top_left = glm::vec2{ANCHOR_X + idx * GAP, ANCHOR_Y};
-				float slot_size = 16.0f * canvas.scale;
-				// draw sprite
-				Rect src{0.0f, 0.0f, 16.0f, 16.0f};
-				ui_batch.draw(*item->texture, src, Rect{top_left.x, top_left.y, slot_size, slot_size});
-				// draw text
-				float H = 12.0f * float(canvas.scale) * 0.5f; //text height in screen pixels
-				glm::vec3 anchor(top_left.x + slot_size * 0.875f, top_left.y + slot_size, 0.0f);
-				std::string text = std::to_string(item_count);
-				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-				lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
-			}
-			idx++;
-		}
+		ui_batch.end();
 	}
-
-	if (opened_inventory != nullptr) {
-		DrawLines lines(screen_to_clip);
-		int idx = 0;
-		const float GAP = 96.0f;
-		const float ANCHOR_X = 800.5f;
-		const float ANCHOR_Y = 800.5f;
-
-		// draw inventory background
-		for (size_t j = 0; j <= 10; ++j) {
-			glm::vec2 top_left = glm::vec2{ANCHOR_X + j * GAP, ANCHOR_Y};
-			float slot_size = 16.0f * canvas.scale;
-
-			ui_batch.fill_rect(Rect{float(top_left.x) - 0.05f * slot_size, float(top_left.y) - 0.05f * slot_size, slot_size * 1.1f, slot_size * 1.1f},
-					glm::u8vec4(0x66, 0x66, 0x66, 0xff));
-			ui_batch.fill_rect(Rect{float(top_left.x), float(top_left.y), slot_size, slot_size},
-					glm::u8vec4(0x22, 0x22, 0x22, 0x80));
-		}
-
-		// draw inventory text and sprites
-		for (const auto &[item_id, item_count] : *opened_inventory) {
-			if (auto item = Item::get(item_id); item != nullptr) {
-				glm::vec2 top_left = glm::vec2{ANCHOR_X + idx * GAP, ANCHOR_Y};
-				float slot_size = 16.0f * canvas.scale;
-				// draw sprite
-				Rect src{0.0f, 0.0f, 16.0f, 16.0f};
-				ui_batch.draw(*item->texture, src, Rect{top_left.x, top_left.y, slot_size, slot_size});
-				// draw text
-				float H = 12.0f * float(canvas.scale) * 0.5f; //text height in screen pixels
-				glm::vec3 anchor(top_left.x + slot_size * 0.875f, top_left.y + slot_size, 0.0f);
-				std::string text = std::to_string(item_count);
-				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-				lines.draw_text(text, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
-			}
-			idx++;
-		}
-	}
-	ui_batch.end();
 
 	GL_ERRORS();
 }

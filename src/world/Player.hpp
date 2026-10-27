@@ -12,7 +12,6 @@ struct Tilemap;
 // 'position' is the point under the player (bottom-center of the sprite)
 struct Player : Entity {
 public:
-	glm::vec2 position = glm::vec2(0.0f);  // world pixels
 	glm::ivec2 facing = glm::ivec2(0, 1);  // last direction moved: (0,1)=down, (0,-1)=up, (+-1,0)=right/left
 	bool moving = false;
 

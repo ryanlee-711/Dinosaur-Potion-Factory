@@ -2,6 +2,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 #include "../rendering/Texture.hpp"
 #include "../main/Rect.hpp"

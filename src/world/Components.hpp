@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Defining components (capabilities, or Interfaces) for entities.
  *
@@ -8,7 +9,7 @@
 #include "../inventory/Item.hpp"
 
 struct IInventoryHolder {
-    /* 
+    /*
      * Entities with a container/inventory.
      * calls `get_inventory()` to acquire a reference to the container.
      *
@@ -20,7 +21,7 @@ struct IInventoryHolder {
 };
 
 struct IInteractable {
-    /* 
+    /*
      * Entities that can be interacted with (clicked?)
      * uses `on_interact()` as callback.
      *
