@@ -27,6 +27,7 @@ public:
 
 	Rect hitbox() const override;
 	void draw(Sprites &batch) const override;
+	void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
 	// The tile directly in front of the dwarf (for interacting with things later).
 	glm::ivec2 facing_tile() const;

@@ -84,3 +84,10 @@ glm::ivec2 Player::facing_tile() const {
 	glm::vec2 middle = position - glm::vec2(0.0f, HITBOX_H * 0.5f);
 	return Tilemap::tile_at_point(middle) + facing;
 }
+
+void Player::get_occupied(std::vector<glm::ivec2> *ans) const {
+	glm::vec2 middle = position - glm::vec2(0.0f, HITBOX_H * 0.5f);
+	
+	ans->emplace_back(Tilemap::tile_at_point(middle));
+
+}

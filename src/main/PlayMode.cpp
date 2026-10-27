@@ -7,7 +7,7 @@
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
 
-#include "../world/entities/DemoBox.hpp"
+#include "../world/entities/Chest.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -26,8 +26,8 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
 	for (size_t i = 0; i < 4; ++i) {
-		entities.push_back(std::make_unique<DemoBox>());
-		entities.back()->position = glm::vec2((i + 2.5) * TILE_SIZE, 17.5 * TILE_SIZE);
+		entities.push_back(std::make_unique<Chest>());
+		entities.back()->position = glm::vec2((2 * i + 2.5) * TILE_SIZE, 17.5 * TILE_SIZE);
 	}
 	// initialize the inventory with two apple and one powder
 	opened_inventory = nullptr;
@@ -83,6 +83,7 @@ void PlayMode::update(float elapsed) {
 			if (auto* target = dynamic_cast<IInteractable*>(entity.get())) {
 				IInteractable::Context ctx;
 				ctx.flag = IInteractable::Context::InteractionType::None;
+				ctx.playmode = this;
 				target->on_interact(ctx);
 				if (ctx.flag != IInteractable::Context::InteractionType::OpenInventory) {
 					continue;

@@ -9,15 +9,16 @@
 
 #include "../../rendering/Texture.hpp"
 
-class DemoBox : public Entity, public IInteractable, public IInventoryHolder {
+class Chest : public Entity, public IInteractable, public IInventoryHolder {
     /* Chest implementation for demo. */
 public:
-    ~DemoBox() = default;
+    ~Chest() = default;
 
     // Entity
     void update(FrameInput const &input, float elapsed, Tilemap const &map) override;
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
+    void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
     // IInteractable
     void on_interact(Context &ctx) override;
