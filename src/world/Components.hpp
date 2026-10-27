@@ -66,3 +66,13 @@ struct IItemPort {
     virtual int push_item(ItemRecord item_record) = 0;
 
 };
+
+struct IBreakable {
+    /* 
+     * Entities that can be broken.
+     * Will have hardnes/duration in the future; now, just empty class.
+     * Inheritance = breakable.
+     *
+     */
+    virtual ~IBreakable() = default;
+};

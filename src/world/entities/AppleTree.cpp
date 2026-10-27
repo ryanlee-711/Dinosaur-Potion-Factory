@@ -34,7 +34,7 @@ void AppleTree::draw(Sprites &batch) const {
 }
 
 auto AppleTree::hitbox() const -> Rect {
-    return Rect{position.x, position.y, 32.0f, 48.0f};
+    return Rect{position.x, position.y, 32.0f, 16.0f};
 }
 
 void AppleTree::get_occupied(std::vector<glm::ivec2> *ans) const {

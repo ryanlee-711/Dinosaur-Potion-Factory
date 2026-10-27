@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class Pipe : public Entity, public IInteractable, public IInventoryHolder, public IItemPort {
+class Pipe : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
 public:
     Pipe();
     ~Pipe() = default;

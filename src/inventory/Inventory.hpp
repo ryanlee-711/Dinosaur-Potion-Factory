@@ -11,7 +11,7 @@ typedef std::string item_id_t;
 using ItemRecord = std::pair< item_id_t, int >;
 
 struct Inventory {
-	static constexpr size_t DEFAULT_SLOTS = 11;
+	static constexpr size_t DEFAULT_SLOTS = 10;
 	static constexpr int MAX_STACK = 99; // max stack of an item
 
 	explicit Inventory(size_t slot_count = DEFAULT_SLOTS);
@@ -31,6 +31,22 @@ struct Inventory {
 	bool has(item_id_t const &id, int amount = 1) const { return count(id) >= amount; }
 	int space_for(item_id_t const &id) const; // how many more of this item would fit
 	bool empty() const;
+
+	// some other helpers
+	item_id_t get_slot_id(int index) const {
+		if (index < 0 || index > size()) {
+			return "";
+		}
+		return slots[index].first;
+	}
+	int get_slot_count(int index) const {
+		if (index < 0 || index > size()) {
+			return 0;
+		}
+		return slots[index].second;
+	}
+
+	int space_for_in_slot_range(item_id_t const &id, size_t begin, size_t end) const; // how many more of this item would fit
 
 	size_t size() const { return slots.size(); } // number of slots (full or empty)
 	ItemRecord const &operator[](size_t i) const { return slots[i]; }

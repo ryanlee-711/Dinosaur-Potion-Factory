@@ -78,6 +78,7 @@ void Pipe::get_occupied(std::vector<glm::ivec2> *ans) const {
 void Pipe::on_interact(Context &ctx) {
     // should add the item to the player's inventory, if there is any item
     // TODO
+    configure(base_frame > 0 ? 0 : 1);
 }
 
 auto Pipe::get_inventory() -> Inventory* {
@@ -98,8 +99,9 @@ IItemPort::PortType Pipe::get_port(glm::ivec2 grid_coord) {
 int Pipe::push_item(ItemRecord item_record) {
 
     int val = inventory.add(item_record.first, item_record.second);
-    if (item_record.second - val) {
+    if (item_record.second - val > 0)
+        frame = base_frame + 6;
         push_timer = PUSH_COOLDOWN;
-    }
+
     return item_record.second - val;
 }

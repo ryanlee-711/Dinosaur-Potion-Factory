@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class Chest : public Entity, public IInteractable, public IInventoryHolder, public IItemPort {
+class Chest : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
     /* Chest implementation for demo. */
 public:
     ~Chest() = default;

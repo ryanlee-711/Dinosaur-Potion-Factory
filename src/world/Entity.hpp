@@ -19,7 +19,7 @@ struct FrameInput {
 	};
 
     glm::vec2 direction;
-    Button interact, tab;
+    Button interact, tab, destroy;
     Button numkeys[10];
 };
 

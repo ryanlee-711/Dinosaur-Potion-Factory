@@ -18,8 +18,14 @@ Cauldron::Cauldron() : inventory(3) {
 void Cauldron::update(FrameInput const &input, float elapsed, World const &world) {
     auto const &entities = world.entities;
 
+    bool making_ale = inventory.count("water_bottle") > 0 && inventory.count("apple_powder") >= 2
+            && inventory.space_for_in_slot_range("ale", 2, 3) >= 1;
+    
+    bool making_juice = inventory.count("water_bottle") > 0 && inventory.count("apple") >= 1
+            && inventory.space_for_in_slot_range("apple_juice", 2, 3) >= 1;
+
     // Processing
-    if (inventory.slots[0].second > 0 && inventory.slots[1].second >= 2) {
+    if (making_ale || making_juice) {
         processing_timer -= elapsed;
     } else {
         processing_timer = BREW_COOLDOWN;
@@ -27,25 +33,20 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     
     if (processing_timer <= 0.0f) {
         // Two apple powder + 1 water bottle
-        if (inventory.slots[0].first == "water_bottle" && inventory.slots[0].second > 0
-            && inventory.slots[1].first != "" && inventory.slots[1].second >= 2
-            && (inventory.slots[2].first == "" || inventory.slots[2].first == "ale")) {
-            inventory.slots[0].second--;
-            inventory.slots[1].second -= 2;
-
-            if (inventory.slots[2].first == "") {
-                inventory.slots[2].first = "ale";  // hardcoding the only recipe now
-                inventory.slots[2].second = 0;
+        if (making_ale) {
+            int rejected = inventory.add_to_slot_range("ale", 1, 2, 3);
+            if (rejected == 0) {
+                inventory.remove("apple_powder", 2);
+                inventory.remove("water_bottle", 1);
+                processing_timer = BREW_COOLDOWN;
             }
-            inventory.slots[2].second++;
-            if (inventory.slots[0].second == 0) {
-                inventory.slots[0].first = "";
+        } else if (making_juice) {
+            int rejected = inventory.add_to_slot_range("apple_juice", 1, 2, 3);
+            if (rejected == 0) {
+                inventory.remove("apple", 1);
+                inventory.remove("water_bottle", 1);
+                processing_timer = BREW_COOLDOWN;
             }
-            if (inventory.slots[1].second == 0) {
-                inventory.slots[1].first = "";
-            }
-
-            processing_timer = BREW_COOLDOWN;
         }
     }
 

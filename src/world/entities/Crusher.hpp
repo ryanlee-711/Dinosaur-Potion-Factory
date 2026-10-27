@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class Crusher : public Entity, public IInteractable, public IInventoryHolder, public IItemPort {
+class Crusher : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
     /* Crusher implementation for demo. */
 public:
     Crusher();

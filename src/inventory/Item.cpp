@@ -41,6 +41,41 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
             std::make_unique<Texture>(data_path("assets/test/ale.png"))
         });
 
+        items->emplace("apple_juice", Item{
+            "apple_juice",
+            "Apple Juice",
+            "Healthy",
+            std::make_unique<Texture>(data_path("assets/test/apple_juice.png"))
+        });
+
+        items->emplace("pipe", Item{
+            "pipe",
+            "Pipe",
+            "N/A",
+            std::make_unique<Texture>(data_path("assets/test/pipe_icon.png"))
+        });
+
+        items->emplace("chest", Item{
+            "chest",
+            "Chest",
+            "N/A",
+            std::make_unique<Texture>(data_path("assets/test/chest_icon.png"))
+        });
+
+        items->emplace("crusher", Item{
+            "crusher",
+            "Crusher",
+            "N/A",
+            std::make_unique<Texture>(data_path("assets/test/crusher_icon.png"))
+        });
+
+        items->emplace("brewer", Item{
+            "brewer",
+            "brewer",
+            "N/A",
+            std::make_unique<Texture>(data_path("assets/test/brewer_icon.png"))
+        });
+
         return items.release();
     }
 );

@@ -20,7 +20,7 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
     // Processing
     processing_timer -= elapsed;
     if (processing_timer <= 0.0f) {
-        if (inventory.slots[0].first != "" && inventory.slots[0].second > 0) {
+        if (inventory.slots[0].first == "apple" && inventory.slots[0].second > 0) {
             inventory.slots[0].second--;
 
             if (inventory.slots[1].first == "") {

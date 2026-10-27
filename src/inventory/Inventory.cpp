@@ -100,3 +100,13 @@ int Inventory::add_to_slot_range(item_id_t const &id, int count, size_t begin, s
 
 	return count; //whatever is left didn't fit
 }
+
+int Inventory::space_for_in_slot_range(item_id_t const &id, size_t begin, size_t end) const {
+	int space = 0;
+	for (size_t idx = begin; idx < std::min(end, size()); ++idx) {
+		auto const &[slot_id, slot_count] = slots[idx];
+		if (slot_count == 0) space += MAX_STACK;
+		else if (slot_id == id) space += MAX_STACK - slot_count;
+	}
+	return space;
+}

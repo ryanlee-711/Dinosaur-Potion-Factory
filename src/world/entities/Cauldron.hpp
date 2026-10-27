@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class Cauldron : public Entity, public IInteractable, public IInventoryHolder, public IItemPort {
+class Cauldron : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
     /* Cauldron implementation for demo. */
 public:
     Cauldron();

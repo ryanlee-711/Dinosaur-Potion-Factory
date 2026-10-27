@@ -26,6 +26,10 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	// Helper methods
+	template <typename EntityClass>
+	void add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position);
+
 	//----- world -----
 	Tilemap map;
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
@@ -36,6 +40,7 @@ struct PlayMode : Mode {
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	bool inventory_taking = false;  // switch the flow direction between inventory <-> opened inventory.
+	int hotbar_selected = -1;   // -1 = unselected
 	//----- input -----
 	FrameInput input;
 

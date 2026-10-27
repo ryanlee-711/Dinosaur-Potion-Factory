@@ -57,12 +57,12 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 //Draws one row of inventory slots plus the items in them.
 // top_left: screen pixels; slot: slot size in screen pixels; step: distance from one slot's left edge to the next
 static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const &inventory,
-                               glm::vec2 top_left, float slot, float step) {
-	for (size_t i = 0; i < inventory.size(); i++) {
+                               glm::vec2 top_left, float slot, float step, int highlight_idx = -1) {
+	for (int i = 0; i < inventory.size(); i++) {
 		glm::vec2 corner = top_left + glm::vec2(float(i) * step, 0.0f);
 		float border = 0.05f * slot;
 		batch.fill_rect(Rect{corner.x - border, corner.y - border, slot + 2.0f * border, slot + 2.0f * border},
-			glm::u8vec4(0x66, 0x66, 0x66, 0xff));
+			glm::u8vec4(highlight_idx == i ? 0xbb : 0x66, highlight_idx == i ? 0xbb : 0x66, 0x66, 0xff));
 		batch.fill_rect(Rect{corner.x, corner.y, slot, slot},
 			glm::u8vec4(0x22, 0x22, 0x22, 0x80));
 	}
@@ -127,12 +127,14 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 
 	}
 
-
-
 	// initialize the inventory with two apple and one powder
 	inventory.add("apple", 20);
 	inventory.add("apple_powder", 10);
 	inventory.add("water_bottle", 10);
+	inventory.add("pipe", 10);
+	inventory.add("chest", 10);
+	inventory.add("crusher", 10);
+	inventory.add("brewer", 10);
 }
 
 PlayMode::~PlayMode() {
@@ -161,9 +163,13 @@ void PlayMode::update(float elapsed) {
 		input.interact.pressed = false;
 		input.interact.downs = 0;
 	}
-
-	//everything entities can collide with this frame:
-	World world{map, entities};
+	if (keys[SDL_SCANCODE_KP_ENTER] || keys[SDL_SCANCODE_X]) {
+		input.destroy.pressed = true;
+		input.destroy.downs += 1;
+	} else {
+		input.destroy.pressed = false;
+		input.destroy.downs = 0;
+	}
 	if (keys[SDL_SCANCODE_TAB]) {
 		input.tab.pressed = true;
 		input.tab.downs += 1;
@@ -186,6 +192,9 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 	}
+
+	//everything entities can collide with this frame:
+	World world{map, entities};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -221,8 +230,38 @@ void PlayMode::update(float elapsed) {
 				message = ctx.message;
 				message_timer = MESSAGE_SECONDS;
 			}
+		} else if (hotbar_selected != -1 && (inventory.get_slot_id(hotbar_selected)) != "") {
+			item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+			glm::ivec2 target_tile = player.facing_tile();
+			glm::vec2 world_pos = target_tile * GameConfig::TILE_SIZE;
+			// TODO: Use some more efficient registry?
+			if (entity_at(entities, target_tile) == nullptr) {
+				if (item_id == "chest") {
+					inventory.remove("chest", 1);
+					add_entity<Chest>(entities, world_pos);
+				} else if (item_id == "crusher") {
+					inventory.remove("crusher", 1);
+					add_entity<Crusher>(entities, world_pos);
+				} else if (item_id == "brewer") {
+					inventory.remove("brewer", 1);
+					add_entity<Cauldron>(entities, world_pos);
+				} else if (item_id == "pipe") {
+					inventory.remove("pipe", 1);
+					add_entity<Pipe>(entities, world_pos);
+				}
+			}
 		}
 	}
+
+	if (input.destroy.downs == 1) {
+		glm::ivec2 target_tile = player.facing_tile();
+		Entity *target = entity_at(entities, target_tile);
+		if (auto breakable = dynamic_cast< IInteractable * >(target); breakable != nullptr) {
+			target->removed = true;
+		}
+
+	}
+
 	// transport items
 	if (opened_inventory != nullptr && opened_inventory != &inventory) {
 		Inventory &source = inventory_taking ? *opened_inventory : inventory;
@@ -239,6 +278,15 @@ void PlayMode::update(float elapsed) {
 
 			source.remove(item_id, 1);
 
+			break;
+		}
+	} else {
+		// without inventory overlay, numkeys select/unselect hotbar items
+		for (size_t raw_index = 0; raw_index < 10; ++raw_index) {
+			size_t index = (raw_index + 9) % 10;
+			if (input.numkeys[raw_index].downs != 1) continue;
+			if (hotbar_selected == index) hotbar_selected = -1;
+			else hotbar_selected = index;
 			break;
 		}
 	}
@@ -317,6 +365,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		batch.fill_rect(player.hitbox(), glm::u8vec4(0xff, 0xee, 0x00, 0xb0));
 	}
 
+	{ // when hotbar is active
+		if (hotbar_selected != -1) {
+			auto facing_tile = player.facing_tile();
+
+			batch.fill_rect(Tilemap::tile_rect(facing_tile), glm::u8vec4(0xee, 0xdd, 0x44, 0xa0));
+		}
+	}
+
 	batch.end();
 
 	//--- scale the canvas up to the window ---
@@ -356,7 +412,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		DrawLines lines(screen_to_clip);
 		ui_batch.begin(screen_to_clip);
-		draw_inventory_row(ui_batch, lines, inventory, hotbar_top_left, slot, step);
+		draw_inventory_row(ui_batch, lines, inventory, hotbar_top_left, slot, step, hotbar_selected);
 		if (opened_inventory != nullptr) {
 			//opened container (chest): centered in the window
 			glm::vec2 container_top_left(centered_x(opened_inventory->size()), std::floor((screen.y - slot) * 0.5f));
@@ -380,4 +436,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	GL_ERRORS();
+}
+
+template <typename EntityClass>
+void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position) {
+	entities.push_back(std::make_unique<EntityClass>());
+	entities.back()->position = position;
 }
