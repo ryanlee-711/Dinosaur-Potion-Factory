@@ -35,10 +35,16 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 		facing = glm::ivec2(0, direction.y > 0.0f ? 1 : -1);
 	}
 
+	float speed_bonus = status_effects[0] > 0.0f ? 2.0f : 1.0f;
 	//move one axis at a time, this is what lets you slide along walls instead of sticking to them when moving diagonally
-	glm::vec2 step = direction * WALK_SPEED * elapsed;
+	glm::vec2 step = direction * WALK_SPEED * elapsed * speed_bonus;
 	move_axis(0, step.x, world);
 	move_axis(1, step.y, world);
+
+	// decrement effect timers
+	for (size_t idx = 0; idx < status_effects.size(); ++idx) {
+		status_effects[idx] = std::max(0.0f, status_effects[idx] - elapsed);
+	}
 }
 
 void Player::move_axis(int axis, float amount, World const &world) {
@@ -106,4 +112,10 @@ void Player::get_occupied(std::vector<glm::ivec2> *ans) const {
 	
 	ans->emplace_back(Tilemap::tile_at_point(middle));
 
+}
+
+void Player::add_effect(size_t effect_index, float time) {
+	// add effects
+	if (effect_index >= status_effects.size()) return;
+	status_effects[effect_index] += time;
 }

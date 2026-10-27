@@ -3,6 +3,7 @@
 #include "../main/Rect.hpp"
 #include "Entity.hpp"
 
+#include <array>
 #include <glm/glm.hpp>
 
 struct World;
@@ -39,6 +40,10 @@ public:
 	// The tile directly in front of the dwarf (for tile-based things later, like placing machines).
 	glm::ivec2 facing_tile() const;
 
+	// Buff
+	void add_effect(size_t effect_index, float time);
+
 private:
 	void move_axis(int axis, float amount, World const &world);
+	std::array<float, 4> status_effects;
 };

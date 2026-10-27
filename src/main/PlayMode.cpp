@@ -235,7 +235,10 @@ void PlayMode::update(float elapsed) {
 			glm::ivec2 target_tile = player.facing_tile();
 			glm::vec2 world_pos = target_tile * GameConfig::TILE_SIZE;
 			// TODO: Use some more efficient registry?
-			if (entity_at(entities, target_tile) == nullptr) {
+			if (item_id == "ale") {
+				player.add_effect(0, 30.0f);
+				inventory.remove("ale", 1);
+			} else if (entity_at(entities, target_tile) == nullptr) {
 				if (item_id == "chest") {
 					inventory.remove("chest", 1);
 					add_entity<Chest>(entities, world_pos);
