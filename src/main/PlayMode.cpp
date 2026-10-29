@@ -289,7 +289,7 @@ void PlayMode::update(float elapsed) {
 			size_t index = (raw_index + 9) % 10;
 			if (input.numkeys[raw_index].downs != 1) continue;
 			if (hotbar_selected == index) hotbar_selected = -1;
-			else hotbar_selected = index;
+			else hotbar_selected = (int)index;
 			break;
 		}
 	}
