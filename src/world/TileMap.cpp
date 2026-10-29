@@ -7,15 +7,17 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <deque>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+
 
 using GameConfig::TILE_SIZE;
 
 const int32_t SOLID_MASK = 1 << 31;
 
-Tilemap::Tilemap(std::string const &map_path) {
+Tilemap::Tilemap(std::string const &map_path): map_path(map_path) {
 	std::ifstream file(map_path, std::ios::binary);
     if (!file) {
         throw std::runtime_error("Cannot open map: " + map_path);
@@ -31,6 +33,7 @@ Tilemap::Tilemap(std::string const &map_path) {
     if (!file) throw std::runtime_error("Cannot read map header");
 
     size = glm::uvec2(width, height);
+	layer_visibilities = std::vector<float>{ };
 	for (uint32_t layer = 0; layer < num_layers; ++layer) {
 		tile_layers.emplace_back();
 		tile_layers.back().resize(size_t(width) * height);
@@ -39,10 +42,12 @@ Tilemap::Tilemap(std::string const &map_path) {
 			tile_layers.back().size() * sizeof(int32_t)
 		);
 
+		layer_visibilities.emplace_back(1.0f);
 		if (!file) {
 			throw std::runtime_error("Cannot read map cells");
 		}
 	}
+	file.close();
 }
 
 glm::vec2 Tilemap::size_px() const {
@@ -101,8 +106,8 @@ void Tilemap::validate_tileset(Texture const &tileset) const {
 
 }
 
-void Tilemap::draw(Sprites &batch, Texture const &tileset, glm::vec2 view_min, glm::vec2 view_max) const {
-	uint32_t columns = std::max(1u, tileset.size.x / TILE_SIZE);
+void Tilemap::draw(Sprites &batch, Texture const &tileset_texture, glm::vec2 view_min, glm::vec2 view_max) const {
+	uint32_t columns = std::max(1u, tileset_texture.size.x / TILE_SIZE);
 
 	//only visit tiles that are on screen
 	glm::ivec2 first = glm::max(tile_at_point(view_min), glm::ivec2(0));
@@ -117,8 +122,32 @@ void Tilemap::draw(Sprites &batch, Texture const &tileset, glm::vec2 view_min, g
 					float((index / columns) * TILE_SIZE),
 					float(TILE_SIZE), float(TILE_SIZE)
 				};
-				batch.draw(tileset, src, glm::vec2(tx * TILE_SIZE, ty * TILE_SIZE));
+				batch.draw(tileset_texture, src, glm::vec2(tx * TILE_SIZE, ty * TILE_SIZE), glm::u8vec4(static_cast<int>(layer_visibilities[layer] * 255.0f)));
 			}
 		}
 	}
+}
+
+void Tilemap::save() {
+	// Save this map; write it to file
+
+
+	std::ofstream file(map_path, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Cannot write to: " + map_path);
+    }
+
+	// header [width, height] (uint32_t)
+    file.write(reinterpret_cast<char *>(&size.x), 4UL);
+    file.write(reinterpret_cast<char *>(&size.y), 4UL);
+	file.write(reinterpret_cast<char *>(&num_layers), sizeof(num_layers));
+    if (!file) throw std::runtime_error("Cannot read map header");
+
+	for (uint32_t layer = 0; layer < num_layers; ++layer) {
+		file.write(
+			reinterpret_cast<char *>(tile_layers[layer].data()),
+			tile_layers[layer].size() * sizeof(int32_t)
+		);
+	}
+	file.close();
 }

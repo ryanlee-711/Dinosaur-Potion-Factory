@@ -1,7 +1,6 @@
 #include "PixelCanvas.hpp"
 
 #include "Sprites.hpp"
-#include "../main/GameConfig.hpp"
 #include "../starter/gl_errors.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,7 +23,8 @@ void PixelCanvas::resize(glm::uvec2 drawable_size) {
 	drawable_size = glm::max(drawable_size, glm::uvec2(1));
 
 	//whole-number zoom that makes the view closest to TARGET_VIEW_HEIGHT art pixels tall
-	int new_scale = std::max(1, int(std::round(float(drawable_size.y) / float(GameConfig::TARGET_VIEW_HEIGHT))));
+	target_height = std::clamp(target_height, 30, 1800);
+	int new_scale = std::max(1, int(std::round(float(drawable_size.y) / float(target_height))));
 
 	//canvas just big enough to cover the window at that zoom
 	glm::uvec2 new_size = (drawable_size + glm::uvec2(new_scale - 1)) / glm::uvec2(new_scale);
@@ -60,8 +60,6 @@ void PixelCanvas::bind() {
 void PixelCanvas::present(Sprites &batch, glm::uvec2 drawable_size) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, drawable_size.x, drawable_size.y);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
 
 	//screen-pixel coordinates, y down
 	glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <cstdint>
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -25,9 +26,11 @@ struct Tilemap {
 	glm::uvec2 size = glm::uvec2(0);   // in tiles
 	uint32_t num_layers = 0;
 	std::string tileset_path;          // relative to the dist/ folder
+	std::string map_path = "INVALID_PATH";
 
 	// each layer is row-major; each entry indexes tile_types
 	std::vector<std::vector< int32_t >> tile_layers;
+	std::vector<float> layer_visibilities;
 
 	// --- queries ---
 	glm::vec2 size_px() const;
@@ -48,4 +51,7 @@ struct Tilemap {
 
 	// Draws only the tiles inside [view_min, view_max)
 	void draw(Sprites &batch, Texture const &tileset, glm::vec2 view_min, glm::vec2 view_max) const;
+
+	// Used by editor
+	void save();
 };

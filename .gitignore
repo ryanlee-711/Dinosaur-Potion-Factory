@@ -11,3 +11,5 @@ dist/game.exe
 maek-cache.json
 dist/README-*.txt
 output/
+
+.DS_Store

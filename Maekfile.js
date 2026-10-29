@@ -152,15 +152,30 @@ const game_names = [
 	maek.CPP('src/main/main.cpp'),
 	maek.CPP('src/main/PlayMode.cpp'),
 
-	//world:
-	maek.CPP('src/world/TileMap.cpp'),
-	maek.CPP('src/world/Player.cpp'),
-	maek.CPP('src/world/World.cpp'),
+	// particular entities
 	maek.CPP('src/world/entities/Chest.cpp'),
 	maek.CPP('src/world/entities/Pipe.cpp'),
 	maek.CPP('src/world/entities/Crusher.cpp'),
 	maek.CPP('src/world/entities/Cauldron.cpp'),
 	maek.CPP('src/world/entities/AppleTree.cpp'),
+
+	//audio (not used yet):
+	maek.CPP('src/starter/Sound.cpp'),
+	maek.CPP('src/starter/load_wav.cpp'),
+	maek.CPP('src/starter/load_opus.cpp'),
+];
+
+const editor_names = [
+	//editor:
+	maek.CPP('src/map_editor/map_editor.cpp'),
+	maek.CPP('src/map_editor/EditorMode.cpp'),
+]
+
+const common_names = [
+	//world:
+	maek.CPP('src/world/TileMap.cpp'),
+	maek.CPP('src/world/Player.cpp'),
+	maek.CPP('src/world/World.cpp'),
 
 	//items:
 	maek.CPP('src/inventory/Item.cpp'),
@@ -172,13 +187,7 @@ const game_names = [
 	maek.CPP('src/rendering/PixelCanvas.cpp'),
 	maek.CPP('src/rendering/TextRenderer.cpp'),
 
-	//audio (not used yet):
-	maek.CPP('src/starter/Sound.cpp'),
-	maek.CPP('src/starter/load_wav.cpp'),
-	maek.CPP('src/starter/load_opus.cpp'),
-];
-
-const common_names = [
+	//starter code:
 	maek.CPP('src/starter/data_path.cpp'),
 	maek.CPP('src/starter/PathFont.cpp'),
 	maek.CPP('src/starter/PathFont-font.cpp'),
@@ -189,7 +198,7 @@ const common_names = [
 	maek.CPP('src/starter/gl_compile_program.cpp'),
 	maek.CPP('src/starter/Mode.cpp'),
 	maek.CPP('src/starter/GL.cpp'),
-	maek.CPP('src/starter/Load.cpp')
+	maek.CPP('src/starter/Load.cpp'),
 ];
 
 //the '[exeFile =] LINK(objFiles, exeFileBase, [, options])' links an array of objects into an executable:
@@ -198,8 +207,11 @@ const common_names = [
 //returns exeFile: exeFileBase + a platform-dependant suffix (e.g., '.exe' on windows)
 const game_exe = maek.LINK([...game_names, ...common_names], 'dist/game');
 
+//map editor
+const editor_exe = maek.LINK([...editor_names, ...common_names], 'dist/editor');
+
 //set the default target to the game (and copy the readme files):
-maek.TARGETS = [game_exe, ...copies];
+maek.TARGETS = [game_exe, editor_exe, ...copies];
 
 //Note that tasks that produce ':abstract targets' are never cached.
 // This is similar to how .PHONY targets behave in make.
