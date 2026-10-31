@@ -7,6 +7,8 @@ dist/game.pdb
 dist/SDL3.dll
 dist/game
 dist/game.exe
+dist/editor
+dist/editor.exe
 *.blend[0-9]
 maek-cache.json
 dist/README-*.txt
