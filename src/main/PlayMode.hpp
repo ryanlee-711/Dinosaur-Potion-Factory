@@ -10,6 +10,7 @@
 #include "../world/TileMap.hpp"
 #include "../world/Entity.hpp"
 #include "../inventory/Item.hpp"
+#include "../world/Components.hpp"
 
 #include <glm/glm.hpp>
 
@@ -27,11 +28,14 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//update subroutines (make code cleaner)
+	void do_world_interaction(float elapsed);
 	void remove_objects(float elapsed);
 
 	// Helper methods
 	template <typename EntityClass>
 	void add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position);
+
+	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &canvas, glm::vec2 camera_topleft);
 
 	//----- world -----
 	Tilemap map;
@@ -47,6 +51,16 @@ struct PlayMode : Mode {
 	//----- input -----
 	FrameInput input;
 
+	//----- world ineraction -----
+	IBreakable *currently_breaking = nullptr;    // the IBreakable that is the current target. nullptr for none
+	float break_timer = 0.0f;
+	struct MouseButton {
+		int downs = 0;
+		bool pressed = false;
+		bool popped = false;
+	} left_click, right_click;
+	glm::ivec2 hovered_coord = glm::ivec2{0};
+
 	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
 	std::string message;
 	float message_timer = 0.0f;
@@ -56,6 +70,7 @@ struct PlayMode : Mode {
 	Sprites batch;
 	Sprites ui_batch;
 	PixelCanvas canvas;
+	float window_scale = 1.0f;   // related to retina schenanigans
 
 	bool show_debug = false; // toggled with F3
 };

@@ -76,6 +76,13 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
             std::make_unique<Texture>(data_path("assets/test/brewer_icon.png"))
         });
 
+        items->emplace("pickaxe", Item{
+            "pickaxe",
+            "Pickaxe",
+            "Isn't this Iron Pick?",
+            std::make_unique<Texture>(data_path("assets/sprites/items/pickaxe.png"))
+        });
+
         return items.release();
     }
 );

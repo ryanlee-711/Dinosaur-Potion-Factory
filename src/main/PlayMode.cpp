@@ -39,7 +39,11 @@ static constexpr float MESSAGE_SECONDS = 2.5f;
 //An open container panel closes by itself once the dwarf's feet are farther than this
 static constexpr float CONTAINER_CLOSE_DISTANCE = float(GameConfig::TILE_SIZE);
 
+//How long it takes to cause one damage by pickaxe to a machine
+static constexpr float SECOND_PER_DAMAGE = 0.25f;
+
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
+[[maybe_unused]]
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
 	Entity *best = nullptr;
 	float best_area = 0.0f;
@@ -90,6 +94,13 @@ static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const
 std::mt19937 mt(0x64696e6f);   // "dino"
 
 PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
+	// initialize window scale, OS specific
+	int window_w, window_h, drawable_w, drawable_h;
+	SDL_GetWindowSize(Mode::window, &window_w, &window_h);
+	SDL_GetWindowSizeInPixels(Mode::window, &drawable_w, &drawable_h);
+	window_scale = float(drawable_w) / float(window_w);
+
+	// initialize tileset
 	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
 	player.position = Tilemap::tile_center(glm::ivec2{10, 10}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
@@ -136,6 +147,7 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	}
 
 	// initialize the inventory with two apple and one powder
+	inventory.add("pickaxe", 1);
 	inventory.add("apple", 20);
 	inventory.add("apple_powder", 10);
 	inventory.add("water_bottle", 10);
@@ -220,49 +232,7 @@ void PlayMode::update(float elapsed) {
 	}
 
 	// Handle interact (only on the first frame E is down):
-	if (input.interact.downs == 1) {
-		if (opened_inventory != nullptr) {
-			//E again closes whatever is open
-			opened_inventory = nullptr;
-			opened_entity = nullptr;
-		} else if (Entity *entity = find_interact_target(player.interact_box(), entities)) {
-			//the entity decides what happens, we just act on what it asks for:
-			auto *target = dynamic_cast< IInteractable * >(entity);
-			IInteractable::Context ctx{player, inventory};
-			target->on_interact(ctx);
-			if (ctx.open_container != nullptr) {
-				opened_inventory = ctx.open_container;
-				opened_entity = entity;
-			}
-			if (!ctx.message.empty()) {
-				message = ctx.message;
-				message_timer = MESSAGE_SECONDS;
-			}
-		} else if (hotbar_selected != -1 && (inventory.get_slot_id(hotbar_selected)) != "") {
-			item_id_t item_id = inventory.get_slot_id(hotbar_selected);
-			glm::ivec2 target_tile = player.facing_tile();
-			glm::vec2 world_pos = target_tile * GameConfig::TILE_SIZE;
-			// TODO: Use some more efficient registry?
-			if (item_id == "ale") {
-				player.add_effect(0, 30.0f);
-				inventory.remove("ale", 1);
-			} else if (entity_at(entities, target_tile) == nullptr) {
-				if (item_id == "chest") {
-					inventory.remove("chest", 1);
-					add_entity<Chest>(entities, world_pos);
-				} else if (item_id == "crusher") {
-					inventory.remove("crusher", 1);
-					add_entity<Crusher>(entities, world_pos);
-				} else if (item_id == "brewer") {
-					inventory.remove("brewer", 1);
-					add_entity<Cauldron>(entities, world_pos);
-				} else if (item_id == "pipe") {
-					inventory.remove("pipe", 1);
-					add_entity<Pipe>(entities, world_pos);
-				}
-			}
-		}
-	}
+	do_world_interaction(elapsed);
 
 	if (input.destroy.downs == 1) {
 		glm::ivec2 target_tile = player.facing_tile();
@@ -342,6 +312,124 @@ void PlayMode::update(float elapsed) {
 
 	// clear input direction
 	input.direction = glm::vec2{0.0f, 0.0f};
+}
+
+void PlayMode::do_world_interaction(float elapsed) {
+	// subroutine for handling world interaction;
+	// or, in more common terms, what happens when the mouse is being clicked on the screen.
+	// if player is empty-handed, or holding a pickaxe, then it breaks stuff.
+	// if player is holding something, then it places the item.
+
+	float mx, my;
+	SDL_MouseButtonFlags buttons = SDL_GetMouseState(&mx, &my);
+	bool left_clicked = (buttons & SDL_BUTTON_LMASK) != 0;
+	if (left_clicked) {
+		left_click.downs += 1;
+		left_click.pressed = true;
+	} else {
+		left_click.downs = 0;
+		left_click.pressed = false;
+		left_click.popped = true;
+	}
+
+	bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0;
+	if (right_clicked) {
+		right_click.downs += 1;
+		right_click.pressed = true;
+	} else {
+		right_click.downs = 0;
+		right_click.pressed = false;
+		right_click.popped = true;
+	}
+
+	// If left click is outside a masked region, return immediately
+	{ /* return...*/ }
+
+	item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+	glm::ivec2 coord = find_tilemap_coord(glm::vec2{mx, my}, canvas, camera.view_min(canvas.size));
+	hovered_coord = coord;
+
+	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) <= 6) {
+		// get left click target
+		if ((left_click.downs == 1 && item_id != "pickaxe") || right_click.downs == 1 || input.interact.downs == 1) {
+			auto entity = entity_at(entities, coord);
+			
+			if (hotbar_selected != -1 && item_id != "" && item_id != "pickaxe") {
+				// cases A. player has a selected item. Try to use it
+				glm::vec2 world_pos = coord * GameConfig::TILE_SIZE;
+				// TODO: Use some more efficient registry?
+				if (item_id == "ale") {
+					player.add_effect(0, 30.0f);
+					inventory.remove("ale", 1);
+				} else if (entity == nullptr) {
+					if (item_id == "chest") {
+						inventory.remove("chest", 1);
+						add_entity<Chest>(entities, world_pos);
+					} else if (item_id == "crusher") {
+						inventory.remove("crusher", 1);
+						add_entity<Crusher>(entities, world_pos);
+					} else if (item_id == "brewer") {
+						inventory.remove("brewer", 1);
+						add_entity<Cauldron>(entities, world_pos);
+					} else if (item_id == "pipe") {
+						inventory.remove("pipe", 1);
+						add_entity<Pipe>(entities, world_pos);
+					}
+				} else {
+					message = "Action failed";
+					message_timer = MESSAGE_SECONDS;
+				}
+			} else {
+				// cases B. player has no active selected item
+				// likely to do with interaction. If nothing to interact with, return
+				if (!entity) return;
+				auto *target = dynamic_cast< IInteractable * >(entity);
+				if (!target) return;
+				IInteractable::Context ctx{player, inventory};
+				target->on_interact(ctx);
+				if (ctx.open_container != nullptr) {
+					opened_inventory = ctx.open_container;
+					opened_entity = entity;
+				}
+				if (!ctx.message.empty()) {
+					message = ctx.message;
+					message_timer = MESSAGE_SECONDS;
+				}
+			}
+		} else if (left_click.downs > 1) {
+			// being held for more than one frames
+			// start breaking things. But first, find entity
+			auto entity = entity_at(entities, coord);
+			auto *target = dynamic_cast< IBreakable * >(entity);
+
+			item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+			if (target != nullptr && target == currently_breaking && item_id == "pickaxe") {
+				// keep breaking...
+				break_timer += elapsed;
+				int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
+				if (damages >= target->get_hardness()) {
+					// breaked
+					entity->removed = true;
+				}
+
+			} else {
+				// changed breaking target or target is just null!
+				break_timer = 0.0f;
+				currently_breaking = target;
+			}
+		}
+
+		if (left_click.popped) {
+			break_timer = 0.0f;
+			// keep the currently_breaking pointer for continuous breaking.
+			// let's dont think about stale pointers...
+		}
+	}
+
+	left_click.popped = false;
+	right_click.popped = false;
+
+
 }
 
 void PlayMode::remove_objects(float elapsed) {
@@ -445,11 +533,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	{ // when hotbar is active
-		if (hotbar_selected != -1) {
-			auto facing_tile = player.facing_tile();
 
-			batch.fill_rect(Tilemap::tile_rect(facing_tile), glm::u8vec4(0xee, 0xdd, 0x44, 0xa0));
-		}
+		
+		batch.fill_rect(Tilemap::tile_rect(hovered_coord), glm::u8vec4(
+			0xee, 
+			inventory.get_slot_id(hotbar_selected) == "pickaxe" ? 0x88 : glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) > 6 ? 0x44 : 0xdd, 
+			0x44, 0x28));
+		
 	}
 
 	batch.end();
@@ -521,4 +611,18 @@ template <typename EntityClass>
 void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position) {
 	entities.push_back(std::make_unique<EntityClass>());
 	entities.back()->position = position;
+}
+
+// =================== Other helpers ================= //
+
+glm::ivec2 PlayMode::find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &canvas, glm::vec2 camera_topleft) {
+	// 1. window coordinates -> drawable pixels, because of Retina schenanigans
+	screen_pos *= window_scale;
+
+	// 2. undo the centering and scaling
+	screen_pos = screen_pos / float(canvas.scale);
+
+	// 3. to world pos, then grid
+	glm::vec2 world_pos = screen_pos + camera_topleft;
+	return Tilemap::tile_at_point(world_pos);
 }
