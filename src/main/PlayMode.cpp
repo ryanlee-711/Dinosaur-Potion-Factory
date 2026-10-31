@@ -9,6 +9,7 @@
 
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
+#include "../world/ItemEntity.hpp"
 // Make macro for this?
 #include "../world/entities/Chest.hpp"
 #include "../world/entities/Pipe.hpp"
@@ -22,6 +23,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <random>
 
 using GameConfig::TILE_SIZE;
 
@@ -85,6 +87,8 @@ static void draw_inventory_row(Sprites &batch, DrawLines &lines, Inventory const
 	}
 }
 
+std::mt19937 mt(0x64696e6f);   // "dino"
+
 PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
@@ -125,6 +129,10 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 		entities.push_back(std::make_unique<AppleTree>());
 		entities.back()->position = glm::vec2((39.0f) * TILE_SIZE, 8.0f * TILE_SIZE);
 
+	}
+	{ // Add one item entity somewhere
+		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
+		entities.back()->position = glm::vec2((25.0f) * TILE_SIZE, 16.0f * TILE_SIZE);
 	}
 
 	// initialize the inventory with two apple and one powder
@@ -194,7 +202,7 @@ void PlayMode::update(float elapsed) {
 	}
 
 	//everything entities can collide with this frame:
-	World world{map, entities};
+	World world{map, entities, player};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -300,13 +308,31 @@ void PlayMode::update(float elapsed) {
 		entity->update(input, elapsed, world);
 	}
 
-	// Remove entities that asked to be removed this frame.
-	if (opened_entity != nullptr && opened_entity->removed) {
-		//its panel is open: close it before the inventory it points at is deleted
-		opened_inventory = nullptr;
-		opened_entity = nullptr;
+	// collect ItemEntities on ground by player
+	{
+		for (auto &entity : world.entities) {
+			if (auto *target = dynamic_cast< ItemEntity * >(entity.get()); target) {
+				// If the item is close enough, then the flag for absorption will be set true;
+				// Then, we consume it
+				if (!target->is_absorbable()) continue;
+				auto target_inventory = target->get_inventory();
+				item_id_t item_id = target_inventory->get_slot_id(0);
+				int item_count = target_inventory->get_slot_count(0);
+				if (item_id == "") continue;
+				if (item_count == 0) continue;
+
+				int remain = inventory.add(item_id, item_count);
+				target_inventory->remove(item_id, item_count - remain);
+				// if the item are all absorbed, then we remove it from the scene.
+				if (target_inventory->count(item_id) <= 0) {
+					target->removed = true;
+				}
+			}
+		}
 	}
-	std::erase_if(entities, [](std::unique_ptr< Entity > const &entity) { return entity->removed; });
+
+	// Remove "removed" objects from the scene; and add ItemEntity if a container is broken.
+	remove_objects(elapsed);
 
 	// Count down the on-screen message
 	if (message_timer > 0.0f) {
@@ -317,6 +343,56 @@ void PlayMode::update(float elapsed) {
 	// clear input direction
 	input.direction = glm::vec2{0.0f, 0.0f};
 }
+
+void PlayMode::remove_objects(float elapsed) {
+	World world{map, entities, player};
+	// Remove entities that asked to be removed this frame.
+	if (opened_entity != nullptr && opened_entity->removed) {
+		//its panel is open: close it before the inventory it points at is deleted
+		opened_inventory = nullptr;
+		opened_entity = nullptr;
+	}
+	
+	// On destruction: for IItemHolder, we would create popped items
+	{
+		std::vector<std::pair<ItemRecord, glm::vec2>> buffered_item_records;
+
+		// first pass: find the list of broken items.
+		// we cannot modify it on the fly because emplacing while enumerating is 
+		// dangerous (undefined?) behavior
+		for (auto &entity : world.entities) {
+			if (!entity->removed) continue;
+			auto *target = dynamic_cast< IInventoryHolder * >(entity.get());
+			if (!target) continue;;
+			// generate a bunch of items if inventory non-empty
+			Inventory *inventory = target->get_inventory();
+			for (auto const &item_record: *inventory) {
+				if (item_record.second <= 0) continue;
+				buffered_item_records.emplace_back(item_record, entity.get()->position);
+			}
+		}
+
+		// second pass: add the items as entities
+		for (auto const &[item_record, pos] : buffered_item_records) {
+			// Add one item entity somewhere
+			entities.push_back(std::make_unique<ItemEntity>(item_record.first, item_record.second));
+			entities.back()->position = pos;
+			// adjust its velocity
+			auto *target = dynamic_cast< ItemEntity * >(entities.back().get());
+			if (!target) {
+				throw std::runtime_error{"ItemEntity just initialized failed?!"};
+			}
+			target->velocity.x += 50.0f * (float(mt()) / float(mt.max()) - 0.5f);
+			target->velocity.y += 50.0f * (float(mt()) / float(mt.max()) - 0.5f);
+		}
+	}
+
+	std::erase_if(entities, [](std::unique_ptr< Entity > const &entity) { return entity->removed; });
+}
+
+// ********************************************************************* //
+// ============================    DRAW    ============================= //
+// ********************************************************************* //
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//--- world, drawn into the low-res canvas ---

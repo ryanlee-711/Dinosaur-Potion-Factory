@@ -26,6 +26,9 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	//update subroutines (make code cleaner)
+	void remove_objects(float elapsed);
+
 	// Helper methods
 	template <typename EntityClass>
 	void add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position);
