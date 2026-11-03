@@ -1,0 +1,30 @@
+# ================ INGREDIENTS ==============
+apple	Apple	assets/sprites/items/ingredients/apple.png	apple that grows in caves
+apple_powder	Apple Powder	assets/sprites/items/ingredients/apple_powder.png	powdered apple
+baked_apple	Baked Apple	assets/sprites/items/missing_no.png	TODO
+apple_paste	Apple Paste	assets/sprites/items/missing_no.png	TODO
+lichen	Lichen	assets/sprites/items/missing_no.png	TODO
+baked_lichen	Roasted Lichen	assets/sprites/items/missing_no.png	TODO
+lichen_powder	Lichen Flour	assets/sprites/items/missing_no.png	TODO
+red_powder	Red Powder	assets/sprites/items/missing_no.png	TODO
+
+# ------ crap items ------
+baked_crap	Organic Goo	assets/sprites/items/missing_no.png	TODO
+crap_powder	Weird powder	assets/sprites/items/missing_no.png	TODO
+crap_ash	Ash	assets/sprites/items/missing_no.png	TODO
+
+# ================ POTION-LIKE ==============
+water_bottle	Water Bottle	assets/sprites/items/potions/water_bottle.png	clean water
+ale	Ale	assets/sprites/items/potions/ale.png	technically this is cider...
+apple_juice	Apple Juice	assets/sprites/items/potions/apple_juice.png	???
+lichen_brew	Lichen Brew	assets/sprites/items/potions/apple_juice.png	???
+red_potion	Red Potion	assets/sprites/items/potions/apple_juice.png	???
+strength_potion	Strength Potion	assets/sprites/items/potions/apple_juice.png	???
+# ================== MACHINES ===============
+pipe	Pipe	assets/sprites/items/placeables/pipe_icon.png	connect containers (directional)
+brewer	Brewer	assets/sprites/items/placeables/brewer_icon.png	brews potions
+chest	Chest	assets/sprites/items/placeables/chest_icon.png	contain items
+crusher	Crusher	assets/sprites/items/placeables/crusher_icon.png	crushes raw materials
+baker	Baker	assets/sprites/items/potions/missing_no.png	???
+# =================== OTHER =================
+pickaxe	Pickaxe	assets/sprites/items/pickaxe.png	Can break stuff
