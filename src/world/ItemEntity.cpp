@@ -42,7 +42,7 @@ void ItemEntity::update(FrameInput const &input, float elapsed, World const &wor
     } else {
         // accelerating towards player
         if (dist < GRAVITATE_DISTANCE) {
-            float accel = glm::pow(dist + 1e-6, -2.0f) * ABSORB_ACCEL_FACTOR;
+            float accel = glm::pow(dist + 1e-6f, -2.0f) * ABSORB_ACCEL_FACTOR;
             velocity += glm::normalize(world.player.position - position) * accel * elapsed;
         }
         // friction

@@ -17,7 +17,7 @@ using GameConfig::TILE_SIZE;
 
 const int32_t SOLID_MASK = 1 << 31;
 
-Tilemap::Tilemap(std::string const &map_path): map_path(map_path) {
+Tilemap::Tilemap(std::string const &path): map_path(path) {
 	std::ifstream file(map_path, std::ios::binary);
     if (!file) {
         throw std::runtime_error("Cannot open map: " + map_path);
@@ -122,7 +122,7 @@ void Tilemap::draw(Sprites &batch, Texture const &tileset_texture, glm::vec2 vie
 					float((index / columns) * TILE_SIZE),
 					float(TILE_SIZE), float(TILE_SIZE)
 				};
-				batch.draw(tileset_texture, src, glm::vec2(tx * TILE_SIZE, ty * TILE_SIZE), glm::u8vec4(static_cast<int>(layer_visibilities[layer] * 255.0f)));
+				batch.draw(tileset_texture, src, glm::vec2(tx * TILE_SIZE, ty * TILE_SIZE), glm::u8vec4(static_cast<glm::u8>(layer_visibilities[layer] * 255.0f)));
 			}
 		}
 	}

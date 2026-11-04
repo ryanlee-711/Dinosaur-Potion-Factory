@@ -58,7 +58,7 @@ struct EditorMode : Mode {
 		bool popped = false;
 		glm::vec2 pos;
 	} left_click, right_click;
-	
+
 
 
 	// ------ Editor -------
@@ -90,12 +90,12 @@ struct EditorMode : Mode {
 
 	// helpers
 	float window_scale = 1.0f;
-	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &canvas, glm::vec2 camera_topleft) {
+	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft) {
 		// 1. window coordinates -> drawable pixels, because of Retina schenanigans
 		screen_pos *= window_scale;
 
 		// 2. undo the centering and scaling
-		screen_pos = screen_pos / float(canvas.scale);
+		screen_pos = screen_pos / float(view_canvas.scale);
 
 		// 3. to world pos, then grid
 		glm::vec2 world_pos = screen_pos + camera_topleft;

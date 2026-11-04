@@ -13,6 +13,8 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 Crusher::Crusher() : inventory(2) {
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Crushable });
+    inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
 }
 
 void Crusher::update(FrameInput const &input, float elapsed, World const &world) {
@@ -120,8 +122,11 @@ int Crusher::push_item(ItemRecord item_record) {
     if (item_record.second <= 0) {
         return 0;
     }
+    if (!inventory.can_insert(0, item_record.first)) {
+        return 0;
+    }
     if (inventory.get_slot_count(0) <= 0) {
         processing_timer = CRUSH_COOLDOWN;
     }
-    return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
+    return inventory.insert_into_slot(0, item_record.first, 1);
 }

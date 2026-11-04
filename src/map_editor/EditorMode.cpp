@@ -82,7 +82,7 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 			if (!left_click.pressed) {
 				tool_mode = ToolMode::RECT;
 			}
-			
+
 		} else if (evt.key.key == SDLK_B) {
 			if (!left_click.pressed) {
 				tool_mode = ToolMode::PEN;
@@ -104,7 +104,7 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 		}
 
 		// numkeys
-		const uint num_key[8] = {SDLK_0, SDLK_1, SDLK_2, SDLK_3, SDLK_4, SDLK_5, SDLK_6, SDLK_7};
+		const SDL_Keycode num_key[8] = {SDLK_0, SDLK_1, SDLK_2, SDLK_3, SDLK_4, SDLK_5, SDLK_6, SDLK_7};
 		for (size_t idx = 0; idx < 8; ++idx) {
 			if (evt.key.key == num_key[idx]) {
 				layers_activated[idx] = !layers_activated[idx];
@@ -143,13 +143,13 @@ void EditorMode::update(float elapsed) {
 	if (!dragging) {
 		dragging = keys[SDL_SCANCODE_SPACE];
 	}
-	
+
 
 	[[maybe_unused]]
 	auto print_pos = [](glm::vec2 pos) {
 		std::cout << pos.x << " " << pos.y << std::endl;
 	};
-	
+
 	{ //handle left click.
 		// This handle the event of left being clicked.
 		// If it clicked the panels, then data is written about that;
@@ -197,15 +197,15 @@ void EditorMode::update(float elapsed) {
 				glm::ivec2 cursor_loc = find_tilemap_coord(glm::vec2{mouse_x, mouse_y}, canvas, view_topleft);
 				if (cursor_loc != just_drawn_on) {
 					just_drawn_on = cursor_loc;
-					for (size_t dy = 0; dy < tileset_select_size.y; dy++) {
-						for (size_t dx = 0; dx < tileset_select_size.x; dx++) {
+					for (int dy = 0; dy < tileset_select_size.y; dy++) {
+						for (int dx = 0; dx < tileset_select_size.x; dx++) {
 							glm::ivec2 draw_to = cursor_loc + glm::ivec2{dx, dy};
 							if (!map.in_bounds(draw_to)) continue;
 							glm::ivec2 draw_with = tileset_select_topleft + glm::ivec2{dx, dy};
 
-							int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : 0x80000001)
+							int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000001u))
 									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_H / GameConfig::TILE_SIZE) + draw_with.x));
-							
+
 							map.tile_layers[selected_layer][
 								map.size.x * draw_to.y + draw_to.x
 							] = wvalue;  // <--- this is tile index
@@ -215,7 +215,7 @@ void EditorMode::update(float elapsed) {
 			} else if (left_click.pressed && (tool_mode == ToolMode::RECT)) {
 				// RECT
 				glm::ivec2 cursor_loc = find_tilemap_coord(glm::vec2{mouse_x, mouse_y}, canvas, view_topleft);
-				drawrect_bottomright = cursor_loc;				
+				drawrect_bottomright = cursor_loc;
 			}
 		}
 
@@ -236,7 +236,7 @@ void EditorMode::update(float elapsed) {
 						(y - drawrect_topleft.y) % tileset_select_size.y
 					};
 
-					int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : 0x80000001)
+					int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000001u))
 									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_H / GameConfig::TILE_SIZE) + draw_with.x));
 
 					map.tile_layers[selected_layer][
@@ -301,8 +301,8 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		glm::ivec2 cursor_loc = find_tilemap_coord(glm::vec2{mouse_x, mouse_y}, canvas, view_topleft);
 
 		just_drawn_on = cursor_loc;
-		for (size_t dy = 0; dy < tileset_select_size.y; dy++) {
-			for (size_t dx = 0; dx < tileset_select_size.x; dx++) {
+		for (int dy = 0; dy < tileset_select_size.y; dy++) {
+			for (int dx = 0; dx < tileset_select_size.x; dx++) {
 				glm::ivec2 draw_to = cursor_loc + glm::ivec2{dx, dy};
 				if (!map.in_bounds(draw_to)) continue;
 				glm::ivec2 draw_with = tileset_select_topleft + glm::ivec2{dx, dy};
@@ -310,7 +310,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 				batch.draw(*tileset.get(), Tilemap::tile_rect(draw_with), glm::vec2(draw_to) * float(GameConfig::TILE_SIZE), glm::u8vec4{0x40});
 			}
 		}
-		
+
 	}
 
 	if (tool_mode == ToolMode::RECT && left_click.pressed && !dragging) { // Highlighting rect
@@ -363,7 +363,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		// begin batch
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(panel_size.x), float(panel_size.y), 0.0f);
 		ui_batch.begin(screen_to_clip);
-		
+
 		ui_batch.draw(
 			*tileset.get(),
 			Rect{0.0f, 0.0f, float(TILESET_W), float(TILESET_H)},
@@ -376,14 +376,14 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		// drag
 		ui_batch.draw(
 			*editor_tool_texture,
-			Rect{64.0f, dragging || tool_mode == ToolMode::DRAG ? 32.0f : 0.0f, 32.0f, 32.0f}, 
+			Rect{64.0f, dragging || tool_mode == ToolMode::DRAG ? 32.0f : 0.0f, 32.0f, 32.0f},
 			Rect{0.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 		// pen
 		ui_batch.draw(
 			*editor_tool_texture,
-			Rect{0.0f, tool_mode == ToolMode::PEN ? 32.0f : 0.0f, 32.0f, 32.0f}, 
+			Rect{0.0f, tool_mode == ToolMode::PEN ? 32.0f : 0.0f, 32.0f, 32.0f},
 			Rect{32.0f * icon_scale, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
@@ -391,7 +391,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		// rect
 		ui_batch.draw(
 			*editor_tool_texture,
-			Rect{32.0f, tool_mode == ToolMode::RECT ? 32.0f : 0.0f, 32.0f, 32.0f}, 
+			Rect{32.0f, tool_mode == ToolMode::RECT ? 32.0f : 0.0f, 32.0f, 32.0f},
 			Rect{32.0f * icon_scale * 2.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
@@ -399,7 +399,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		// erasing
 		ui_batch.draw(
 			*editor_tool_texture,
-			Rect{96.0f, erasing ? 32.0f : 0.0f, 32.0f, 32.0f}, 
+			Rect{96.0f, erasing ? 32.0f : 0.0f, 32.0f, 32.0f},
 			Rect{32.0f * icon_scale * 3.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
@@ -425,7 +425,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		for (size_t idx = 0; idx < map.num_layers; ++idx) {
 			ui_batch.draw(
 			*editor_digit_texture,
-			Rect{32.0f * float(idx), layers_activated[idx] ? 32.0f : 0.0f, 32.0f, 32.0f}, 
+			Rect{32.0f * float(idx), layers_activated[idx] ? 32.0f : 0.0f, 32.0f, 32.0f},
 			Rect{32.0f * float(idx) * icon_scale, float(panel_size.x) * 1.3f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
