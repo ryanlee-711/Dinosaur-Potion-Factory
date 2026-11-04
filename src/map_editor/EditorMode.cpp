@@ -36,7 +36,7 @@ static Load< Texture > editor_digit_texture(LoadTagDefault, []() -> Texture cons
 });
 
 EditorMode::EditorMode(std::string path) : map(data_path(path)) {
-	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
+	tileset = std::make_unique< Texture >(data_path("assets/tileset.png"));
 
 	// initialize window scale, OS specific
 	int window_w, window_h, drawable_w, drawable_h;
@@ -108,6 +108,7 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 		for (size_t idx = 0; idx < 8; ++idx) {
 			if (evt.key.key == num_key[idx]) {
 				layers_activated[idx] = !layers_activated[idx];
+				map.layer_visibilities[idx] = layers_activated[idx] ? 1.0f : 0.0f;
 			}
 		}
 	}
@@ -279,7 +280,9 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	batch.begin(map_world_to_clip);
-
+	// fill bg
+	glm::vec2 map_size = map.size_px();
+	batch.fill_rect(Rect{0.0f, 0.0f, map_size.x, map_size.y}, glm::u8vec4{0x10, 0x10, 0x10, 0xff});
 	map.draw(batch, *tileset, view_min, view_max);
 
 	if (layers_activated[0]) {
@@ -327,6 +330,24 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	batch.end();
+
+	{ // draw gridlines
+		DrawLines lines(map_world_to_clip);
+		float spacing = 8.0f * float(GameConfig::TILE_SIZE);
+		glm::vec2 topleft = glm::max(view_min, glm::vec2(0.0f));
+		glm::vec2 botright = glm::min(view_max, map.size_px());
+
+		if (topleft.x < botright.x && topleft.y < botright.y) {
+			glm::u8vec4 linecolor{0x80, 0x80, 0x90, 0xff};
+
+			for (float x = std::ceil(topleft.x / spacing) * spacing; x <= botright.x; x += spacing) {
+				lines.draw(glm::vec3(x, topleft.y, 0.0f), glm::vec3(x, botright.y, 0.0f), linecolor);
+			}
+			for (float y = std::ceil(topleft.y / spacing) * spacing; y <= botright.y; y += spacing) {
+				lines.draw(glm::vec3(topleft.x, y, 0.0f), glm::vec3(botright.x, y, 0.0f), linecolor);
+			}
+		}
+	}
 
 	//--- scale the canvas up to the window ---
 	canvas.present(batch, drawable_size);

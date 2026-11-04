@@ -71,7 +71,7 @@ static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &
 
 std::mt19937 mt(0x64696e6f);   // "dino"
 
-PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
+PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// initialize window scale, OS specific
 	int window_w, window_h, drawable_w, drawable_h;
 	SDL_GetWindowSize(Mode::window, &window_w, &window_h);
@@ -79,7 +79,7 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 	window_scale = float(drawable_w) / float(window_w);
 
 	// initialize tileset
-	tileset = std::make_unique< Texture >(data_path("assets/tileset_new.png"));
+	tileset = std::make_unique< Texture >(data_path("assets/tileset.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
 	player.position = Tilemap::tile_center(glm::ivec2{10, 10}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 
@@ -126,7 +126,7 @@ PlayMode::PlayMode() : map(data_path("maps/demo.map")) {
 
 	// initialize the inventory with two apple and one powder
 	inventory.add("pickaxe", 1);
-	inventory.add("apple", 20);
+	inventory.add("ale", 20);
 	inventory.add("apple_powder", 10);
 	inventory.add("water_bottle", 10);
 	inventory.add("pipe", 10);

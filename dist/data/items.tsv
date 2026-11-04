@@ -25,6 +25,6 @@ pipe	Pipe	assets/sprites/items/placeables/pipe_icon.png	connect containers (dire
 brewer	Brewer	assets/sprites/items/placeables/brewer_icon.png	brews potions
 chest	Chest	assets/sprites/items/placeables/chest_icon.png	contain items
 crusher	Crusher	assets/sprites/items/placeables/crusher_icon.png	crushes raw materials
-baker	Baker	assets/sprites/items/potions/missing_no.png	???
+baker	Baker	assets/sprites/items/missing_no.png	???
 # =================== OTHER =================
 pickaxe	Pickaxe	assets/sprites/items/pickaxe.png	Can break stuff

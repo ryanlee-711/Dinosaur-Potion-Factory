@@ -115,7 +115,7 @@ void Tilemap::draw(Sprites &batch, Texture const &tileset_texture, glm::vec2 vie
 
 	for (int ty = first.y; ty <= last.y; ++ty) {
 		for (int tx = first.x; tx <= last.x; ++tx) {
-			for (size_t layer = 0; layer < tile_layers.size(); ++layer) {
+			for (size_t layer = 1; layer < tile_layers.size(); ++layer) {
 				int32_t index = tile_layers[layer][size_t(ty) * size.x + tx] & (~SOLID_MASK);
 				Rect src{
 					float((index % columns) * TILE_SIZE),
