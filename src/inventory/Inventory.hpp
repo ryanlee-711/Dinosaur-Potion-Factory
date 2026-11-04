@@ -15,28 +15,26 @@ struct Inventory {
 	static constexpr size_t DEFAULT_SLOTS = 10;
 	static constexpr int MAX_STACK = 99; // max stack of an item
 
-	// Rules for moving items into / out of one slot from OUTSIDE the inventory's owner:
-	// the player's mouse and other machines (pipes, push_item). The owner itself ignores
-	// them, e.g. a crusher writes into its own output slot with add_to_slot_range().
+	// Rules for moving items into / out of one slot from OUTSIDE the inventory
 	struct SlotRule {
 		bool can_insert = true;      // false = take-only slot (products, apple tree)
 		bool can_extract = true;     // false = put-only slot
-		uint32_t required_tags = 0;  // 0 = any item; else the item needs at least one of these ItemTag bits
+		uint32_t required_tags = 0;  // 0 = any item
 	};
 
 	explicit Inventory(size_t slot_count = DEFAULT_SLOTS);
 
-	// ---------- Owner-side API (ignores slot rules) ----------
+	// ---------- Owner-side (ignores slot rules) ----------
 
-	// Adds up to 'count' of an item: tops up existing stacks of it first, then
-	// fills empty slots left to right. Returns how many did NOT fit (0 = all added)
+	// Adds up to 'count' of an item, tops up existing stacks of it first, then
+	// fills empty slots left to right. Returns how many did NOT fit
 	int add(item_id_t const &id, int count);
 
 	// Adds to specific slot range [begin, end). Returns how many did NOT fit.
 	int add_to_slot_range(item_id_t const &id, int count, size_t begin, size_t end);
 
 	// Removes exactly 'count' of an item, or nothing at all if there aren't enough.
-	// Returns true if they were removed. Takes from the last stacks first.
+	// Returns true if they were removed
 	bool remove(item_id_t const &id, int count);
 
 	int count(item_id_t const &id) const; // total held across all slots
@@ -44,21 +42,21 @@ struct Inventory {
 	int space_for(item_id_t const &id) const; // how many more of this item would fit
 	bool empty() const;
 
-	// ---------- Slot rules (player / pipe side) ----------
+	// ---------- Slot rules ----------
 
 	void set_rule(size_t slot, SlotRule rule);
 	SlotRule const &rule(size_t slot) const { return rules[slot]; }
 
-	// Would this slot accept this item from outside? (checks can_insert and tags; ignores how full it is)
+	// Checks required tags are satisfied
 	bool can_insert(size_t slot, item_id_t const &id) const;
 	bool can_extract(size_t slot) const;
 
-	// Puts up to 'count' of an item into one slot, obeying its rule and the stack limit.
-	// Returns how many were actually put in.
+	// Puts up to 'count' of an item into one slot
+	// Returns how many were put in
 	int insert_into_slot(size_t slot, item_id_t const &id, int count);
 
-	// Takes up to 'count' items out of one slot, obeying its rule.
-	// Returns how many were actually taken (their id is whatever the slot held).
+	// Takes up to 'count' items out of one slot
+	// Returns how many were actually taken
 	int extract_from_slot(size_t slot, int count);
 
 	// ---------- helpers ----------
@@ -79,7 +77,7 @@ struct Inventory {
 
 	int space_for_in_slot_range(item_id_t const &id, size_t begin, size_t end) const; // how many more of this item would fit
 
-	size_t size() const { return slots.size(); } // number of slots (full or empty)
+	size_t size() const { return slots.size(); }
 	ItemRecord const &operator[](size_t i) const { return slots[i]; }
 
 	std::vector< ItemRecord >::const_iterator begin() const { return slots.begin(); }

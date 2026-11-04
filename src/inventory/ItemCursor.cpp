@@ -52,7 +52,7 @@ ItemCursor::Result ItemCursor::click(Inventory &inv, size_t slot, bool shift) {
 	bool slot_has_items = !inv.slot_empty(slot);
 
 	if (shift) {
-		if (!empty()) return put_all(inv, slot); //holding: put the whole stack down
+		if (!empty()) return put_all(inv, slot);
 		if (!slot_has_items) return Result::Nothing;
 		if (!inv.can_extract(slot)) return Result::CantExtract;
 		return take(inv, slot, Inventory::MAX_STACK) > 0 ? Result::Moved : Result::Nothing;
@@ -68,14 +68,14 @@ ItemCursor::Result ItemCursor::click(Inventory &inv, size_t slot, bool shift) {
 	bool same_item = slot_has_items && inv.slots[slot].first == held.first;
 
 	if (is_origin(inv, slot)) {
-		//the slot we picked up from: pick up one more (if it still has any)
+		//the slot we picked up from: pick up one more
 		if (!same_item) return Result::Nothing;
 		return take(inv, slot, 1) > 0 ? Result::Moved : Result::Nothing;
 	}
 
-	//any other slot: put one down (it must be empty or hold the same item)
+	//any other slot: put one down
 	if (!inv.can_insert(slot, held.first)) return Result::CantInsert;
-	if (slot_has_items && !same_item) return Result::Nothing; //different item: use shift-click to swap
+	if (slot_has_items && !same_item) return Result::Nothing;
 	return put(inv, slot, 1) > 0 ? Result::Moved : Result::Nothing;
 }
 

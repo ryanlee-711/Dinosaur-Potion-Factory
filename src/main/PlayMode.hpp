@@ -31,6 +31,9 @@ struct PlayMode : Mode {
 
 	//update subroutines (make code cleaner)
 	void do_world_interaction(float elapsed);
+	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
+	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
+	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
 	void remove_objects(float elapsed);
 
 	// Helper methods
@@ -51,7 +54,7 @@ struct PlayMode : Mode {
 	int hotbar_selected = -1;   // -1 = unselected
 
 	//----- inventory mouse UI -----
-	ItemCursor cursor;  // items held on the mouse (click / shift-click, see ItemCursor.hpp)
+	ItemCursor cursor;  // items held on the mouse while a panel is open
 
 	// Where one visible slot is on screen. Rebuilt every draw; also used for mouse hit-testing.
 	struct SlotView {
@@ -79,6 +82,7 @@ struct PlayMode : Mode {
 		int downs = 0;
 		bool pressed = false;
 		bool popped = false;
+		bool latched = false;  // a press event arrived since the last update
 	} left_click, right_click;
 	glm::ivec2 hovered_coord = glm::ivec2{0};
 

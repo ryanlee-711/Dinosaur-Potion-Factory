@@ -14,7 +14,6 @@ int Inventory::add_to_slot_range(item_id_t const &id, int count, size_t begin, s
 	if (id.empty() || count <= 0) return 0;
 	end = std::min(end, slots.size());
 
-	//first top up stacks that already hold this item:
 	for (size_t i = begin; i < end && count > 0; ++i) {
 		auto &[slot_id, slot_count] = slots[i];
 		if (slot_count <= 0 || slot_id != id || slot_count >= MAX_STACK) continue;
@@ -23,7 +22,6 @@ int Inventory::add_to_slot_range(item_id_t const &id, int count, size_t begin, s
 		count -= moved;
 	}
 
-	//then start new stacks in empty slots:
 	for (size_t i = begin; i < end && count > 0; ++i) {
 		auto &[slot_id, slot_count] = slots[i];
 		if (slot_count > 0) continue;
@@ -38,9 +36,8 @@ int Inventory::add_to_slot_range(item_id_t const &id, int count, size_t begin, s
 
 bool Inventory::remove(item_id_t const &id, int count) {
 	if (count <= 0) return true;
-	if (this->count(id) < count) return false; //all or nothing
+	if (this->count(id) < count) return false;
 
-	//take from the last stacks first, so the first slots (hotbar) stay put
 	for (auto it = slots.rbegin(); it != slots.rend() && count > 0; ++it) {
 		auto &[slot_id, slot_count] = *it;
 		if (slot_id != id) continue;

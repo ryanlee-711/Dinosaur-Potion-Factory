@@ -36,7 +36,7 @@ public:
 	// The area right in front of the feet, in the facing direction.
 	// Whatever entity this overlaps is what pressing E interacts with.
 	Rect interact_box() const;
-	
+
 	// The tile directly in front of the dwarf (for tile-based things later, like placing machines).
 	glm::ivec2 facing_tile() const;
 

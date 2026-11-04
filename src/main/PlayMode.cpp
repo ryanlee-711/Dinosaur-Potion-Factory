@@ -39,7 +39,6 @@ static constexpr float CONTAINER_CLOSE_DISTANCE = float(GameConfig::TILE_SIZE);
 static constexpr float SECOND_PER_DAMAGE = 0.25f;
 
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
-[[maybe_unused]]
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
 	Entity *best = nullptr;
 	float best_area = 0.0f;
@@ -155,11 +154,23 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	// Clicks are handled here, as events, so even very fast clicks are never missed.
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT) {
 		if (SlotView const *hit = slot_at(glm::vec2(evt.button.x, evt.button.y)); hit != nullptr) {
-			bool shift = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
-			show_slot_result(cursor.click(*hit->inventory, hit->slot, shift));
+			if (opened_inventory == nullptr) {
+				//no panel open: clicking the hotbar selects that slot (click again to unselect), like the number keys
+				int slot = int(hit->slot);
+				hotbar_selected = (hotbar_selected == slot) ? -1 : slot;
+			} else {
+				//a panel is open: move items with the cursor
+				bool shift = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+				show_slot_result(cursor.click(*hit->inventory, hit->slot, shift));
+			}
 			ui_mouse_down = true; //the world ignores this press until it's released
 			return true;
 		}
+		left_click.latched = true; //for the world: remembered until the next update, so quick clicks aren't missed
+		return false;
+	}
+	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_RIGHT) {
+		right_click.latched = true;
 		return false;
 	}
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_LEFT && ui_mouse_down) {
@@ -290,7 +301,8 @@ void PlayMode::do_world_interaction(float elapsed) {
 
 	float mx, my;
 	SDL_MouseButtonFlags buttons = SDL_GetMouseState(&mx, &my);
-	bool left_clicked = (buttons & SDL_BUTTON_LMASK) != 0;
+	bool left_clicked = (buttons & SDL_BUTTON_LMASK) != 0 || left_click.latched;
+	left_click.latched = false;
 	if (left_clicked) {
 		left_click.downs += 1;
 		left_click.pressed = true;
@@ -300,7 +312,8 @@ void PlayMode::do_world_interaction(float elapsed) {
 		left_click.popped = true;
 	}
 
-	bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0;
+	bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
+	right_click.latched = false;
 	if (right_clicked) {
 		right_click.downs += 1;
 		right_click.pressed = true;
@@ -310,67 +323,47 @@ void PlayMode::do_world_interaction(float elapsed) {
 		right_click.popped = true;
 	}
 
-	// The inventory UI owns the mouse while it points at a slot or a press on a slot is still held:
-	// clicks then don't also do things in the world.
-	// While items are held on the cursor, left click doesn't place/break either, but right click
-	// and E / Space can still interact (e.g. open another chest to put the items in).
+	// The inventory UI owns the mouse while it points at a slot or a press on a slot is still held.
+	// While an inventory panel is open, the hotbar can't be used in the world: left click doesn't
+	// place/use/break anything (the mouse is for moving items). Right click and E / Space can
+	// still interact.
 	bool over_ui = mouse_over_ui();
-	bool carrying = !cursor.empty();
-	if (over_ui || carrying) break_timer = 0.0f;
-	bool left_new = !over_ui && !carrying && left_click.downs == 1;
-	bool left_held = !over_ui && !carrying && left_click.downs > 1;
+	bool panel_open = (opened_inventory != nullptr);
+	if (over_ui || panel_open) break_timer = 0.0f;
+	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
+	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
 	bool right_new = !over_ui && right_click.downs == 1;
 
 	item_id_t item_id = inventory.get_slot_id(hotbar_selected);
 	glm::ivec2 coord = find_tilemap_coord(glm::vec2{mx, my}, canvas, camera.view_min(canvas.size));
 	hovered_coord = coord;
 
+	// E / Space: interact with whatever the dwarf is facing. Pressing it again with a panel open closes the panel.
+	if (input.interact.downs == 1) {
+		interact_facing();
+	}
+
 	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) <= 6) {
 		// get left click target
-		if ((left_new && item_id != "pickaxe") || right_new || input.interact.downs == 1) {
+		if ((left_new && item_id != "pickaxe") || right_new) {
 			auto entity = entity_at(entities, coord);
 
-			if (hotbar_selected != -1 && item_id != "" && item_id != "pickaxe" && !carrying) {
+			if (!panel_open && hotbar_selected != -1 && item_id != "" && item_id != "pickaxe") {
 				// cases A. player has a selected item. Try to use it
 				glm::vec2 world_pos = coord * GameConfig::TILE_SIZE;
-				// TODO: Use some more efficient registry?
 				if (item_id == "ale") {
 					player.add_effect(0, 30.0f);
 					inventory.remove("ale", 1);
 				} else if (entity == nullptr) {
-					if (item_id == "chest") {
-						inventory.remove("chest", 1);
-						add_entity<Chest>(entities, world_pos);
-					} else if (item_id == "crusher") {
-						inventory.remove("crusher", 1);
-						add_entity<Crusher>(entities, world_pos);
-					} else if (item_id == "brewer") {
-						inventory.remove("brewer", 1);
-						add_entity<Cauldron>(entities, world_pos);
-					} else if (item_id == "pipe") {
-						inventory.remove("pipe", 1);
-						add_entity<Pipe>(entities, world_pos);
+					if (place_machine(item_id, world_pos)) {
+						inventory.remove(item_id, 1);
 					}
 				} else {
 					message = "Action failed";
 					message_timer = MESSAGE_SECONDS;
 				}
 			} else {
-				// cases B. player has no active selected item
-				// likely to do with interaction. If nothing to interact with, return
-				if (!entity) return;
-				auto *target = dynamic_cast< IInteractable * >(entity);
-				if (!target) return;
-				IInteractable::Context ctx{player, inventory};
-				target->on_interact(ctx);
-				if (ctx.open_container != nullptr) {
-					opened_inventory = ctx.open_container;
-					opened_entity = entity;
-				}
-				if (!ctx.message.empty()) {
-					message = ctx.message;
-					message_timer = MESSAGE_SECONDS;
-				}
+				interact_with(entity);
 			}
 		} else if (left_held) {
 			// being held for more than one frames
@@ -403,8 +396,60 @@ void PlayMode::do_world_interaction(float elapsed) {
 
 	left_click.popped = false;
 	right_click.popped = false;
+}
 
+bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
+	if (id == "chest") {
+		add_entity<Chest>(entities, world_pos);
+	} else if (id == "crusher") {
+		add_entity<Crusher>(entities, world_pos);
+	} else if (id == "brewer") {
+		add_entity<Cauldron>(entities, world_pos);
+	} else if (id == "pipe") {
+		add_entity<Pipe>(entities, world_pos);
+	} else {
+		return false; //not a machine
+	}
+	return true;
+}
 
+bool PlayMode::interact_with(Entity *entity) {
+	if (entity == nullptr || entity->removed) return false;
+	auto *target = dynamic_cast< IInteractable * >(entity);
+	if (target == nullptr) return false;
+
+	if (opened_inventory != nullptr && entity != opened_entity) {
+		close_container(); //interacting with something else: close the old panel
+	}
+
+	IInteractable::Context ctx{player, inventory};
+	target->on_interact(ctx);
+	if (ctx.open_container != nullptr) {
+		opened_inventory = ctx.open_container;
+		opened_entity = entity;
+	}
+	if (!ctx.message.empty()) {
+		message = ctx.message;
+		message_timer = MESSAGE_SECONDS;
+	}
+	return true;
+}
+
+void PlayMode::interact_facing() {
+	//what's in front of the dwarf: the interactable overlapping the reach box the most,
+	//else whatever occupies the facing tile
+	Entity *target = find_interact_target(player.interact_box(), entities);
+	if (target == nullptr) {
+		Entity *in_front = entity_at(entities, player.facing_tile());
+		if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) target = in_front;
+	}
+
+	//a panel is open then E closes it
+	if (opened_inventory != nullptr && (target == nullptr || target == opened_entity)) {
+		close_container();
+		return;
+	}
+	interact_with(target); //(closes the old panel first if it's a different entity)
 }
 
 void PlayMode::remove_objects(float elapsed) {
