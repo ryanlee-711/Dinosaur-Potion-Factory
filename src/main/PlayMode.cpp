@@ -454,7 +454,7 @@ void PlayMode::interact_facing() {
 	//else whatever occupies the facing tile
 	Entity *target = find_interact_target(player.interact_box(), entities);
 	if (target == nullptr) {
-		Entity *in_front = entity_at(entities, player.facing_tile());
+		Entity *in_front = entity_at(player.facing_tile());
 		if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) target = in_front;
 	}
 
@@ -483,13 +483,19 @@ void PlayMode::remove_objects(float elapsed) {
 		// dangerous (undefined?) behavior
 		for (auto &entity : world.entities) {
 			if (!entity->removed) continue;
-			auto *target = dynamic_cast< IInventoryHolder * >(entity.get());
-			if (!target) continue;;
-			// generate a bunch of items if inventory non-empty
-			Inventory *dropped = target->get_inventory();
-			for (auto const &item_record: *dropped) {
-				if (item_record.second <= 0) continue;
-				buffered_item_records.emplace_back(item_record, entity.get()->position);
+			if (auto *target = dynamic_cast< IInventoryHolder * >(entity.get()); target) {
+				// generate a bunch of items if inventory non-empty
+				Inventory *dropped = target->get_inventory();
+				for (auto const &item_record: *dropped) {
+					if (item_record.second <= 0) continue;
+					buffered_item_records.emplace_back(item_record, entity.get()->position);
+				}
+			}
+			if (auto *target = dynamic_cast<IBreakable *>(entity.get()); target) {
+				item_id_t drop_id = target->get_drop_id();
+				if (drop_id != "") {
+					buffered_item_records.emplace_back(ItemRecord{drop_id, 1}, entity.get()->position);
+				}
 			}
 		}
 

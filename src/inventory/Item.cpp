@@ -30,19 +30,19 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		using namespace ItemTag;
 
 		// ingredients
-		add("apple", "Apple", "N/A", "assets/test/apple.png", Crushable | Brewable | Burnable);
-		add("apple_powder", "Apple Powder", "N/A", "assets/test/apple_powder.png", Brewable);
+		add("apple", "Apple", "N/A", "assets/sprites/items/ingredients/apple.png", Crushable | Brewable | Burnable);
+		add("apple_powder", "Apple Powder", "N/A", "assets/sprites/items/ingredients/apple_powder.png", Brewable);
 
 		// drinks
-		add("water_bottle", "Water Bottle", "Just water",         "assets/test/bottle.png",      Liquid);
-		add("ale", "Ale", "Non-alchohol drink", "assets/test/ale.png", Potion);
-		add("apple_juice", "Apple Juice", "Healthy", "assets/test/apple_juice.png", Potion);
+		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
+		add("ale", "Ale", "Non-alchohol drink", "assets/sprites/items/potions/ale.png", Potion);
+		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion);
 
 		// placeables
-		add("pipe", "Pipe", "N/A", "assets/test/pipe_icon.png", Placeable);
-		add("chest", "Chest", "N/A", "assets/test/chest_icon.png", Placeable);
-		add("crusher", "Crusher", "N/A", "assets/test/crusher_icon.png", Placeable);
-		add("brewer", "brewer", "N/A", "assets/test/brewer_icon.png", Placeable);
+		add("pipe", "Pipe", "N/A", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
+		add("chest", "Chest", "N/A", "assets/sprites/items/placeables/chest_icon.png", Placeable);
+		add("crusher", "Crusher", "N/A", "assets/sprites/items/placeables/crusher_icon.png", Placeable);
+		add("brewer", "brewer", "N/A", "assets/sprites/items/placeables/brewer_icon.png", Placeable);
 
 		// tools
 		add("pickaxe", "Pickaxe", "A sturdy pick", "assets/sprites/items/pickaxe.png", Tool);

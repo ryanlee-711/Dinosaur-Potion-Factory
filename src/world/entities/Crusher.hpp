@@ -29,6 +29,9 @@ public:
     PortType get_port(glm::ivec2 grid_coord) override;
     int push_item(ItemRecord item_record) override;
 
+    // IBreakable
+    item_id_t get_drop_id() override {return "crusher";}
+
 
 private:
     Inventory inventory;

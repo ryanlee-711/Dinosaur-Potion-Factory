@@ -75,4 +75,5 @@ struct IBreakable {
      */
     virtual ~IBreakable() = default;
     virtual int get_hardness() {return 3;};
+    virtual item_id_t get_drop_id() = 0;
 };
