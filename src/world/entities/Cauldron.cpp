@@ -18,8 +18,6 @@ Cauldron::Cauldron() : inventory(3) {
 }
 
 void Cauldron::update(FrameInput const &input, float elapsed, World const &world) {
-    auto const &entities = world.entities;
-
     bool making_ale = inventory.count("water_bottle") > 0 && inventory.count("apple_powder") >= 2
             && inventory.space_for_in_slot_range("ale", 2, 3) >= 1;
 
@@ -65,7 +63,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     auto source_tile = origin + glm::ivec2(1, 0);
     auto target_tile = origin + glm::ivec2{2, 0};
 
-    Entity *target = entity_at(entities, target_tile);
+    Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;
 
     // get IItemPort!

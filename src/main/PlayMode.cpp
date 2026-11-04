@@ -81,7 +81,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// initialize tileset
 	tileset = std::make_unique< Texture >(data_path("assets/tileset.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
-	player.position = Tilemap::tile_center(glm::ivec2{10, 10}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
@@ -218,7 +218,7 @@ void PlayMode::update(float elapsed) {
 	}
 
 	//everything entities can collide with this frame:
-	World world{map, entities, player};
+	World world{map, entities, player, coord_to_entities};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -229,12 +229,15 @@ void PlayMode::update(float elapsed) {
 		close_container();
 	}
 
+	// Rebuild entity mapping (before world interaction)
+	rebuild_coord_to_entities();
+
 	// Handle interact (only on the first frame E is down):
 	do_world_interaction(elapsed);
 
 	if (input.destroy.downs == 1) {
 		glm::ivec2 target_tile = player.facing_tile();
-		Entity *target = entity_at(entities, target_tile);
+		Entity *target = world.entity_at(target_tile);
 		if (auto breakable = dynamic_cast< IInteractable * >(target); breakable != nullptr) {
 			target->removed = true;
 		}
@@ -336,6 +339,12 @@ void PlayMode::do_world_interaction(float elapsed) {
 
 	item_id_t item_id = inventory.get_slot_id(hotbar_selected);
 	glm::ivec2 coord = find_tilemap_coord(glm::vec2{mx, my}, canvas, camera.view_min(canvas.size));
+
+	// overwrite coords when player used interact key instead (compare Stardew Valley again)
+	if (input.interact.downs == 1) {
+		coord = player.facing_tile();
+	}
+	// This variable is used by drawing for highlight cursor
 	hovered_coord = coord;
 
 	// E / Space: interact with whatever the dwarf is facing. Pressing it again with a panel open closes the panel.
@@ -343,10 +352,15 @@ void PlayMode::do_world_interaction(float elapsed) {
 		interact_facing();
 	}
 
-	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) <= 6) {
+	// E / Space: interact with whatever the dwarf is facing. Pressing it again with a panel open closes the panel.
+	if (input.interact.downs == 1) {
+		interact_facing();
+	}
+
+	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - coord)) <= 6) {
 		// get left click target
 		if ((left_new && item_id != "pickaxe") || right_new) {
-			auto entity = entity_at(entities, coord);
+			auto entity = entity_at(coord);
 
 			if (!panel_open && hotbar_selected != -1 && item_id != "" && item_id != "pickaxe") {
 				// cases A. player has a selected item. Try to use it
@@ -368,7 +382,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 		} else if (left_held) {
 			// being held for more than one frames
 			// start breaking things. But first, find entity
-			auto entity = entity_at(entities, coord);
+			auto entity = entity_at(coord);
 			auto *target = dynamic_cast< IBreakable * >(entity);
 
 			if (target != nullptr && target == currently_breaking && item_id == "pickaxe") {
@@ -453,7 +467,7 @@ void PlayMode::interact_facing() {
 }
 
 void PlayMode::remove_objects(float elapsed) {
-	World world{map, entities, player};
+	World world{map, entities, player, coord_to_entities};
 	// Remove entities that asked to be removed this frame.
 	if (opened_entity != nullptr && opened_entity->removed) {
 		//its panel is open: close it before the inventory it points at is deleted
@@ -733,4 +747,30 @@ glm::ivec2 PlayMode::find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_
 	// 3. to world pos, then grid
 	glm::vec2 world_pos = screen_pos + camera_topleft;
 	return Tilemap::tile_at_point(world_pos);
+}
+
+void PlayMode::rebuild_coord_to_entities() {
+	coord_to_entities.clear();
+	for (auto &entity : entities) {
+		std::vector<glm::ivec2> occupied_tiles;
+		entity->get_occupied(&occupied_tiles);
+
+		for (auto const &tile: occupied_tiles) {
+			if (coord_to_entities.find(tile) != coord_to_entities.end()) {
+				coord_to_entities.at(tile).emplace_back(entity.get());
+			} else {
+				coord_to_entities[tile] = std::vector<Entity *>{ };
+				coord_to_entities.at(tile).emplace_back(entity.get());
+			}
+		}
+	}
+}
+
+ auto PlayMode::entity_at(glm::ivec2 tile) const -> Entity* {
+	if (coord_to_entities.find(tile) != coord_to_entities.end()) {
+		auto &entities = coord_to_entities.at(tile);
+		if (entities.size() == 0) return nullptr;
+		return entities[0];
+	}
+	return nullptr;
 }

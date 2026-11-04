@@ -9,6 +9,17 @@ Kind of stuff
 - Products
 - Machines
 
+# Layer convention
+0=DATA
+1=GROUND
+2=GROUND OVERLAY
+3=WALL
+4=WALL OVERLAY
+5=DECOR?
+6=???
+7=???
+
+
 ### Game progression
 
 #### (1) Cave I

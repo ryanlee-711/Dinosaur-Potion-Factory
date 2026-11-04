@@ -45,16 +45,3 @@ struct Entity {
 		return (collision_mask & other.collision_mask) != 0;
 	}
 };
-
-inline auto entity_at(std::vector<std::unique_ptr<Entity>> const &entities, glm::ivec2 tile) -> Entity* {
-    for (auto const &entity : entities) {
-        std::vector<glm::ivec2> ans;
-        entity->get_occupied(&ans);
-        for (glm::ivec2 &candidate : ans) {
-            if (candidate == tile) {
-                return entity.get();
-            }
-        }
-    }
-    return nullptr;
-}

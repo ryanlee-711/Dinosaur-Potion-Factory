@@ -18,8 +18,6 @@ Crusher::Crusher() : inventory(2) {
 }
 
 void Crusher::update(FrameInput const &input, float elapsed, World const &world) {
-    auto const &entities = world.entities;
-
     // update frame animation
     frame = 3 - std::clamp(static_cast<int>(std::round(std::abs((processing_timer - CRUSH_COOLDOWN / 2.0f) * 6.0f))), 0, 3);
 
@@ -54,7 +52,7 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
     auto source_tile = origin + glm::ivec2(1, 0);
     auto target_tile = origin + glm::ivec2{2, 0};
 
-    Entity *target = entity_at(entities, target_tile);
+    Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;
 
     // get IItemPort!

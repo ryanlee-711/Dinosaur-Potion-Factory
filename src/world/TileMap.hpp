@@ -5,7 +5,9 @@
 #include <glm/glm.hpp>
 
 #include <cstdint>
+#include <cstddef>
 #include <deque>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -54,4 +56,14 @@ struct Tilemap {
 
 	// Used by editor
 	void save();
+};
+
+struct TileHash {
+	std::size_t operator()(glm::ivec2 const &tile) const {
+		// https://stackoverflow.com/questions/22826326/good-hashcode-function-for-2d-coordinates
+
+		size_t tmp = static_cast<size_t>(tile.y * 2 + tile.x + 1);
+        size_t value = 4 * static_cast<size_t>(tile.x) + tmp * tmp;
+		return std::hash<size_t>{}(value);		
+	}
 };
