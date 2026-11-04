@@ -12,15 +12,15 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 });
 
 AppleTree::AppleTree() : inventory(1) {
-
-};
+    inventory.set_rule(0, Inventory::SlotRule{ .can_insert = false });
+}
 
 void AppleTree::update(FrameInput const &input, float elapsed, World const &world) {
     regrow_timer -= elapsed;
     if (regrow_timer <= 0.0f) {
         regrow_timer = REGROW_COOLDOWN;
         inventory.add("apple", 1);
-    } 
+    }
 
     return;
 }

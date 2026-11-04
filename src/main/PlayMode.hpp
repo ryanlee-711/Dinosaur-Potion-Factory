@@ -10,6 +10,9 @@
 #include "../world/TileMap.hpp"
 #include "../world/Entity.hpp"
 #include "../inventory/Item.hpp"
+#include "../inventory/ItemCursor.hpp"
+#include "../world/Components.hpp"
+#include "Rect.hpp"
 
 #include <glm/glm.hpp>
 
@@ -26,9 +29,15 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	//update subroutines
+	void do_world_interaction(float elapsed);
+	void remove_objects(float elapsed);
+
 	// Helper methods
 	template <typename EntityClass>
 	void add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position);
+
+	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &canvas, glm::vec2 camera_topleft);
 
 	//----- world -----
 	Tilemap map;
@@ -39,10 +48,45 @@ struct PlayMode : Mode {
 	Inventory inventory;                     // the player's hotbar
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
-	bool inventory_taking = false;  // switch the flow direction between inventory <-> opened inventory.
 	int hotbar_selected = -1;   // -1 = unselected
+
+	//----- inventory mouse UI -----
+	ItemCursor cursor;  // items held on the mouse
+
+	// Where one visible slot is on screen
+	struct SlotView {
+		Inventory *inventory;
+		size_t slot;
+		Rect rect;  // drawable pixels
+	};
+	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
+
+	// A press that started on a slot
+	struct UiPress {
+		bool active = false;
+		Inventory *inventory = nullptr; // slot pressed on
+		size_t slot = 0;
+		bool shift = false;             // shift held at press time
+	} ui_press;
+
+	void layout_ui_slots(glm::uvec2 drawable_size, float slot_size);
+	SlotView const *slot_at(glm::vec2 window_pos) const;
+	bool mouse_over_ui() const;
+	void show_slot_result(ItemCursor::Result result);
+	void return_cursor_items();           // cursor -> player inventory
+	void close_container();               // close the open panel and returns cursor items
 	//----- input -----
 	FrameInput input;
+
+	//----- world ineraction -----
+	IBreakable *currently_breaking = nullptr;
+	float break_timer = 0.0f;
+	struct MouseButton {
+		int downs = 0;
+		bool pressed = false;
+		bool popped = false;
+	} left_click, right_click;
+	glm::ivec2 hovered_coord = glm::ivec2{0};
 
 	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
 	std::string message;
@@ -53,6 +97,7 @@ struct PlayMode : Mode {
 	Sprites batch;
 	Sprites ui_batch;
 	PixelCanvas canvas;
+	float window_scale = 1.0f;   // related to retina schenanigans
 
 	bool show_debug = false; // toggled with F3
 };

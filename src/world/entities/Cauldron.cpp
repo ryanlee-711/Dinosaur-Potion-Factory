@@ -12,7 +12,9 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 Cauldron::Cauldron() : inventory(3) {
-
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid });
+    inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+    inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
 }
 
 void Cauldron::update(FrameInput const &input, float elapsed, World const &world) {
@@ -20,7 +22,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
 
     bool making_ale = inventory.count("water_bottle") > 0 && inventory.count("apple_powder") >= 2
             && inventory.space_for_in_slot_range("ale", 2, 3) >= 1;
-    
+
     bool making_juice = inventory.count("water_bottle") > 0 && inventory.count("apple") >= 1
             && inventory.space_for_in_slot_range("apple_juice", 2, 3) >= 1;
 
@@ -30,7 +32,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     } else {
         processing_timer = BREW_COOLDOWN;
     }
-    
+
     if (processing_timer <= 0.0f) {
         // Two apple powder + 1 water bottle
         if (making_ale) {
@@ -138,8 +140,10 @@ int Cauldron::push_item(ItemRecord item_record) {
         return 0;
     }
 
-    if (item_record.first == "water_bottle") {
-        return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
+    for (size_t slot = 0; slot < 2; ++slot) {
+        if (!inventory.can_insert(slot, item_record.first)) continue;
+        int moved = inventory.insert_into_slot(slot, item_record.first, 1);
+        if (moved > 0) return moved;
     }
-    return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 1, 2);
+    return 0;
 }
