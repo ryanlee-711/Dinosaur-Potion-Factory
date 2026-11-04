@@ -352,11 +352,6 @@ void PlayMode::do_world_interaction(float elapsed) {
 		interact_facing();
 	}
 
-	// E / Space: interact with whatever the dwarf is facing. Pressing it again with a panel open closes the panel.
-	if (input.interact.downs == 1) {
-		interact_facing();
-	}
-
 	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - coord)) <= 6) {
 		// get left click target
 		if ((left_new && item_id != "pickaxe") || right_new) {
