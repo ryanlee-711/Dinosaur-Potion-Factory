@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <string>
 #include "../inventory/Item.hpp"
-#include "../main/PlayMode.hpp"
 
 struct Player;
 
@@ -70,9 +69,10 @@ struct IItemPort {
 struct IBreakable {
     /* 
      * Entities that can be broken.
-     * Will have hardnes/duration in the future; now, just empty class.
+     * Have a hardness. There is no callback for breaking, because it entirely resides in PlayMode.
      * Inheritance = breakable.
      *
      */
     virtual ~IBreakable() = default;
+    virtual int get_hardness() {return 3;};
 };

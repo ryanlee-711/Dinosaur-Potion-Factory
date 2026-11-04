@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../starter/GL.hpp"
+#include "../main/GameConfig.hpp"
 
 #include <glm/glm.hpp>
 
@@ -32,6 +33,8 @@ struct PixelCanvas {
 
 	glm::uvec2 size = glm::uvec2(0); // canvas size in art pixels
 	int scale = 1;                   // screen pixels per art pixel
+
+	int target_height = GameConfig::TARGET_VIEW_HEIGHT;  // Default is 270
 
 private:
 	GLuint framebuffer = 0;
