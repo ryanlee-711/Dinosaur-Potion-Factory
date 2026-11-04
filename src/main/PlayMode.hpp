@@ -51,7 +51,7 @@ struct PlayMode : Mode {
 	int hotbar_selected = -1;   // -1 = unselected
 
 	//----- inventory mouse UI -----
-	ItemCursor cursor;  // items held on the mouse (click / shift-click / drag, see ItemCursor.hpp)
+	ItemCursor cursor;  // items held on the mouse (click / shift-click, see ItemCursor.hpp)
 
 	// Where one visible slot is on screen. Rebuilt every draw; also used for mouse hit-testing.
 	struct SlotView {
@@ -61,17 +61,11 @@ struct PlayMode : Mode {
 	};
 	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
 
-	// A left press that started on a slot (or anywhere while holding items), waiting for its release.
-	struct UiPress {
-		bool active = false;
-		Inventory *inventory = nullptr; // slot pressed on (nullptr = pressed outside the slots)
-		size_t slot = 0;
-		bool shift = false;             // shift held at press time
-	} ui_press;
+	bool ui_mouse_down = false;  // a left press landed on a slot and hasn't been released yet
 
 	void layout_ui_slots(glm::uvec2 drawable_size, float slot_size);
 	SlotView const *slot_at(glm::vec2 window_pos) const; // window (SDL event) coordinates
-	bool mouse_over_ui() const;           // pointing at a slot or mid slot-press: the world ignores mouse buttons
+	bool mouse_over_ui() const;           // pointing at a slot or holding a slot press: the world ignores mouse buttons
 	void show_slot_result(ItemCursor::Result result);
 	void return_cursor_items();           // cursor -> player inventory (overflow dropped on the ground)
 	void close_container();               // close the open panel; returns cursor items
