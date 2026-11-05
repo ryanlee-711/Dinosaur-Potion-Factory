@@ -85,43 +85,39 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
-	for (size_t i = 0; i < 2; ++i) {
-		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * i + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
-	}
 
 	for (size_t i = 0; i < 4; ++i) {
 		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((3 * i + 19.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 	}
 
 	{
 		entities.push_back(std::make_unique<Crusher>());
-		entities.back()->position = glm::vec2((3 * 2 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * 2 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 
 		entities.push_back(std::make_unique<Cauldron>());
-		entities.back()->position = glm::vec2((3 * 3 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * 3 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 
 		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 4 + 17.0f) * TILE_SIZE, 17.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * 4 + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE);
 	}
 	{
 		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 3 + 16.0f) * TILE_SIZE, 15.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE);
 
 		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((3 * 3 + 17.0f) * TILE_SIZE, 16.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3 * 3 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 		if (auto* pipe = dynamic_cast<Pipe*>(entities.back().get())) {
 			pipe->configure(1);
 		}
 
 		entities.push_back(std::make_unique<AppleTree>());
-		entities.back()->position = glm::vec2((39.0f) * TILE_SIZE, 8.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE);
 
 	}
 	{ // Add one item entity somewhere
 		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
-		entities.back()->position = glm::vec2((25.0f) * TILE_SIZE, 16.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE);
 	}
 
 	// initialize the inventory with two apple and one powder
