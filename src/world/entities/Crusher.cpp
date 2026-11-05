@@ -191,5 +191,5 @@ int Crusher::push_item(ItemRecord item_record) {
 
 float Crusher::get_progress() const {
     if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
-    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0,0f, 1,0f);
+    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
 }

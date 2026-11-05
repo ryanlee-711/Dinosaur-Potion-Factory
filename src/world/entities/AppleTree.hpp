@@ -21,9 +21,9 @@ public:
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
 private:
-    static constexpr float DROP_COOLDOWN = 5.0f;   // seconds between apples
-    static constexpr int MAX_NEARBY_APPLES = 6;    // stop dropping once this many apples lie around the tree
-    static constexpr float DROP_RADIUS = 2.0f * GameConfig::TILE_SIZE;  // apples land up to ~2 tiles away
+    static constexpr float DROP_COOLDOWN = 10.0f;   // seconds between apples
+    static constexpr int MAX_NEARBY_APPLES = 5;    // stop dropping once this many apples lie around the tree
+    static constexpr float DROP_RADIUS = 1.5f * GameConfig::TILE_SIZE;  // apples land up to ~2 tiles away
     static constexpr float COUNT_RADIUS = 3.0f * GameConfig::TILE_SIZE; // apples this close count as "nearby"
 
     float drop_timer = DROP_COOLDOWN;

@@ -73,12 +73,3 @@ void AppleTree::get_occupied(std::vector<glm::ivec2> *ans) const {
 	ans->emplace_back(tile);
     ans->emplace_back(tile + glm::ivec2{1, 0});
 }
-
-void AppleTree::on_interact(Context &ctx) {
-    // should trigger inventory display through some mechanism
-    ctx.open_container = &inventory;
-}
-
-auto AppleTree::get_inventory() -> Inventory* {
-    return &inventory;
-}

@@ -82,4 +82,4 @@ struct IProgress {
     // Machine that work over time like brewer
     virtual ~IProgress() = default;
     virtual float get_progress() const = 0;
-}
+};
