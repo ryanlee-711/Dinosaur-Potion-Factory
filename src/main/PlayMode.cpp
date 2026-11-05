@@ -6,6 +6,7 @@
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
+#include "../starter/PathFont.hpp"
 
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
@@ -38,6 +39,10 @@ static constexpr float CONTAINER_CLOSE_DISTANCE = float(GameConfig::TILE_SIZE);
 //How long it takes to cause one damage by pickaxe to a machine
 static constexpr float SECOND_PER_DAMAGE = 0.25f;
 
+// Reach distances
+static constexpr float PLACE_REACH = 6.0f;
+static constexpr float TOOL_REACH = 3.0f;
+
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
 	Entity *best = nullptr;
@@ -67,6 +72,26 @@ static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &
 	std::string text = std::to_string(record.second);
 	lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 	lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+}
+
+//Width of 'text' as DrawLines::draw_text would draw it at height 1 (same glyph lookup), for centering text.
+static float text_width(std::string const &text) {
+	float width = 0.0f;
+	size_t start = 0;
+	while (start < text.size()) {
+		size_t end = start;
+		uint32_t glyph = -1U;
+		while (end < text.size()) {
+			end += 1;
+			auto f = PathFont::font.glyph_map.find(text.substr(start, end - start));
+			if (f == PathFont::font.glyph_map.end()) { end -= 1; break; }
+			glyph = f->second;
+		}
+		if (glyph == -1U) { end = start + 1; width += 0.6f; } //unknown character: drawn as a 0.6-wide box
+		else width += PathFont::font.glyph_widths[glyph];
+		start = end;
+	}
+	return width;
 }
 
 std::mt19937 mt(0x64696e6f);   // "dino"
@@ -134,6 +159,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		show_debug = !show_debug;
 		return true;
 	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_F) {
+		//F: drink / eat the selected consumable
+		if (!inventory_open) consume_selected();
+		return true;
+	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_TAB) {
 		if (inventory_open) close_container();
 		else inventory_open = true;
@@ -162,10 +192,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 		left_click.latched = true; //for the world: remembered until the next update, so quick clicks aren't missed
-		return false;
-	}
-	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_RIGHT) {
-		right_click.latched = true;
 		return false;
 	}
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_LEFT && ui_mouse_down) {
@@ -243,7 +269,7 @@ void PlayMode::update(float elapsed) {
 
 	// numkeys select/unselect hotbar items (1..9, 0 = tenth slot).
 	// Moving items between inventories is done with the mouse (see handle_event).
-	for (size_t raw_index = 0; raw_index < 10; ++raw_index) {
+	for (size_t raw_index = 0; raw_index < 10 && !inventory_open; raw_index++) {
 		int index = int((raw_index + 9) % 10);
 		if (input.numkeys[raw_index].downs != 1) continue;
 		if (hotbar_selected == index) hotbar_selected = -1;
@@ -261,10 +287,11 @@ void PlayMode::update(float elapsed) {
 	{
 		for (auto &entity : world.entities) {
 			if (auto *target = dynamic_cast< ItemEntity * >(entity.get()); target) {
+				auto target_inventory = target->get_inventory();
 				// If the item is close enough, then the flag for absorption will be set true;
 				// Then, we consume it
+				target->attract = inventory.space_for(target_inventory->get_slot_id(0)) > 0;
 				if (!target->is_absorbable()) continue;
-				auto target_inventory = target->get_inventory();
 				item_id_t item_id = target_inventory->get_slot_id(0);
 				int item_count = target_inventory->get_slot_count(0);
 				if (item_id == "") continue;
@@ -312,16 +339,16 @@ void PlayMode::do_world_interaction(float elapsed) {
 		left_click.popped = true;
 	}
 
-	bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
-	right_click.latched = false;
-	if (right_clicked) {
-		right_click.downs += 1;
-		right_click.pressed = true;
-	} else {
-		right_click.downs = 0;
-		right_click.pressed = false;
-		right_click.popped = true;
-	}
+	// bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
+	// right_click.latched = false;
+	// if (right_clicked) {
+	// 	right_click.downs += 1;
+	// 	right_click.pressed = true;
+	// } else {
+	// 	right_click.downs = 0;
+	// 	right_click.pressed = false;
+	// 	right_click.popped = true;
+	// }
 
 	// The inventory UI owns the mouse while it points at a slot or a press on a slot is still held.
 	// While an inventory panel is open, the hotbar can't be used in the world: left click doesn't
@@ -332,9 +359,12 @@ void PlayMode::do_world_interaction(float elapsed) {
 	if (over_ui || panel_open) break_timer = 0.0f;
 	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
 	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
-	bool right_new = !over_ui && right_click.downs == 1;
+	// bool right_new = !over_ui && right_click.downs == 1;
 
 	item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+	uint32_t item_tags = Item::tags_of(item_id);
+	bool holding_placeable = (item_tags & ItemTag::Placeable) != 0;
+	bool holding_tool = (item_tags & ItemTag::Tool) != 0;
 	glm::ivec2 coord = find_tilemap_coord(glm::vec2{mx, my}, canvas, camera.view_min(canvas.size));
 
 	// overwrite coords when player used interact key instead (compare Stardew Valley again)
@@ -349,55 +379,34 @@ void PlayMode::do_world_interaction(float elapsed) {
 		interact_facing();
 	}
 
-	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - coord)) <= 6) {
-		// get left click target
-		if ((left_new && item_id != "pickaxe") || right_new) {
-			auto entity = entity_at(coord);
-
-			if (!panel_open && hotbar_selected != -1 && item_id != "" && item_id != "pickaxe") {
-				// cases A. player has a selected item. Try to use it
-				glm::vec2 world_pos = coord * GameConfig::TILE_SIZE;
-				if (item_id == "ale") {
-					player.add_effect(0, 30.0f);
-					inventory.extract_from_slot(size_t(hotbar_selected), 1);
-				} else if (entity == nullptr) {
-					if (place_machine(item_id, world_pos)) {
-						inventory.extract_from_slot(size_t(hotbar_selected), 1);
-					}
-				} else {
-					message = "Action failed";
-					message_timer = MESSAGE_SECONDS;
-				}
-			} else {
-				interact_with(entity);
-			}
-		} else if (left_held) {
-			// being held for more than one frames
-			// start breaking things. But first, find entity
-			auto entity = entity_at(coord);
-			auto *target = dynamic_cast< IBreakable * >(entity);
-
-			if (target != nullptr && target == currently_breaking && item_id == "pickaxe") {
-				// keep breaking...
-				break_timer += elapsed;
-				int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
-				if (damages >= target->get_hardness()) {
-					// breaked
-					entity->removed = true;
-				}
-
-			} else {
-				// changed breaking target or target is just null!
-				break_timer = 0.0f;
-				currently_breaking = target;
-			}
+	// Left click with a machine selected: place it (within PLACE_REACH, on an empty tile)
+	if (left_new && holding_placeable && tile_in_reach(coord, PLACE_REACH)) {
+		glm::vec2 world_pos = glm::vec2(coord) * float(GameConfig::TILE_SIZE);
+		if (entity_at(coord) == nullptr && place_machine(item_id, world_pos)) {
+			inventory.extract_from_slot(size_t(hotbar_selected), 1);
+		} else {
+			message = "Can't place that there";
+			message_timer = MESSAGE_SECONDS;
 		}
+	}
 
-		if (left_click.popped) {
+	// Hold left click with a tool: break the machine under the mouse (within TOOL_REACH)
+	if (left_held && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
+		auto entity = entity_at(coord);
+		auto *target = dynamic_cast< IBreakable * >(entity);
+		if (target != nullptr && target == currently_breaking) {
+			break_timer += elapsed;
+			int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
+			if (damages >= target->get_hardness()) {
+				entity->removed = true;
+			}
+		} else {
+			// changed breaking target or target is just null
 			break_timer = 0.0f;
-			// keep the currently_breaking pointer for continuous breaking.
-			// let's dont think about stale pointers...
+			currently_breaking = target;
 		}
+	} else if (!left_held) {
+		break_timer = 0.0f;
 	}
 
 	left_click.popped = false;
@@ -457,6 +466,18 @@ void PlayMode::interact_facing() {
 		return;
 	}
 	interact_with(target); //(closes the old panel first if it's a different entity)
+}
+
+void PlayMode::consume_selected() {
+	item_id_t id = inventory.get_slot_id(hotbar_selected);
+	if ((Item::tags_of(id) & ItemTag::Potion) == 0) return;
+
+	if (id == "ale") player.add_effect(0, 30.0f);
+	inventory.extract_from_slot(size_t(hotbar_selected), 1);
+}
+
+bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const {
+	return glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - tile)) <= reach;
 }
 
 void PlayMode::remove_objects(float elapsed) {
@@ -565,10 +586,16 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	if (!mouse_over_ui()) { // hovered-tile highlight (hidden while the mouse is on the inventory UI)
-		batch.fill_rect(Tilemap::tile_rect(hovered_coord), glm::u8vec4(
-			0xee,
-			inventory.get_slot_id(hotbar_selected) == "pickaxe" ? 0x88 : glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) > 6 ? 0x44 : 0xdd,
-			0x44, 0x28));
+		uint32_t tags = Item::tags_of(inventory.get_slot_id(hotbar_selected));
+		bool placeable = (tags & ItemTag::Placeable) != 0;
+		bool tool = (tags & ItemTag::Tool) != 0;
+		if ((placeable || tool) && !inventory_open && !mouse_over_ui()) {
+			float reach = tool ? TOOL_REACH : PLACE_REACH;
+			bool in_reach = tile_in_reach(hovered_coord, reach);
+			glm::u8vec4 color = in_reach ? glm::u8vec4(0xee, 0xdd, 0x44, 0x28)  //yellow: in reach
+			                             : glm::u8vec4(0xee, 0x44, 0x44, 0x28); //red: too far
+			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
+		}
 	}
 
 	batch.end();
@@ -653,6 +680,24 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			}
 			ui_batch.end();
 		} //(lines draw here, on top of the slots)
+
+		//name of the hovered item, centered above its slot
+		if (hovered != nullptr && cursor.empty() && !hovered->inventory->slot_empty(hovered->slot)) {
+			if (Item const *item = Item::get(hovered->inventory->slots[hovered->slot].first)) {
+				Rect const &r = hovered->rect;
+				float text_h = slot * 0.4f;
+				float text_w = text_width(item->name) * text_h;
+				float pad = slot * 0.12f;
+				//background box, just above the slot
+				Rect box{std::floor(r.x + (r.w - text_w) * 0.5f - pad), std::floor(r.y - slot * 0.15f - text_h - 2.0f * pad), text_w + 2.0f * pad, text_h + 2.0f * pad};
+				DrawLines lines(screen_to_clip);
+				ui_batch.begin(screen_to_clip);
+				ui_batch.fill_rect(box, glm::u8vec4(0x18, 0x10, 0x28, 0xe8));
+				ui_batch.end();
+				glm::vec3 anchor(box.x + pad, box.y + pad + text_h, 0.0f); //text baseline
+				lines.draw_text(item->name, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			}
+		}
 
 		//the stack held on the cursor, drawn last so it sits above everything
 		if (!cursor.empty()) {

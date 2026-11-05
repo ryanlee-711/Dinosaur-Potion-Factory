@@ -34,7 +34,9 @@ struct PlayMode : Mode {
 	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
 	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
 	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
+	void consume_selected(); // F to drink/eat selected hotbar item
 	void remove_objects(float elapsed);
+	bool tile_in_reach(glm::ivec2 tile, float reach) const;
 
 	// Helper methods
 	template <typename EntityClass>
