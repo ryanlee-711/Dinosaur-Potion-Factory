@@ -169,7 +169,7 @@ IItemPort::PortType Furnace::get_port(glm::ivec2 grid_coord) {
     if (grid_coord == tile + glm::ivec2{-1, -1}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{4, 0}) {
+    if (grid_coord == tile + glm::ivec2{4, -1}) {
         return IItemPort::PortType::Out;
     }
     return IItemPort::PortType::None;

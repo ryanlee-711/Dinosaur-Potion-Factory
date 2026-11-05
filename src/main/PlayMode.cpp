@@ -58,13 +58,16 @@ static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
 
 	std::vector<std::string> {
 		"Cough cough... I'm sick...\nplease bring me medicine...\nBrew potion...", 
-		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHUUU*.", 
+		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHOOOO*.", 
 		"Your pickaxe is missing... \nwhere is it...?", 
 		"If a rock is too heavy...\nDrink some ale to bulk up...", 
 	},
 	std::vector<std::string> {
 		"You've brewed Ale... \ndrink it and find your pickaxe...\nAnd bring back the furnace...", 
 		"You can press `interact`\nto push a rock...\nafter a bottle of drink.", 
+	},
+	std::vector<std::string> {
+		"Collect some copper ore by mining...\nAnd give it to me, to smith pipes.", 
 	},
 	std::vector<std::string> {
 		"Furnace is very powerful...\nDry the lichens... and grind them.", 
@@ -273,9 +276,8 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	}
 
 	// initialize the inventory with two apple and one powder
-	inventory.add("water_bottle", 10);
-	inventory.add("ale", 5);
-	inventory.add("strength_potion", 5);
+	inventory.add("water_bottle", 15);
+	inventory.add("apple", 2);
 
 	// initialize quest
 	quests.emplace_back(
@@ -293,9 +295,16 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	);
 
 	quests.emplace_back(
+		Quest{"Give the dragon some copper ores to create pipes.",
+			std::vector<ItemRecord>{ItemRecord{"copper_ore", 10}, ItemRecord{"pipe", 5}},
+			3
+		}
+	);
+
+	quests.emplace_back(
 		Quest{"Brew stronger potion from dried lichen and apple crush.",
 			std::vector<ItemRecord>{ItemRecord{"dried_lichen", 5}, ItemRecord{"red_potion", 1}, ItemRecord{"strength_potion", 1}},
-			3
+			4
 		}
 	);
 

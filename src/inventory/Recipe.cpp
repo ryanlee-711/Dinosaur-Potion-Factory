@@ -157,6 +157,40 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             10.0f
         );
 
+
+
+        // Dragon crafting
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 1} },
+            ItemVector{ ItemRecord{"pipe", 1} },
+            0.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"rock", 3} },
+            ItemVector{ ItemRecord{"chest", 1} },
+            1.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"lichen", 3} },
+            ItemVector{ ItemRecord{"furnace", 1} },
+            1.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"apple_powder", 3} },
+            ItemVector{ ItemRecord{"brewer", 1} },
+            1.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"apple", 3} },
+            ItemVector{ ItemRecord{"crusher", 2} },
+            1.5f
+        );
+
+
 		return recipes.release();
 	}
 );
