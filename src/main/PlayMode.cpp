@@ -134,6 +134,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		show_debug = !show_debug;
 		return true;
 	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_TAB) {
+		if (inventory_open) close_container();
+		else inventory_open = true;
+		return true;
+	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_ESCAPE) {
 		//close the open container (and put anything on the cursor back in the bag)
 		close_container();
@@ -144,7 +149,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	// Clicks are handled here, as events, so even very fast clicks are never missed.
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT) {
 		if (SlotView const *hit = slot_at(glm::vec2(evt.button.x, evt.button.y)); hit != nullptr) {
-			if (opened_inventory == nullptr) {
+			if (!inventory_open) {
 				//no panel open: clicking the hotbar selects that slot (click again to unselect), like the number keys
 				int slot = int(hit->slot);
 				hotbar_selected = (hotbar_selected == slot) ? -1 : slot;
@@ -321,7 +326,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 	// place/use/break anything (the mouse is for moving items). Right click and E / Space can
 	// still interact.
 	bool over_ui = mouse_over_ui();
-	bool panel_open = (opened_inventory != nullptr);
+	bool panel_open = inventory_open;
 	if (over_ui || panel_open) break_timer = 0.0f;
 	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
 	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
@@ -352,10 +357,10 @@ void PlayMode::do_world_interaction(float elapsed) {
 				glm::vec2 world_pos = coord * GameConfig::TILE_SIZE;
 				if (item_id == "ale") {
 					player.add_effect(0, 30.0f);
-					inventory.remove("ale", 1);
+					inventory.extract_from_slot(size_t(hotbar_selected), 1);
 				} else if (entity == nullptr) {
 					if (place_machine(item_id, world_pos)) {
-						inventory.remove(item_id, 1);
+						inventory.extract_from_slot(size_t(hotbar_selected), 1);
 					}
 				} else {
 					message = "Action failed";
@@ -426,6 +431,7 @@ bool PlayMode::interact_with(Entity *entity) {
 	if (ctx.open_container != nullptr) {
 		opened_inventory = ctx.open_container;
 		opened_entity = entity;
+		inventory_open = true;
 	}
 	if (!ctx.message.empty()) {
 		message = ctx.message;
@@ -444,7 +450,7 @@ void PlayMode::interact_facing() {
 	}
 
 	//a panel is open then E closes it
-	if (opened_inventory != nullptr && (target == nullptr || target == opened_entity)) {
+	if (inventory_open && (target == nullptr || target == opened_entity)) {
 		close_container();
 		return;
 	}
@@ -600,6 +606,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		{
 			DrawLines lines(screen_to_clip);
 			ui_batch.begin(screen_to_clip);
+			if (inventory_open && !ui_slots.empty()) {
+				//dark backdrop behind all visible slots so the open inventory reads as one panel
+				glm::vec2 lo = ui_slots.front().rect.min(), hi = ui_slots.front().rect.max();
+				for (SlotView const &view : ui_slots) {
+					lo = glm::min(lo, view.rect.min());
+					hi = glm::max(hi, view.rect.max());
+				}
+				float pad = slot * 0.3f;
+				ui_batch.fill_rect(Rect{lo.x - pad, lo.y - pad, hi.x - lo.x + 2.0f * pad, hi.y - lo.y + 2.0f * pad},
+					glm::u8vec4(0x10, 0x10, 0x18, 0xb0));
+			}
 			for (SlotView const &view : ui_slots) {
 				Rect const &r = view.rect;
 				bool selected = (view.inventory == &inventory && int(view.slot) == hotbar_selected);
@@ -622,8 +639,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			}
 
 			if (!message.empty() && !ui_slots.empty()) {
-				//interaction message, just above the hotbar's left end (hotbar slots come first in ui_slots):
-				Rect const &first = ui_slots.front().rect;
+				//interaction message, just above the topmost row
+				Rect first = ui_slots.front().rect;
+				for (SlotView const &view : ui_slots) {
+					if (view.inventory == &inventory && view.rect.y < first.y) first = view.rect;
+				}
 				float text_h = slot * 0.4f;
 				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
 				lines.draw_text(message, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
@@ -655,18 +675,31 @@ void PlayMode::layout_ui_slots(glm::uvec2 drawable_size, float slot) {
 		float row_width = step * float(slots - 1) + slot;
 		return std::floor((screen.x - row_width) * 0.5f);
 	};
-	auto add_row = [&](Inventory &inv, glm::vec2 top_left) {
-		for (size_t i = 0; i < inv.size(); ++i) {
-			ui_slots.emplace_back(SlotView{&inv, i, Rect{top_left.x + float(i) * step, top_left.y, slot, slot}});
+	auto add_row = [&](Inventory &inv, size_t first, size_t count, glm::vec2 top_left) {
+		for (size_t i = 0; i < count; ++i) {
+			ui_slots.emplace_back(SlotView{&inv, first + i, Rect{top_left.x + float(i) * step, top_left.y, slot, slot}});
 		}
 	};
 
 	ui_slots.clear();
 	//hotbar first (the message is drawn relative to its first slot), along the bottom:
-	add_row(inventory, glm::vec2(centered_x(inventory.size()), std::floor(screen.y - slot * 1.5f)));
+	float player_x = centered_x(HOTBAR_SLOTS);
+	float hotbar_y = std::floor(screen.y - slot * 1.5f);
+	add_row(inventory, 0, HOTBAR_SLOTS, glm::vec2(player_x, hotbar_y));
+
+	float top_y = hotbar_y;
+	if (inventory_open) {
+		//backpack rows stacked above the hotbar, with a small gap
+		for (size_t row = 0; row < BACKPACK_ROWS; row++) {
+			float y = std::floor(hotbar_y - slot * 0.4f - step * float(BACKPACK_ROWS - row));
+			add_row(inventory, HOTBAR_SLOTS * (row + 1), HOTBAR_SLOTS, glm::vec2(player_x, y));
+			top_y = std::min(top_y, y);
+		}
+	}
 	if (opened_inventory != nullptr) {
-		//opened container: centered in the window
-		add_row(*opened_inventory, glm::vec2(centered_x(opened_inventory->size()), std::floor((screen.y - slot) * 0.5f)));
+		//opened container: above the player's inventory (leaving room for the message line)
+		float y = std::floor(top_y - slot * 0.9f - step);
+		add_row(*opened_inventory, 0, opened_inventory->size(), glm::vec2(centered_x(opened_inventory->size()), y));
 	}
 }
 
@@ -713,6 +746,7 @@ void PlayMode::return_cursor_items() {
 
 void PlayMode::close_container() {
 	return_cursor_items();
+	inventory_open = false;
 	opened_inventory = nullptr;
 	opened_entity = nullptr;
 	//slot views may point into the closed container; they're rebuilt on the next draw
