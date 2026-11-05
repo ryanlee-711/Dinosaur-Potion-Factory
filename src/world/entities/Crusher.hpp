@@ -41,5 +41,5 @@ private:
     float push_timer = 0.0f;
     float processing_timer = 0.0f;
     size_t frame = 0;
-    const Recipe *current_recipe;
+    const Recipe *current_recipe = nullptr;  // recipe being processed (nullptr = none)
 };

@@ -34,9 +34,9 @@ bool World::blocked(Rect const &box, Entity const &mover) const {
 
  auto World::entity_at(glm::ivec2 tile) const -> Entity* {
 	if (coord_to_entities.find(tile) != coord_to_entities.end()) {
-		auto &entities = coord_to_entities.at(tile);
-		if (entities.size() == 0) return nullptr;
-		return entities[0];
+		auto &here = coord_to_entities.at(tile);
+		if (here.size() == 0) return nullptr;
+		return here[0];
 	}
 	return nullptr;
 }

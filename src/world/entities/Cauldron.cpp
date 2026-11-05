@@ -24,7 +24,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     if (anim_timer > 8.0f) anim_timer -= 8.0f;
 
     // Cauldron Update:
-    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items,
     //    find the new recipe from the registry (and reset timer).
     // 2. Decrement timer accordingly.
     // 3. If timer timeouts, add that new item to matching output slots.
@@ -56,7 +56,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
 
         // try to find a new recipe
         auto recipes = Recipe::get_recipes("brewer");
-        for (Recipe const &recipe : *recipes) {
+        if (recipes != nullptr) for (Recipe const &recipe : *recipes) {
             bool ok = true;
             // check that inputs are sufficient
             for (ItemRecord const &item : recipe.items_in) {
