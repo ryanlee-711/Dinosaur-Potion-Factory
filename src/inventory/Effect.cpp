@@ -39,7 +39,6 @@ static Load< ConsumableRegistry > consumable_registry(LoadTagDefault, []() -> Co
 	// ---- cave I: ale lets you push the rocks ----
 	add("ale", { {"strength", 60.0f, 1}, {"speed", 30.0f, 1} });
 	add("apple_juice", { {"speed", 30.0f, 1} });
-	add("sweet_cider", { {"speed", 60.0f, 1} });
 
 	// ---- cave II: strength potion breaks large boulders ----
 	add("strong_ale", { {"strength", 120.0f, 1} });

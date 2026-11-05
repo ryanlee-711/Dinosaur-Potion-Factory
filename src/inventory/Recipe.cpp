@@ -43,7 +43,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             8.0f
         );
 
-        add("furnace", 
+        add("furnace",
             ItemVector{ ItemRecord{"crushed_apple", 1} },
             ItemVector{ ItemRecord{"apple_powder", 1} },
             4.0f
@@ -55,7 +55,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             8.0f
         );
 
-        add("furnace", 
+        add("furnace",
             ItemVector{ ItemRecord{"apple_powder", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             4.0f
@@ -63,13 +63,13 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
         // ------- Apple potions ---------
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"ale", 1} },
             10.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"apple_powder", 3} },
             ItemVector{ ItemRecord{"apple_juice", 1} },
             10.0f
@@ -82,7 +82,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             2.0f
         );
 
-        add("crusher", 
+        add("crusher",
             ItemVector{ ItemRecord{"dried_lichen", 1} },
             ItemVector{ ItemRecord{"lichen_powder", 1} },
             2.0f
@@ -94,63 +94,63 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             8.0f
         );
 
-        add("furnace", 
+        add("furnace",
             ItemVector{ ItemRecord{"crushed_lichen", 1} },
             ItemVector{ ItemRecord{"lichen_powder", 1} },
             4.0f
         );
 
-        add("furnace", 
+        add("furnace",
             ItemVector{ ItemRecord{"dried_lichen", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             8.0f
         );
 
-        add("furnace", 
+        add("furnace",
             ItemVector{ ItemRecord{"lichen_powder", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             4.0f
         );
 
         // --------------- LICHEN POTIONS ---------------
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"lichen_powder", 5} },
             ItemVector{ ItemRecord{"red_potion", 1} },
             20.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"lichen_powder", 5} },
             ItemVector{ ItemRecord{"potent_red_potion", 1} },
             20.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"strength_potion", 1} },
             10.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"potent_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"potent_strength_potion", 1} },
             10.0f
         );
 
         // bad/hidden recipes
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_lichen", 5} },
             ItemVector{ ItemRecord{"muddy_red_potion", 1} },
             20.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"muddy_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"strong_ale", 1} },
             10.0f
         );
 
-        add("brewer", 
+        add("brewer",
             ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_crushed_apple", 3} },
             ItemVector{ ItemRecord{"sweetened_potion", 1} },
             10.0f
@@ -172,7 +172,7 @@ static uint32_t input_tags_for(item_id_t const &machine_id) {
     using namespace ItemTag;
     if (machine_id == "crusher") return Crushable;
     if (machine_id == "furnace") return Burnable;
-    if (machine_id == "brewer")  return Liquid | Brewable; // base slot | ingredient slot
+    if (machine_id == "brewer")  return Liquid | Potion | Brewable; // base slot (Liquid | Potion) | ingredient slot
     return None;
 }
 

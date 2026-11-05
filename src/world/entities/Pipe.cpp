@@ -7,6 +7,7 @@
 #include "../Components.hpp"
 
 
+#include <array>
 #include <cmath>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
@@ -66,7 +67,7 @@ void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
         }
 
         // update frame.
-        
+
         auto direction_bit = [](glm::ivec2 d) {
             if (d.x < 0) return 1; // W
             if (d.y < 0) return 2; // N
@@ -74,7 +75,7 @@ void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
             if (d.y > 0) return 8; // S
             return 0;
         };
-        // ...............................................NW....WE.NE... 
+        // ...............................................NW....WE.NE...
         static constexpr int which_frame[16] = {0, 0, 1, 5, 0, 0, 4, -1, 1, 3, 1, -1, 2, -1, -1, -1};
 
         size_t mask = 0x0u;

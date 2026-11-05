@@ -32,33 +32,33 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		// ingredients
 		add("apple", "Apple", "", "assets/sprites/items/ingredients/apple.png", Crushable | Burnable);
 		add("crushed_apple", "Crushed Apple", "", "assets/sprites/items/ingredients/crushed_apple.png", Brewable | Burnable);
-		add("apple_powder", "Apple Powder", "", "assets/sprites/items/ingredients/crushed_apple.png", Brewable | Burnable);
+		add("apple_powder", "Apple Powder", "", "assets/sprites/items/ingredients/apple_powder.png", Brewable | Burnable);
 		add("baked_apple", "Baked Apple", "", "assets/sprites/items/ingredients/baked_apple.png", Crushable | Burnable);
+		add("baked_crushed_apple", "Baked Crushed Apple", "Sweet and smoky", "assets/sprites/items/missing_no.png", Brewable);
 
 		add("lichen", "Lichen", "Something magical", "assets/sprites/items/ingredients/lichen.png", Crushable | Burnable);
 		add("crushed_lichen", "Crushed Lichen", "", "assets/sprites/items/ingredients/crushed_lichen.png", Brewable | Burnable);
 		add("lichen_powder", "Lichen Powder", "Glows a little", "assets/sprites/items/ingredients/lichen_powder.png", Brewable | Burnable);
 		add("dried_lichen", "Dried Lichen", "Crispy", "assets/sprites/items/ingredients/baked_lichen.png", Crushable | Burnable);
 
-		add("ash", "Ash", "Overburnt", "assets/sprites/items/ingredients/ash.png", None);
-
 		// ---- leftovers (burnt too long) ----
 		add("goo", "Goo", "Overcooked. Useless", "assets/sprites/items/ingredients/ash.png", None);
-		add("ash", "Ash", "Burnt to a crisp", "assets/sprites/items/ingredients/ash.png", None);
+		add("ash", "Ash", "Overburnt", "assets/sprites/items/ingredients/ash.png", None);
 
 		// ---- liquids and potions ----
-		// Potions are also Liquid so they fit the brewer's base slot (red potion -> strength potion, ...)
+		// The brewer's base slot takes Liquid or Potion, so potions can be brewed into other potions
 		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
 		add("ale", "Ale", "Becomes faster and slightly stronger", "assets/sprites/items/potions/ale.png", Potion);
 		add("strong_ale", "Strong Ale", "(TBD)", "assets/sprites/items/potions/strong_ale.png", Potion);
 		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion);
 
-		add("red_potion", "Red Potion", "Intermediate product", "assets/sprites/items/potions/potent_red_potion.png", Potion);
+		add("red_potion", "Red Potion", "Intermediate product", "assets/sprites/items/potions/red_potion.png", Potion);
 		add("potent_red_potion", "Potent Red Potion", "Intermediate product", "assets/sprites/items/potions/potent_red_potion.png", Potion);
 		add("muddy_red_potion", "Muddy Red Potion", "Intermediate product???", "assets/sprites/items/potions/muddy_red_potion.png", Potion);
 
 		add("strength_potion", "Strength Potion", "Mines harder rocks", "assets/sprites/items/potions/strength_potion.png", Potion);
 		add("potent_strength_potion", "Potent Strength Potion", "Mines harder rocks and lasts longer", "assets/sprites/items/potions/potent_strength_potion.png", Potion);
+		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", "assets/sprites/items/missing_no.png", Potion);
 
 		// placeables
 		add("pipe", "Pipe", "Transmit items", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
