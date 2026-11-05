@@ -58,13 +58,13 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
 		add("ale", "Ale", "Non-alchohol drink", "assets/sprites/items/potions/ale.png", Potion | Liquid);
 		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion | Liquid);
-		add("apple_drink", "Sweet Cider", "Made with baked apples", MISSING, Potion | Liquid);
+		add("sweet_cider", "Sweet Cider", "Made with baked apples", MISSING, Potion | Liquid);
 		add("strong_ale", "Strong Ale", "Lichen gives it a kick", MISSING, Potion | Liquid);
 		add("red_potion", "Red Potion", "Base for stronger potions", MISSING, Potion | Liquid);
-		add("tense_red_potion", "Tense Red Potion", "Extra concentrated", MISSING, Potion | Liquid);
-		add("muddy_red_potion", "Muddy Red Potion", "Made from raw lichen", MISSING, Potion | Liquid);
+		add("strong_red_potion", "Strong Red Potion", "Extra concentrated", MISSING, Potion | Liquid);
+		add("weak_red_potion", "Weak Red Potion", "Made from raw lichen", MISSING, Potion | Liquid);
 		add("strength_potion", "Strength Potion", "Better than ale", MISSING, Potion | Liquid);
-		add("tense_strength_potion", "Tense Strength Potion", "Much better than ale", MISSING, Potion | Liquid);
+		add("strong_strength_potion", "Strong Strength Potion", "Much better than ale", MISSING, Potion | Liquid);
 		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", MISSING, Potion | Liquid);
 
 		// placeables

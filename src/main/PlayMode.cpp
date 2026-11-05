@@ -8,6 +8,8 @@
 #include "../starter/gl_errors.hpp"
 #include "../starter/PathFont.hpp"
 
+#include "../inventory/Effect.hpp"
+
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
 #include "../world/ItemEntity.hpp"
@@ -497,9 +499,12 @@ void PlayMode::interact_facing() {
 
 void PlayMode::consume_selected() {
 	item_id_t id = inventory.get_slot_id(hotbar_selected);
-	if ((Item::tags_of(id) & ItemTag::Potion) == 0) return;
+	Consumable const *consumable = Consumable::get(id);
+	if (consumable == nullptr) return; //nothing selected, or not something you can drink
 
-	if (id == "ale") player.add_effect(0, 30.0f);
+	for (EffectGrant const &grant : consumable->grants) {
+		player.add_effect(grant.effect, grant.seconds, grant.level);
+	}
 	inventory.extract_from_slot(size_t(hotbar_selected), 1);
 }
 
@@ -741,6 +746,26 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			ui_batch.begin(screen_to_clip);
 			draw_item_stack(ui_batch, lines, cursor.held, r);
 			ui_batch.end();
+		}
+	}
+
+	//--- active effects, top left ---
+	if (!player.active_effects().empty()) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		DrawLines lines(screen_to_clip);
+		static char const *roman[] = {"", "I", " II", " III", " IV", " V"};
+		float text_h = 8.0f * float(canvas.scale);
+		float y = text_h * 1.5f;
+		for (auto const &[id, active] : player.active_effects()) {
+			Effect const *effect = Effect::get(id);
+			std::string text = (effect ? effect->name : id)
+				+ " " + (active.level < 6 ? roman[active.level] : " " + std::to_string(active.level))
+				+ ":  " + std::to_string(int(std::ceil(active.time_left))) + "s";
+			float x = std::floor(text_h * 0.5f);
+			glm::vec3 anchor(x, y, 0.0f);
+			lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+			lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xf0, 0xa0, 0xff));
+			y += text_h * 1.4f;
 		}
 	}
 
