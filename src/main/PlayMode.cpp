@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <sstream>
 
 using GameConfig::TILE_SIZE;
 
@@ -144,6 +145,11 @@ static std::string roman_level(int level) {
 	return " " + std::to_string(level);
 }
 
+// ------ Quest system ------
+
+
+
+
 std::mt19937 mt(0x64696e6f);   // "dino"
 
 PlayMode::PlayMode() : map(data_path("maps/world.map")) {
@@ -169,7 +175,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<Cauldron>(entities, glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 		add_entity<Chest>(entities, glm::vec2((3.0f * 4.0f + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE));
 		add_entity<Chest>(entities, glm::vec2((3.0f * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE));
-		add_entity<Furnace>(entities, Tilemap::tile_topleft(glm::ivec2(122, 70)));
+		add_entity<Furnace>(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)));
 
 		// Apple trees
 		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE));
@@ -237,6 +243,38 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	inventory.add("water_bottle", 10);
 	inventory.add("ale", 5);
 	inventory.add("strength_potion", 5);
+
+	// initialize quest
+	quests.emplace_back(
+		Quest{"Collect apples, crush them, and brew ale.",
+			std::vector<ItemRecord>{ItemRecord{"apple", 6}, ItemRecord{"crushed_apple", 3}, ItemRecord{"ale", 1}},
+			1
+		}
+	);
+
+	quests.emplace_back(
+		Quest{"Use pickaxe to break & pick up furnace.",
+			std::vector<ItemRecord>{ItemRecord{"pickaxe", 1}, ItemRecord{"furnace", 1}},
+			2
+		}
+	);
+
+	quests.emplace_back(
+		Quest{"Brew stronger potion from dried lichen and apple crush.",
+			std::vector<ItemRecord>{ItemRecord{"dried_lichen", 5}, ItemRecord{"red_potion", 1}, ItemRecord{"strength_potion", 1}},
+			3
+		}
+	);
+
+	quests.emplace_back(
+		Quest{"Semi-automate strength potion!?",
+			std::vector<ItemRecord>{ItemRecord{"strength_potion", 8}},
+			-1
+		}
+	);
+
+	for (size_t i = 0; i < 10; ++i) quest_goals_cleared.emplace_back(false);
+
 }
 
 PlayMode::~PlayMode() {
@@ -388,6 +426,8 @@ void PlayMode::update(float elapsed) {
 		else hotbar_selected = index;
 		break;
 	}
+	// change Player's held item based on selection
+	player.held_item = inventory[hotbar_selected];
 
 	// Update entities
 	for (auto &entity : entities) {
@@ -427,6 +467,19 @@ void PlayMode::update(float elapsed) {
 
 	// Remove "removed" objects from the scene; and add ItemEntity if a container is broken.
 	remove_objects(elapsed);
+
+	// Quest system: update quest data.
+	if (active_quest != -1) {
+		auto &quest = quests[active_quest];
+		int req_idx = 0;
+		for (auto &record : quest.required_items) {
+			if (inventory.count(record.first) >= record.second) {
+				quest_goals_cleared[req_idx] = true;
+			}
+			req_idx ++;
+		}
+	}
+
 
 	// Count down the on-screen message
 	if (message_timer > 0.0f) {
@@ -877,6 +930,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 
+	//---- quest system ----
+	if (active_quest != -1) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		DrawLines lines(screen_to_clip);
+		draw_quest_ui(ui_batch, lines, drawable_size);
+	}
+
+
 	//--- recipe book ---
 	if (book_open) {
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
@@ -1040,6 +1101,70 @@ void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &
 	std::string number = std::to_string(page_number);
 	float number_h = std::floor(body_h * 0.9f);
 	text(number, std::floor(page.x + (page.w - text_width(number) * number_h) * 0.5f), page.y + page.h - std::floor(pad * 0.6f), number_h, BOOK_FADED);
+}
+
+// =================== Quest UI ====================== //
+
+
+void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size) {
+	// only draw if there is an active quest
+	if (active_quest < 0 || active_quest > quests.size()) return;
+
+	// right-anchored rendering
+	float text_h = 8.0f * float(canvas.scale);
+	float y = text_h * (1.5f + 1.4f * player.active_effects().size());
+
+	// draw description
+	std::stringstream ss("[Goals]  " + quests[active_quest].description);
+    std::string line;
+
+    while (getline(ss, line)) {
+        float x = std::floor(text_h * 0.5f);
+		glm::vec3 anchor(x, y, 0.0f);
+		lines.draw_text(line, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		lines.draw_text(line, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xf0, 0xff));
+		y += text_h * 1.4f;
+    }
+
+	int req_idx = -1;
+	for (auto &record : quests[active_quest].required_items) {
+		req_idx++;
+		auto item = Item::get(record.first);
+		int count = inventory.count(record.first);
+
+		if (item == nullptr) continue;
+		line = quest_goals_cleared[req_idx] ? "[ X ] " : "[   ] ";
+		line += item->name + "  ";
+		if (quest_goals_cleared[req_idx]) {
+			line += std::to_string(record.second) + "/" + std::to_string(record.second);
+		} else {
+			line += std::to_string(count) + "/" + std::to_string(record.second);
+		}
+		float x = std::floor(text_h * 0.5f);
+		glm::vec3 anchor(x, y, 0.0f);
+		glm::u8vec4 color = quest_goals_cleared[req_idx] ? glm::u8vec4(0xbf, 0xff, 0x90, 0xff) : glm::u8vec4(0xf0, 0xab, 0x90, 0xff);
+		lines.draw_text(line, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		lines.draw_text(line, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
+		y += text_h * 1.4f;
+	}
+
+}
+
+void PlayMode::clear_quest() {
+	// this function tries to clear the quest if it is clearable.
+	int req_idx = -1;
+	for (auto &record : quests[active_quest].required_items) {
+		req_idx++;
+		auto item = Item::get(record.first);
+		if (item == nullptr) continue;
+		
+		if (!quest_goals_cleared[req_idx]) return;
+	}
+	// should be cleared. proceed to next task
+	for (int i = 0; i < quest_goals_cleared.size(); ++i) 
+		quest_goals_cleared[i] = false;
+	
+	active_quest = quests[active_quest].next_quest_index;
 }
 
 // =================== Inventory mouse UI ================= //

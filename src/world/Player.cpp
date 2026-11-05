@@ -5,6 +5,7 @@
 #include "../main/GameConfig.hpp"
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
+#include "../inventory/Item.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -90,7 +91,25 @@ void Player::draw(Sprites &batch) const {
 	Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
 	//round to whole pixels so the sprite never sits between pixels:
 	glm::vec2 top_left = glm::round(position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
-	batch.draw(*player_texture, src, top_left);
+	
+	if (facing.y >= 0) {
+		batch.draw(*player_texture, src, top_left);
+	}
+	// draw held item
+	if (held_item.first != "" && held_item.second > 0) {
+		if (auto item = Item::get(held_item.first); item != nullptr) {
+			glm::vec2 offset = glm::vec2{-2.0f, 15.0f};
+			if (facing.y < 0) offset = glm::vec2{19.0f, 13.0f};
+			if (facing.x < 0) offset = glm::vec2{6.0f, 16.0f};
+			if (facing.x > 0) offset = glm::vec2{10.0f, 16.0f};
+			
+			batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, top_left + offset);
+		}
+	}
+	if (facing.y < 0) {
+		batch.draw(*player_texture, src, top_left);
+	}
+	
 }
 
 Rect Player::hitbox() const {

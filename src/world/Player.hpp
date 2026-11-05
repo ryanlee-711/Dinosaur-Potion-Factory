@@ -57,6 +57,7 @@ public:
 	int effect_level(effect_id_t const &id) const;
 
 	std::map< effect_id_t, ActiveEffect > const &active_effects() const { return effects; }
+	ItemRecord held_item = ItemRecord{"", 0};
 
 private:
 	void move_axis(int axis, float amount, World const &world);

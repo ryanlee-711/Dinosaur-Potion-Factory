@@ -58,7 +58,7 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 
 		add("strength_potion", "Strength Potion", "Mines harder rocks", "assets/sprites/items/potions/strength_potion.png", Potion);
 		add("potent_strength_potion", "Potent Strength Potion", "Mines harder rocks and lasts longer", "assets/sprites/items/potions/potent_strength_potion.png", Potion);
-		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", "assets/sprites/items/missing_no.png", Potion);
+		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", "assets/sprites/items/potions/apple_juice.png", Potion);
 
 		// placeables
 		add("pipe", "Pipe", "Transmit items", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
@@ -66,6 +66,10 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		add("crusher", "Crusher", "Crush ingredients", "assets/sprites/items/placeables/crusher_icon.png", Placeable);
 		add("brewer", "brewer", "Brew potions", "assets/sprites/items/placeables/brewer_icon.png", Placeable);
 		add("furnace", "furnace", "Bake ingredients", "assets/sprites/items/placeables/furnace_icon.png", Placeable);
+
+		// resources
+		add("rock", "Rock", "", "assets/sprites/items/ingredients/rock.png", None);
+		add("copper_ore", "Copper ore", "", "assets/sprites/items/ingredients/copper_ore.png", None);
 
 		// tools
 		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);

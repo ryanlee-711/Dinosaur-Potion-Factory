@@ -69,6 +69,19 @@ struct PlayMode : Mode {
 	void draw_book(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot);
 	void draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &recipe, Rect const &page, float slot, size_t page_number);
 
+	// ----- quest UI -----
+	struct Quest {
+		std::string description = "";
+		std::vector<ItemRecord> required_items { };
+		int next_quest_index = -1;
+	};
+	// list of quests now
+	std::vector<Quest> quests;
+	std::vector<bool> quest_goals_cleared;
+	int active_quest = 0;
+	void draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size);
+	void clear_quest();
+
 	//----- inventory -----
 	static constexpr size_t HOTBAR_SLOTS = 10; // Number of slots in the hotbar
 	static constexpr size_t BACKPACK_ROWS = 2; // Number of inventory rows
