@@ -29,14 +29,43 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 
 		using namespace ItemTag;
 
-		// ingredients
-		add("apple", "Apple", "N/A", "assets/sprites/items/ingredients/apple.png", Crushable | Brewable | Burnable);
-		add("apple_powder", "Apple Powder", "N/A", "assets/sprites/items/ingredients/apple_powder.png", Brewable);
+		// Placeholder sprite for items that don't have art yet
+		std::string const MISSING = "assets/sprites/items/missing_no.png";
 
-		// drinks
+		// Tags decide which machine slots accept an item, so they follow the recipes in Recipe.cpp:
+		//   Crushable = crusher input, Burnable = furnace input,
+		//   Brewable = brewer ingredient, Liquid = brewer base (water and potions),
+		//   Potion = something you drink (see the effects table).
+
+		// ---- apple line ----
+		add("apple", "Apple", "Grows in the cave, somehow", "assets/sprites/items/ingredients/apple.png", Crushable | Burnable);
+		add("apple_powder", "Apple Powder", "Crushed apple", "assets/sprites/items/ingredients/apple_powder.png", Brewable | Burnable);
+		add("baked_apple", "Baked Apple", "Warm and soft", MISSING, Crushable | Burnable);
+		add("baked_apple_powder", "Baked Apple Powder", "Sweet and smoky", MISSING, Brewable | Burnable);
+
+		// ---- lichen line ----
+		add("lichen", "Red Lichen", "Something magical", MISSING, Crushable | Burnable);
+		add("lichen_powder", "Lichen Powder", "Crushed raw lichen", MISSING, Brewable | Burnable);
+		add("baked_lichen", "Baked Lichen", "Crispy", MISSING, Crushable | Burnable);
+		add("baked_lichen_powder", "Red Powder", "Glows a little", MISSING, Brewable | Burnable);
+
+		// ---- leftovers (burnt too long) ----
+		add("goo", "Goo", "Overcooked. Useless", MISSING, None);
+		add("ash", "Ash", "Burnt to a crisp", MISSING, None);
+
+		// ---- liquids and potions ----
+		// Potions are also Liquid so they fit the brewer's base slot (red potion -> strength potion, ...)
 		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
-		add("ale", "Ale", "Non-alchohol drink", "assets/sprites/items/potions/ale.png", Potion);
-		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion);
+		add("ale", "Ale", "Non-alchohol drink", "assets/sprites/items/potions/ale.png", Potion | Liquid);
+		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion | Liquid);
+		add("apple_drink", "Sweet Cider", "Made with baked apples", MISSING, Potion | Liquid);
+		add("strong_ale", "Strong Ale", "Lichen gives it a kick", MISSING, Potion | Liquid);
+		add("red_potion", "Red Potion", "Base for stronger potions", MISSING, Potion | Liquid);
+		add("tense_red_potion", "Tense Red Potion", "Extra concentrated", MISSING, Potion | Liquid);
+		add("muddy_red_potion", "Muddy Red Potion", "Made from raw lichen", MISSING, Potion | Liquid);
+		add("strength_potion", "Strength Potion", "Better than ale", MISSING, Potion | Liquid);
+		add("tense_strength_potion", "Tense Strength Potion", "Much better than ale", MISSING, Potion | Liquid);
+		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", MISSING, Potion | Liquid);
 
 		// placeables
 		add("pipe", "Pipe", "N/A", "assets/sprites/items/placeables/pipe_icon.png", Placeable);

@@ -4,6 +4,9 @@
 //The 'PlayMode' mode plays the game:
 #include "PlayMode.hpp"
 
+//For checking the recipe table at startup:
+#include "../inventory/Recipe.hpp"
+
 //For asset loading:
 #include "../starter/Load.hpp"
 
@@ -106,6 +109,9 @@ int main(int argc, char **argv) {
 
 	//------------ load assets --------------
 	call_load_functions();
+
+	//catch typos / missing items in the recipe table early (prints warnings, keeps running):
+	Recipe::validate();
 
 	//------------ create game mode + make current --------------
 	Mode::set_current(std::make_shared< PlayMode >());
