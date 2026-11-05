@@ -18,6 +18,8 @@ struct World {
 	std::vector< std::unique_ptr< Entity > > const &entities;
 	Player const &player;
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> const &coord_to_entities;
+	//spawned entities
+	std::vector<std::unique_ptr<Entity>> *spawned = nullptr;
 
 	// Appends to 'out' every solid thing 'box' overlaps that 'mover' can't walk through
 	void solids_overlapping(Rect const &box, Entity const &mover, std::vector< Rect > &out) const;

@@ -197,3 +197,8 @@ int Cauldron::push_item(ItemRecord item_record) {
     }
     return 0;
 }
+
+float Cauldron::get_progress() const {
+    if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
+    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0,0f, 1,0f);
+}

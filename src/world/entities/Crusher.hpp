@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-class Crusher : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
+class Crusher : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress {
     /* Crusher implementation for demo. */
 public:
     Crusher();
@@ -29,6 +29,7 @@ public:
     // IItemPort
     PortType get_port(glm::ivec2 grid_coord) override;
     int push_item(ItemRecord item_record) override;
+    float get_progress() const override;
 
     // IBreakable
     item_id_t get_drop_id() override {return "crusher";}

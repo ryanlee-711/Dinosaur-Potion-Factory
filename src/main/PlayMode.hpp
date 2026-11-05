@@ -74,6 +74,9 @@ struct PlayMode : Mode {
 	};
 	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
 
+	bool show_arrow = false;
+	Rect arrow_rect;
+
 	bool ui_mouse_down = false;  // a left press landed on a slot and hasn't been released yet
 
 	void layout_ui_slots(glm::uvec2 drawable_size, float slot_size);

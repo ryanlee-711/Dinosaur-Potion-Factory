@@ -94,6 +94,26 @@ static float text_width(std::string const &text) {
 	return width;
 }
 
+//Background color of a slot, from its rule, so you can see what goes where.
+static glm::u8vec4 slot_color(Inventory::SlotRule const &rule) {
+	if (!rule.can_insert)                        return glm::u8vec4(0x8a, 0x6d, 0x1e, 0xc0); //output: gold
+	if (rule.required_tags & ItemTag::Liquid)    return glm::u8vec4(0x24, 0x4c, 0x8c, 0xc0); //liquid: blue
+	if (rule.required_tags & ItemTag::Crushable) return glm::u8vec4(0x6e, 0x68, 0x62, 0xc0); //crushable: stone
+	return glm::u8vec4(0x22, 0x22, 0x22, 0x80);                                              //anything: dark
+}
+
+//A pixel-art arrow pointing right, filling 'r', built from 8 columns (shaft, then the head).
+//The left 'progress' (0..1) of it is drawn in 'fill', the rest in 'empty'.
+static void draw_arrow(Sprites &batch, Rect const &r, float progress, glm::u8vec4 empty, glm::u8vec4 fill) {
+	static constexpr int heights[8] = {2, 2, 2, 2, 7, 5, 3, 1}; //column heights, in eighths of r.h
+	float column = r.w / 8.0f;
+	for (int c = 0; c < 8; ++c) {
+		float h = r.h * float(heights[c]) / 8.0f;
+		bool filled = (float(c) + 0.5f) / 8.0f <= progress;
+		batch.fill_rect(Rect{r.x + column * float(c), r.y + (r.h - h) * 0.5f, column, h}, filled ? fill : empty);
+	}
+}
+
 std::mt19937 mt(0x64696e6f);   // "dino"
 
 PlayMode::PlayMode() : map(data_path("maps/world.map")) {
@@ -241,7 +261,8 @@ void PlayMode::update(float elapsed) {
 	}
 
 	//everything entities can collide with this frame:
-	World world{map, entities, player, coord_to_entities};
+	std::vector<std::unique_ptr<Entity>> spawned;
+	World world{map, entities, player, coord_to_entities, &spawned};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -282,6 +303,12 @@ void PlayMode::update(float elapsed) {
 		if (entity->removed) continue;
 		entity->update(input, elapsed, world);
 	}
+
+	// Add entities spawned during the updates
+	for (auto &entity : spawned) {
+		entities.push_back(std::move(entity));
+	}
+	spawned.clear();
 
 	// collect ItemEntities on ground by player
 	{
@@ -657,7 +684,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				if (is_hovered) border_color = glm::u8vec4(0xdd, 0xdd, 0xdd, 0xff);
 				if (selected) border_color = glm::u8vec4(0xbb, 0xbb, 0x66, 0xff);
 				ui_batch.fill_rect(Rect{r.x - border, r.y - border, r.w + 2.0f * border, r.h + 2.0f * border}, border_color);
-				ui_batch.fill_rect(r, glm::u8vec4(0x22, 0x22, 0x22, 0x80));
+				ui_batch.fill_rect(r, slot_color(view.inventory->rule(view.slot)));
 
 				draw_item_stack(ui_batch, lines, view.inventory->slots[view.slot], r);
 
@@ -665,6 +692,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				if (!cursor.empty() && !view.inventory->can_insert(view.slot, cursor.held.first)) {
 					ui_batch.fill_rect(r, glm::u8vec4(0xaa, 0x22, 0x22, 0x60));
 				}
+			}
+
+			if (show_arrow) {
+				//arrow from a machine's inputs to its outputs; fills up while the machine works
+				float progress = 0.0f;
+				if (auto *machine = dynamic_cast< IProgress * >(opened_entity)) progress = machine->get_progress();
+				draw_arrow(ui_batch, arrow_rect, progress, glm::u8vec4(0x55, 0x55, 0x55, 0xff), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 			}
 
 			if (!message.empty() && !ui_slots.empty()) {
@@ -743,10 +777,29 @@ void PlayMode::layout_ui_slots(glm::uvec2 drawable_size, float slot) {
 			top_y = std::min(top_y, y);
 		}
 	}
+	show_arrow = false;
 	if (opened_inventory != nullptr) {
-		//opened container: above the player's inventory (leaving room for the message line)
+		//opened container: above the player's inventory
+		Inventory &inv = *opened_inventory;
 		float y = std::floor(top_y - slot * 0.9f - step);
-		add_row(*opened_inventory, 0, opened_inventory->size(), glm::vec2(centered_x(opened_inventory->size()), y));
+
+		//machines: outputs are the take-only slots after the inputs
+		size_t first_output = inv.size();
+		for (size_t i = 1; i < inv.size(); ++i) {
+			if (!inv.rule(i).can_insert) { first_output = i; break; }
+		}
+		bool has_arrow = (first_output < inv.size());
+
+		float x = centered_x(inv.size() + (has_arrow ? 1 : 0));
+		for (size_t i = 0; i < inv.size(); ++i) {
+			if (has_arrow && i == first_output) {
+				arrow_rect = Rect{x, y, slot, slot};
+				show_arrow = true;
+				x += step;
+			}
+			ui_slots.emplace_back(SlotView{&inv, i, Rect{x, y, slot, slot}});
+			x += step;
+		}
 	}
 }
 
