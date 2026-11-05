@@ -694,7 +694,7 @@ bool PlayMode::interact_with(Entity *entity) {
 		book_open = false;
 	}
 
-	if (auto *dragon = dynamic_cast< Dragon * >(entity)) {
+	if (dynamic_cast< Dragon * >(entity)) {
 		// If it is a dragon
 		talking_to_dragon = true;
 		dragon_dialogue_index += 1;
@@ -1171,7 +1171,7 @@ void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &
 
 void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size) {
 	// only draw if there is an active quest
-	if (active_quest < 0 || active_quest > quests.size()) return;
+	if (active_quest < 0 || size_t(active_quest) > quests.size()) return;
 
 	// right-anchored rendering
 	float text_h = 8.0f * float(canvas.scale);
@@ -1240,13 +1240,13 @@ void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 		if (active_quest >= 0 && size_t(active_quest) < DRAGON_DIALOGUES.size()) {
 			 auto const &dialogues = DRAGON_DIALOGUES[active_quest];
 			if (!dialogues.empty()) {
-				std::stringstream ss(dialogues[dragon_dialogue_index % dialogues.size()]);
+				std::stringstream ss2(dialogues[dragon_dialogue_index % dialogues.size()]);
 				std::string dialogue_line;
 
-				while (std::getline(ss, dialogue_line)) {
-					glm::vec3 anchor(x, y, 0.0f);
-					lines.draw_text(dialogue_line, anchor + glm::vec3(2, 2, 0), glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-					lines.draw_text(dialogue_line, anchor, glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), color);
+				while (std::getline(ss2, dialogue_line)) {
+					glm::vec3 anchor2(x, y, 0.0f);
+					lines.draw_text(dialogue_line, anchor2 + glm::vec3(2, 2, 0), glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+					lines.draw_text(dialogue_line, anchor2, glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), color);
 					y += text_h * 1.4f;
 				}
 			}
@@ -1268,7 +1268,7 @@ void PlayMode::clear_quest() {
 		if (!quest_goals_cleared[req_idx]) return;
 	}
 	// should be cleared. proceed to next task
-	for (int i = 0; i < quest_goals_cleared.size(); ++i) 
+	for (size_t i = 0; i < quest_goals_cleared.size(); ++i) 
 		quest_goals_cleared[i] = false;
 	
 	active_quest = quests[active_quest].next_quest_index;
