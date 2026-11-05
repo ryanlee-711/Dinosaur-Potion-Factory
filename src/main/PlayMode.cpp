@@ -23,6 +23,8 @@
 #include "../world/entities/LichenRock.hpp"
 #include "../world/entities/Boulder.hpp"
 #include "../world/entities/Furnace.hpp"
+#include "../world/entities/CopperVein.hpp"
+#include "../world/entities/Dragon.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -49,6 +51,33 @@ static constexpr float SECOND_PER_DAMAGE = 0.25f;
 // Reach distances
 static constexpr float PLACE_REACH = 6.0f;
 static constexpr float TOOL_REACH = 3.0f;
+
+
+// DRAGON DIALOGUES
+static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
+
+	std::vector<std::string> {
+		"Cough cough... I'm sick...\nplease bring me medicine...\nBrew potion...", 
+		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHUUU*.", 
+		"Your pickaxe is missing... \nwhere is it...?", 
+		"If a rock is too heavy...\nDrink some ale to bulk up...", 
+	},
+	std::vector<std::string> {
+		"You've brewed Ale... \ndrink it and find your pickaxe...\nAnd bring back the furnace...", 
+		"You can press `interact`\nto push a rock...\nafter a bottle of drink.", 
+	},
+	std::vector<std::string> {
+		"Furnace is very powerful...\nDry the lichens... and grind them.", 
+		"Lichen powder yields a red solution...\nAdd apples to it...\nto brew stronger potions...", 
+		"I can smith new machines for you...\nBring materials.", 
+	},
+	std::vector<std::string> {
+		"You've mastered brewing...\nPlease bring me 8 Strength potion.", 
+	},
+};
+
+
+
 
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
@@ -191,10 +220,11 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		entities.back()->position = glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE);
 
 		// Boulders scattered around
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)));
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)));
@@ -206,7 +236,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)));
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)));
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)));
 
@@ -219,6 +249,9 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
+	}
+	{ // Dragon
+		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)));
 	}
 
 	{ // boulders on the left, and lichen rock
@@ -580,6 +613,11 @@ void PlayMode::do_world_interaction(float elapsed) {
 			if (player.effect_level("strength") > 0) {
 				damages *= player.effect_level("strength");
 			}
+			if (damages >= 5 && target->get_hardness() == 99 && target->get_drop_id() != "") {
+				// these are non-dropping source blocks
+				spawn_item(target->get_drop_id(), 1, entity->position);
+				break_timer -= 5.0f * SECOND_PER_DAMAGE;
+			}
 			if (damages >= target->get_hardness()) {
 				entity->removed = true;
 			}
@@ -617,6 +655,8 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_entity<Cauldron>(entities, world_pos);
 	} else if (id == "pipe") {
 		add_entity<Pipe>(entities, world_pos);
+	} else if (id == "furnace" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+		add_entity<Furnace>(entities, world_pos);
 	} else {
 		return false; //not a machine
 	}
@@ -640,6 +680,16 @@ bool PlayMode::interact_with(Entity *entity) {
 		inventory_open = true;
 		book_open = false;
 	}
+
+	if (auto *dragon = dynamic_cast< Dragon * >(entity)) {
+		// If it is a dragon
+		talking_to_dragon = true;
+		dragon_dialogue_index += 1;
+		clear_quest();
+	} else {
+		talking_to_dragon = false;
+	}
+
 	if (!ctx.message.empty()) {
 		message = ctx.message;
 		message_timer = MESSAGE_SECONDS;
@@ -1127,6 +1177,7 @@ void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
     }
 
 	int req_idx = -1;
+	bool all_satisfied = true;
 	for (auto &record : quests[active_quest].required_items) {
 		req_idx++;
 		auto item = Item::get(record.first);
@@ -1139,6 +1190,7 @@ void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 			line += std::to_string(record.second) + "/" + std::to_string(record.second);
 		} else {
 			line += std::to_string(count) + "/" + std::to_string(record.second);
+			all_satisfied = false;
 		}
 		float x = std::floor(text_h * 0.5f);
 		glm::vec3 anchor(x, y, 0.0f);
@@ -1147,6 +1199,48 @@ void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 		lines.draw_text(line, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
 		y += text_h * 1.4f;
 	}
+
+	// If finished, draw the "Talk to dragon" hint
+	if (all_satisfied) {
+		float x = std::floor(text_h * 0.5f);
+		glm::vec3 anchor(x, y, 0.0f);
+		glm::u8vec4 color = quest_goals_cleared[req_idx] ? glm::u8vec4(0xbf, 0xff, 0x90, 0xff) : glm::u8vec4(0xf0, 0xab, 0x90, 0xff);
+		lines.draw_text("Talk to the dragon", anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		lines.draw_text("Talk to the dragon", anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
+		y += text_h * 1.4f;
+	}
+
+	// draw dragon dialogue
+	if (talking_to_dragon) {
+		float x = std::floor(drawable_size.x * 0.11f);
+		y = drawable_size.y * 0.6f;
+		glm::vec3 anchor(x, y, 0.0f);
+		glm::u8vec4 color = glm::u8vec4(0xff, 0xa0, 0x90, 0xff);
+
+		std::string text = "Dragon";
+		lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
+
+		x = std::floor(text_h * 0.5f);
+		y += text_h * 2.4f;
+		// dialogues
+		if (active_quest >= 0 && size_t(active_quest) < DRAGON_DIALOGUES.size()) {
+			 auto const &dialogues = DRAGON_DIALOGUES[active_quest];
+			if (!dialogues.empty()) {
+				std::stringstream ss(dialogues[dragon_dialogue_index % dialogues.size()]);
+				std::string dialogue_line;
+
+				while (std::getline(ss, dialogue_line)) {
+					glm::vec3 anchor(x, y, 0.0f);
+					lines.draw_text(dialogue_line, anchor + glm::vec3(2, 2, 0), glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+					lines.draw_text(dialogue_line, anchor, glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), color);
+					y += text_h * 1.4f;
+				}
+			}
+		}
+
+	}
+
 
 }
 
@@ -1272,6 +1366,7 @@ void PlayMode::close_container() {
 	//slot views may point into the closed container; they're rebuilt on the next draw
 	ui_slots.clear();
 	ui_mouse_down = false;
+	talking_to_dragon = false;
 }
 
 template <typename EntityClass>

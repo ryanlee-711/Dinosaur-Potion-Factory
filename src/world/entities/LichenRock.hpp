@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class LichenRock : public Entity, public IInteractable, public IInventoryHolder {
+class LichenRock : public Entity, public IInteractable, public IInventoryHolder, public IBreakable {
     /* LichenRock implementation for demo. */
 public:
     LichenRock();
@@ -24,6 +24,10 @@ public:
 
     // IInventoryHolder
     auto get_inventory() -> Inventory* override;
+
+    // IBreakable
+    int get_hardness() override {return 99;}
+    item_id_t get_drop_id() override {return "lichen";}
 
 
 private:

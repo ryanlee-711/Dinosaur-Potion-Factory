@@ -161,6 +161,8 @@ const game_names = [
 	maek.CPP('src/world/entities/AppleTree.cpp'),
 	maek.CPP('src/world/entities/LichenRock.cpp'),
 	maek.CPP('src/world/entities/Boulder.cpp'),
+	maek.CPP('src/world/entities/CopperVein.cpp'),
+	maek.CPP('src/world/entities/Dragon.cpp'),
 
 	//audio (not used yet):
 	maek.CPP('src/starter/Sound.cpp'),

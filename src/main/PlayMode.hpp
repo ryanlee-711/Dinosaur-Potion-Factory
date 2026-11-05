@@ -76,6 +76,8 @@ struct PlayMode : Mode {
 		int next_quest_index = -1;
 	};
 	// list of quests now
+	bool talking_to_dragon = false;
+	int dragon_dialogue_index = 0;
 	std::vector<Quest> quests;
 	std::vector<bool> quest_goals_cleared;
 	int active_quest = 0;

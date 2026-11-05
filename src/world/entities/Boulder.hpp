@@ -24,7 +24,7 @@ public:
 
     // IBreakable
     int get_hardness() override {return big ? 8 : 4;}
-    item_id_t get_drop_id() override {return "";}
+    item_id_t get_drop_id() override {return "rock";}
 
     bool big = true;
 
