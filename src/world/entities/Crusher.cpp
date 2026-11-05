@@ -166,10 +166,10 @@ auto Crusher::get_inventory() -> Inventory* {
 
 IItemPort::PortType Crusher::get_port(glm::ivec2 grid_coord) {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
-    if (grid_coord == tile + glm::ivec2{-1, 0}) {
+    if (grid_coord == tile + glm::ivec2{-1, -1}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{2, 0}) {
+    if (grid_coord == tile + glm::ivec2{4, 0}) {
         return IItemPort::PortType::Out;
     }
     return IItemPort::PortType::None;

@@ -87,26 +87,17 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// initialize several boxes for demonstration (entities).
 
 	for (size_t i = 0; i < 3; ++i) {
-		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
+		add_entity<Pipe>(entities, glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 	}
 
 	{
-		entities.push_back(std::make_unique<Crusher>());
-		entities.back()->position = glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<Cauldron>());
-		entities.back()->position = glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 4 + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE);
+		add_entity<Crusher>(entities, glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
+		add_entity<Cauldron>(entities, glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
+		add_entity<Chest>(entities, glm::vec2((3.0f * 4.0f + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE));
 	}
 	{
-		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<AppleTree>());
-		entities.back()->position = glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE);
+		add_entity<Chest>(entities, glm::vec2((3.0f * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE));
+		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE));
 
 	}
 	{ // Add one item entity somewhere
@@ -117,7 +108,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// initialize the inventory with two apple and one powder
 	inventory.add("pickaxe", 1);
 	inventory.add("ale", 20);
-	inventory.add("apple_powder", 10);
+	inventory.add("crushed_apple", 10);
 	inventory.add("water_bottle", 10);
 	inventory.add("pipe", 10);
 	inventory.add("chest", 10);
@@ -628,6 +619,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
 				lines.draw_text(message, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 				lines.draw_text(message, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			} else if (std::string sel_id = inventory.get_slot_id(hotbar_selected); !ui_slots.empty() && sel_id != "") {
+				auto item = Item::get(sel_id);
+				std::string text = item->name + (item->description != "" ? "  -  " + item->description : "");
+				Rect const &first = ui_slots.front().rect;
+				float text_h = slot * 0.4f;
+				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
+				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+				lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 			}
 			ui_batch.end();
 		} //(lines draw here, on top of the slots)
@@ -724,6 +723,18 @@ template <typename EntityClass>
 void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position) {
 	list.push_back(std::make_unique<EntityClass>());
 	list.back()->position = position;
+
+	std::vector<glm::ivec2> occupied_tiles;
+	list.back()->get_occupied(&occupied_tiles);
+
+	for (auto const &tile: occupied_tiles) {
+		if (coord_to_entities.find(tile) != coord_to_entities.end()) {
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		} else {
+			coord_to_entities[tile] = std::vector<Entity *>{ };
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		}
+	}
 }
 
 // =================== Other helpers ================= //

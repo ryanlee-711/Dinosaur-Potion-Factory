@@ -54,7 +54,7 @@ void Chest::update(FrameInput const &input, float elapsed, World const &world) {
 }
 
 void Chest::draw(Sprites &batch) const {
-    Rect src{0.0f, 0.0f, 32.0f, 16.0f};
+    Rect src{3 * 32.0f, 0.0f, 32.0f, 16.0f};
     //round to whole pixels so the sprite never sits between pixels:
     glm::vec2 top_left = glm::round(position);
     batch.draw(*box_texture, src, top_left);

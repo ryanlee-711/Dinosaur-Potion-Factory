@@ -26,13 +26,13 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         // -------------- APPLE -------------
         add("crusher", 
             ItemVector{ ItemRecord{"apple", 1} },
-            ItemVector{ ItemRecord{"apple_powder", 1} },
+            ItemVector{ ItemRecord{"crushed_apple", 1} },
             2.0f
         );
 
         add("crusher", 
             ItemVector{ ItemRecord{"baked_apple", 1} },
-            ItemVector{ ItemRecord{"baked_apple_powder", 1} },
+            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
             2.0f
         );
 
@@ -43,8 +43,8 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("furnace", 
-            ItemVector{ ItemRecord{"apple_powder", 1} },
-            ItemVector{ ItemRecord{"baked_apple_powder", 1} },
+            ItemVector{ ItemRecord{"crushed_apple", 1} },
+            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
             4.0f
         );
 
@@ -55,7 +55,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("furnace", 
-            ItemVector{ ItemRecord{"baked_apple_powder", 1} },
+            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             4.0f
         );
@@ -63,13 +63,13 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         // ------- Apple potions ---------
 
         add("brewer", 
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"apple_powder", 3} },
+            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"ale", 1} },
             10.0f
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"baked_apple_powder", 3} },
+            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"baked_crushed_apple", 3} },
             ItemVector{ ItemRecord{"apple_drink", 1} },
             10.0f
         );
@@ -120,19 +120,19 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
         add("brewer", 
             ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_lichen_powder", 5} },
-            ItemVector{ ItemRecord{"tense_red_potion", 1} },
+            ItemVector{ ItemRecord{"potent_red_potion", 1} },
             20.0f
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"apple_powder", 3} },
+            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"crushed_apple", 3} },
             ItemVector{ ItemRecord{"strength_potion", 1} },
             10.0f
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"tense_red_potion", 1}, ItemRecord{"apple_powder", 3} },
-            ItemVector{ ItemRecord{"tense_strength_potion", 1} },
+            ItemVector{ ItemRecord{"potent_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
+            ItemVector{ ItemRecord{"potent_strength_potion", 1} },
             10.0f
         );
 
@@ -144,13 +144,13 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"muddy_red_potion", 1}, ItemRecord{"apple_powder", 3} },
-            ItemVector{ ItemRecord{"strong_ale", 1} },
+            ItemVector{ ItemRecord{"muddy_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
+            ItemVector{ ItemRecord{"potent_ale", 1} },
             10.0f
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_apple_powder", 3} },
+            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_crushed_apple", 3} },
             ItemVector{ ItemRecord{"sweetened_potion", 1} },
             10.0f
         );

@@ -1,6 +1,6 @@
 # ================ INGREDIENTS ==============
 apple	Apple	assets/sprites/items/ingredients/apple.png	apple that grows in caves
-apple_powder	Apple Powder	assets/sprites/items/ingredients/apple_powder.png	powdered apple
+crushed_apple	Apple Powder	assets/sprites/items/ingredients/crushed_apple.png	powdered apple
 baked_apple	Baked Apple	assets/sprites/items/missing_no.png	TODO
 apple_paste	Apple Paste	assets/sprites/items/missing_no.png	TODO
 lichen	Lichen	assets/sprites/items/missing_no.png	TODO
