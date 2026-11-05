@@ -9,6 +9,7 @@
 #include "../starter/PathFont.hpp"
 
 #include "../inventory/Effect.hpp"
+#include "../inventory/Recipe.hpp"
 
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
@@ -78,7 +79,7 @@ static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &
 	} else {
 		batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
 	}
-	
+
 
 	float text_h = rect.w * 0.375f; //count text height in screen pixels
 	glm::vec3 anchor(rect.x + rect.w * 0.875f, rect.y + rect.h, 0.0f);
@@ -117,14 +118,30 @@ static glm::u8vec4 slot_color(Inventory::SlotRule const &rule) {
 
 //A pixel-art arrow pointing right, filling 'r', built from 8 columns (shaft, then the head).
 //The left 'progress' (0..1) of it is drawn in 'fill', the rest in 'empty'.
-static void draw_arrow(Sprites &batch, Rect const &r, float progress, glm::u8vec4 empty, glm::u8vec4 fill) {
+static void draw_arrow(Sprites &batch, Rect const &r, float progress, glm::u8vec4 empty, glm::u8vec4 fill, bool point_left = false) {
 	static constexpr int heights[8] = {2, 2, 2, 2, 7, 5, 3, 1}; //column heights, in eighths of r.h
 	float column = r.w / 8.0f;
 	for (int c = 0; c < 8; ++c) {
 		float h = r.h * float(heights[c]) / 8.0f;
 		bool filled = (float(c) + 0.5f) / 8.0f <= progress;
-		batch.fill_rect(Rect{r.x + column * float(c), r.y + (r.h - h) * 0.5f, column, h}, filled ? fill : empty);
+		float x = point_left ? r.x + r.w - column * float(c + 1) : r.x + column * float(c); //mirror for left
+		batch.fill_rect(Rect{x, r.y + (r.h - h) * 0.5f, column, h}, filled ? fill : empty);
 	}
+}
+
+//----- recipe book colors -----
+static glm::u8vec4 const BOOK_COVER(0x5a, 0x34, 0x1c, 0xff); //leather around the pages
+static glm::u8vec4 const BOOK_PAPER(0xec, 0xdf, 0xbf, 0xff);
+static glm::u8vec4 const BOOK_SPINE(0xc4, 0xb2, 0x8e, 0xff); //fold between the pages
+static glm::u8vec4 const BOOK_INK(0x1c, 0x10, 0x08, 0xff);   //normal text
+static glm::u8vec4 const BOOK_RED(0x6e, 0x12, 0x08, 0xff);   //effect lines
+static glm::u8vec4 const BOOK_FADED(0x5a, 0x48, 0x30, 0xff); //page numbers, locked-page hint
+
+//" I", " II", ... for an effect level
+static std::string roman_level(int level) {
+	static char const *numerals[] = {"", " I", " II", " III", " IV", " V"};
+	if (level >= 0 && level <= 5) return numerals[level];
+	return " " + std::to_string(level);
 }
 
 std::mt19937 mt(0x64696e6f);   // "dino"
@@ -210,6 +227,12 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)));
 	}
 
+	// recipe book: one page per recipe that makes a potion
+	for (Recipe const *recipe : Recipe::all()) {
+		if (recipe->items_out.empty()) continue;
+		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion) book_recipes.push_back(recipe);
+	}
+
 	// initialize the inventory with two apple and one powder
 	inventory.add("water_bottle", 10);
 	inventory.add("ale", 5);
@@ -230,13 +253,27 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		if (!inventory_open) consume_selected();
 		return true;
 	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_J) {
+		//J: open / close the recipe book
+		if (book_open) {
+			book_open = false;
+		} else {
+			close_container();
+			book_open = true;
+		}
+		return true;
+	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_TAB) {
 		if (inventory_open) close_container();
-		else inventory_open = true;
+		else {
+			inventory_open = true;
+			book_open = false;
+		}
 		return true;
 	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_ESCAPE) {
 		//close the open container (and put anything on the cursor back in the bag)
+		book_open = false;
 		close_container();
 		return true;
 	}
@@ -244,6 +281,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	//----- inventory mouse controls (see ItemCursor.hpp for the full scheme) -----
 	// Clicks are handled here, as events, so even very fast clicks are never missed.
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT) {
+		if (book_open) {
+			//recipe book: the arrows turn two pages at a time
+			glm::vec2 p = glm::vec2(evt.button.x, evt.button.y) * window_scale;
+			if (book_prev_rect.contains(p) && book_page >= 2) book_page -= 2;
+			else if (book_next_rect.contains(p) && book_page + 2 < book_recipes.size()) book_page += 2;
+			if (book_rect.contains(p)) return true;
+		}
+
 		if (SlotView const *hit = slot_at(glm::vec2(evt.button.x, evt.button.y)); hit != nullptr) {
 			if (!inventory_open) {
 				//no panel open: clicking the hotbar selects that slot (click again to unselect), like the number keys
@@ -308,7 +353,7 @@ void PlayMode::update(float elapsed) {
 
 	//everything entities can collide with this frame:
 	std::vector<std::unique_ptr<Entity>> spawned;
-	World world{map, entities, player, coord_to_entities, &spawned};
+	World world{map, entities, player, coord_to_entities, &spawned, &made_items};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -428,7 +473,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 	// place/use/break anything (the mouse is for moving items). Right click and E / Space can
 	// still interact.
 	bool over_ui = mouse_over_ui();
-	bool panel_open = inventory_open;
+	bool panel_open = inventory_open || book_open;
 	if (over_ui || panel_open) break_timer = 0.0f;
 	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
 	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
@@ -540,6 +585,7 @@ bool PlayMode::interact_with(Entity *entity) {
 		opened_inventory = ctx.open_container;
 		opened_entity = entity;
 		inventory_open = true;
+		book_open = false;
 	}
 	if (!ctx.message.empty()) {
 		message = ctx.message;
@@ -689,7 +735,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		uint32_t tags = Item::tags_of(inventory.get_slot_id(hotbar_selected));
 		bool placeable = (tags & ItemTag::Placeable) != 0;
 		bool tool = (tags & ItemTag::Tool) != 0;
-		if ((placeable || tool) && !inventory_open && !mouse_over_ui()) {
+		if ((placeable || tool) && !inventory_open && !book_open && !mouse_over_ui()) {
 			float reach = tool ? TOOL_REACH : PLACE_REACH;
 			bool in_reach = tile_in_reach(hovered_coord, reach);
 			glm::u8vec4 color = in_reach ? glm::u8vec4(0xee, 0xdd, 0x44, 0x28)  //yellow: in reach
@@ -792,7 +838,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				} else {
 					text = sel_id + " (error item)";
 				}
-				
+
 				Rect const &first = ui_slots.front().rect;
 				float text_h = slot * 0.4f;
 				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
@@ -831,6 +877,16 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 
+	//--- recipe book ---
+	if (book_open) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		float slot = 16.0f * float(canvas.scale);
+		DrawLines lines(screen_to_clip);
+		ui_batch.begin(screen_to_clip);
+		draw_book(ui_batch, lines, drawable_size, slot);
+		ui_batch.end();
+	}
+
 	//--- active effects, top left ---
 	if (!player.active_effects().empty()) {
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
@@ -852,6 +908,138 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	GL_ERRORS();
+}
+
+// =================== Recipe book ================= //
+
+void PlayMode::draw_book(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot) {
+	glm::vec2 screen = glm::vec2(drawable_size);
+
+	//two pages side by side, centered in the space above the hotbar
+	float page_w = std::floor(slot * 9.0f);
+	float page_h = std::floor(slot * 8.0f);
+	float gutter = std::floor(slot * 0.25f); //fold between the pages
+	float border = std::floor(slot * 0.3f);  //cover showing around the pages
+	glm::vec2 top_left = glm::floor(glm::vec2(
+		(screen.x - 2.0f * page_w - gutter) * 0.5f,
+		(screen.y - slot * 2.0f - page_h) * 0.5f
+	));
+	Rect left{top_left.x, top_left.y, page_w, page_h};
+	Rect right{top_left.x + page_w + gutter, top_left.y, page_w, page_h};
+	book_rect = Rect{left.x - border, left.y - border, 2.0f * page_w + gutter + 2.0f * border, page_h + 2.0f * border};
+
+	sprites.fill_rect(book_rect, BOOK_COVER);
+	sprites.fill_rect(left, BOOK_PAPER);
+	sprites.fill_rect(right, BOOK_PAPER);
+	sprites.fill_rect(Rect{left.x + page_w, left.y, gutter, page_h}, BOOK_SPINE);
+
+	book_prev_rect = Rect{};
+	book_next_rect = Rect{};
+	if (book_recipes.empty()) return;
+
+	//left page shows an even index; the right page the one after it (if any)
+	book_page = std::min(book_page, (book_recipes.size() - 1) / 2 * 2);
+	draw_book_page(sprites, lines, *book_recipes[book_page], left, slot, book_page + 1);
+	if (book_page + 1 < book_recipes.size()) {
+		draw_book_page(sprites, lines, *book_recipes[book_page + 1], right, slot, book_page + 2);
+	}
+
+	//page-turn arrows in the bottom outer corners, only when there's a page that way
+	float a = std::floor(slot * 0.75f);
+	float arrow_y = left.y + page_h - a - std::floor(slot * 0.25f);
+	if (book_page >= 2) {
+		book_prev_rect = Rect{left.x + std::floor(slot * 0.3f), arrow_y, a, a};
+		draw_arrow(sprites, book_prev_rect, 0.0f, BOOK_INK, BOOK_INK, true);
+	}
+	if (book_page + 2 < book_recipes.size()) {
+		book_next_rect = Rect{right.x + page_w - a - std::floor(slot * 0.3f), arrow_y, a, a};
+		draw_arrow(sprites, book_next_rect, 0.0f, BOOK_INK, BOOK_INK);
+	}
+}
+
+
+void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &recipe, Rect const &page, float slot, size_t page_number) {
+	//draws 'str' with the left end of its baseline at (x, y), 'h' pixels tall
+	auto text = [&](std::string const &str, float x, float y, float h, glm::u8vec4 color) {
+		lines.draw_text(str, glm::vec3(x, y, 0.0f), glm::vec3(h, 0.0f, 0.0f), glm::vec3(0.0f, -h, 0.0f), color);
+	};
+	Rect const sprite_src{0.0f, 0.0f, 16.0f, 16.0f};
+
+	float pad = std::floor(slot * 0.5f);
+	float x = page.x + pad;
+	float body_h = std::floor(slot * 0.35f);
+	float line = std::floor(body_h * 1.6f);
+
+	item_id_t potion = recipe.items_out.empty() ? "" : recipe.items_out[0].first;
+	Item const *item = Item::get(potion);
+
+	//--- potion sprite, top right corner ---
+	float icon = std::floor(slot * 1.5f);
+	Rect icon_rect{page.x + page.w - pad - icon, page.y + std::floor(pad * 0.6f), icon, icon};
+
+	//--- locked: not brewed yet. Show "????" and a dark silhouette of the potion, nothing else ---
+	if (made_items.count(potion) == 0) {
+		if (item) sprites.draw(*item->texture, sprite_src, icon_rect, glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		float title_h = std::floor(slot * 0.55f);
+		text("????", x, page.y + pad + title_h, title_h, BOOK_INK);
+		text("Brew this potion once", x, icon_rect.y + icon + line, body_h, BOOK_FADED);
+		text("to learn its recipe.", x, icon_rect.y + icon + 2.0f * line, body_h, BOOK_FADED);
+	} else {
+		if (item) sprites.draw(*item->texture, sprite_src, icon_rect);
+
+		//--- name, shrunk if needed so it never runs into the sprite ---
+		std::string name = item ? item->name : potion;
+		float title_space = icon_rect.x - x - slot * 0.2f;
+		float title_h = std::min(slot * 0.55f, title_space / std::max(text_width(name), 0.01f));
+		text(name, x, page.y + pad + title_h, title_h, BOOK_INK);
+
+		//--- effects (from the consumables table) ---
+		float y = icon_rect.y + icon + line;
+		if (Consumable const *drink = Consumable::get(potion)) {
+			for (EffectGrant const &grant : drink->grants) {
+				Effect const *effect = Effect::get(grant.effect);
+				std::string str = (effect ? effect->name : grant.effect) + roman_level(grant.level)
+					+ " for " + std::to_string(int(grant.seconds)) + "s";
+				text(str, x, y, body_h, BOOK_RED);
+				y += line;
+			}
+		} else {
+			text("No effect: brewing base", x, y, body_h, BOOK_RED);
+			y += line;
+		}
+
+		//--- ingredients: small sprite as the bullet, then "3 x Apple Powder" ---
+		y += std::floor(line * 0.5f);
+		float header_h = std::floor(body_h * 1.15f);
+		text("Ingredients", x, y, header_h, BOOK_INK);
+		float underline = std::max(1.0f, std::floor(slot / 16.0f));
+		sprites.fill_rect(Rect{x, y + std::floor(body_h * 0.25f), text_width("Ingredients") * header_h, underline}, BOOK_INK);
+		y += line;
+
+		float bullet = std::floor(body_h * 1.4f);
+		for (ItemRecord const &in : recipe.items_in) {
+			Item const *ingredient = Item::get(in.first);
+			if (ingredient) {
+				//centered on the text's middle (the text sits between y - body_h and y)
+				Rect bullet_rect{x, std::floor(y - body_h * 0.5f - bullet * 0.5f), bullet, bullet};
+				sprites.draw(*ingredient->texture, sprite_src, bullet_rect);
+			}
+			std::string str = std::to_string(in.second) + " x " + (ingredient ? ingredient->name : in.first);
+			text(str, x + bullet + std::floor(slot * 0.15f), y, body_h, BOOK_INK);
+			y += std::floor(bullet * 1.2f);
+		}
+
+		//--- machine (and how long it takes) ---
+		y += std::floor(line * 0.5f);
+		Item const *machine = Item::get(recipe.machine_id);
+		std::string machine_name = machine ? machine->name : recipe.machine_id;
+		text("Made in: " + machine_name + " (" + std::to_string(int(recipe.time_cost)) + "s)", x, y, body_h, BOOK_INK);
+	}
+
+	//--- page number, bottom center ---
+	std::string number = std::to_string(page_number);
+	float number_h = std::floor(body_h * 0.9f);
+	text(number, std::floor(page.x + (page.w - text_width(number) * number_h) * 0.5f), page.y + page.h - std::floor(pad * 0.6f), number_h, BOOK_FADED);
 }
 
 // =================== Inventory mouse UI ================= //

@@ -96,6 +96,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
         // check that there is space for outputs
         for (ItemRecord const &item : current_recipe->items_out) {
             inventory.add_to_slot_range(item.first, item.second, 2, 3);
+            if (world.made_items) world.made_items->insert(item.first);
         }
     }
 

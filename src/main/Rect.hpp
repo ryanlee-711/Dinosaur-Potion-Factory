@@ -11,6 +11,11 @@ struct Rect {
 	glm::vec2 min() const { return glm::vec2(x, y); }  //top-left
 	glm::vec2 max() const { return glm::vec2(x + w, y + h); }  //bottom-right
 
+	// True if point 'p' is inside the rectangle
+	bool contains(glm::vec2 p) const {
+		return p.x >= x && p.x < x + w && p.y >= y && p.y < y + h;
+	}
+
 	// True if the two rectangles share some area
 	// Rectangles that only touch along an edge do NOT overlap
 	bool overlaps(Rect const &o) const {

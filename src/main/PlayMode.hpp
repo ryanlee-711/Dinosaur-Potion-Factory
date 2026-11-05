@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../starter/Mode.hpp"
+#include "../starter/DrawLines.hpp"
 
 #include "../rendering/Camera2D.hpp"
 #include "../rendering/PixelCanvas.hpp"
@@ -18,6 +19,9 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
+
+struct Recipe;
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
@@ -54,6 +58,16 @@ struct PlayMode : Mode {
 
 	// ----- entity lookup caching ------
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;
+
+	//----- recipe book -----
+	bool book_open = false;
+	size_t book_page = 0;                        // index of the recipe on the left page
+	std::vector< Recipe const * > book_recipes;  // every potion recipe, one per page
+	std::unordered_set< item_id_t > made_items;  // potions brewed at least once; their pages are unlocked
+	Rect book_rect;                              // the whole open book on screen
+	Rect book_prev_rect, book_next_rect;         // page-turn arrows
+	void draw_book(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot);
+	void draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &recipe, Rect const &page, float slot, size_t page_number);
 
 	//----- inventory -----
 	static constexpr size_t HOTBAR_SLOTS = 10; // Number of slots in the hotbar

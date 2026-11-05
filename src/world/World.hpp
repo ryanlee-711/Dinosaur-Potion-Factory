@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <unordered_set>
 
 struct Tilemap;
 struct Entity;
@@ -21,6 +22,7 @@ struct World {
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> const &coord_to_entities;
 	//spawned entities
 	std::vector<std::unique_ptr<Entity>> *spawned = nullptr;
+	std::unordered_set<item_id_t> *made_items = nullptr;
 
 	// Appends to 'out' every solid thing 'box' overlaps that 'mover' can't walk through
 	void solids_overlapping(Rect const &box, Entity const &mover, std::vector< Rect > &out) const;

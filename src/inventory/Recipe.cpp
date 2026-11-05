@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <algorithm>
 #include "../starter/Load.hpp"
 
 using RecipeRegistry = Recipe::RecipeRegistry;
@@ -164,6 +165,18 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 std::vector<Recipe> const * Recipe::get_recipes(item_id_t machine_id) {
     if (recipe_registry->find(machine_id) == recipe_registry->end()) return nullptr;
     return &recipe_registry->at(machine_id);
+}
+
+std::vector<Recipe const *> Recipe::all() {
+    std::vector<item_id_t> machines;
+    for (auto const &[machine_id, recipes] : *recipe_registry) machines.push_back(machine_id);
+    std::sort(machines.begin(), machines.end());
+
+    std::vector<Recipe const *> result;
+    for (item_id_t const &machine_id : machines) {
+        for (Recipe const &recipe : recipe_registry->at(machine_id)) result.push_back(&recipe);
+    }
+    return result;
 }
 
 // Which tags a machine's input slots accept
