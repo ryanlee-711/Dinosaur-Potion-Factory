@@ -21,6 +21,10 @@ float GRAVITATE_DISTANCE = 120.0f;
 float FRICTION_FACTOR = 40.0f;
 float VERTICAL_GRAVITY = 6.0f;
 
+static Load< Texture > missing_no_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/items/missing_no.png"));
+});
+
 ItemEntity::ItemEntity(): inventory(1) {
     collision_mask = 0x0;
 }
@@ -68,7 +72,12 @@ void ItemEntity::draw(Sprites &batch) const {
         Rect src{0.0f, 0.0f, 16.0f, 16.0f};
         //round to whole pixels so the sprite never sits between pixels:
         glm::vec2 top_left = glm::round(position + glm::vec2{-8.0f, -8.0f + height + glm::sin(no_absorb_cooldown * 2.0f)});
-        batch.draw(*item->texture, src, top_left);
+        if (item != nullptr) {
+            batch.draw(*item->texture, src, top_left);
+        } else {
+            batch.draw(*missing_no_texture, src, top_left);
+        }
+        
     }
 }
 

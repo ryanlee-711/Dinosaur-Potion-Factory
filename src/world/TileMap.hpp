@@ -45,6 +45,7 @@ struct Tilemap {
 	static glm::vec2 tile_center(glm::ivec2 tile);
 	// Bottom-center of a tile: the 'position' to give an entity that stands on that tile
 	static glm::vec2 tile_base(glm::ivec2 tile);
+	static glm::vec2 tile_topleft(glm::ivec2 tile);
 	// The world-pixel rectangle a tile covers
 	static Rect tile_rect(glm::ivec2 tile);
 

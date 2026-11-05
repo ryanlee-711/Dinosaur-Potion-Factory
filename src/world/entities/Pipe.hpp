@@ -29,6 +29,7 @@ public:
     int push_item(ItemRecord item_record) override;
 
     // IBreakable
+    int get_hardness() override {return 1;}
     item_id_t get_drop_id() override {return "pipe";}
 
     // Pipe

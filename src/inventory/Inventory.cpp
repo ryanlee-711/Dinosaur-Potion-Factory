@@ -72,6 +72,9 @@ int Inventory::space_for_in_slot_range(item_id_t const &id, size_t begin, size_t
 	int space = 0;
 	for (size_t idx = begin; idx < std::min(end, size()); ++idx) {
 		auto const &[slot_id, slot_count] = slots[idx];
+		auto item = Item::get(id);
+		if (item == nullptr) continue;
+		if (rules[idx].required_tags != 0 && (Item::tags_of(id) & rules[idx].required_tags) == 0) continue;
 		if (slot_count <= 0) space += MAX_STACK;
 		else if (slot_id == id) space += MAX_STACK - slot_count;
 	}

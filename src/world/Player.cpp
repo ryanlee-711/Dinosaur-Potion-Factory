@@ -119,3 +119,5 @@ void Player::add_effect(size_t effect_index, float time) {
 	if (effect_index >= status_effects.size()) return;
 	status_effects[effect_index] += time;
 }
+
+float Player::get_effect(size_t effect_index) {return status_effects.at(effect_index);}

@@ -37,29 +37,30 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 
 		add("lichen", "Lichen", "", "assets/sprites/items/ingredients/lichen.png", Crushable | Burnable);
 		add("crushed_lichen", "Crushed Lichen", "", "assets/sprites/items/ingredients/crushed_lichen.png", Brewable | Burnable);
-		add("lichen_powder", "Lichen Powder", "", "assets/sprites/items/ingredients/crushed_lichen.png", Brewable | Burnable);
-		add("baked_lichen", "Baked Lichen", "", "assets/sprites/items/ingredients/baked_lichen.png", Crushable | Burnable);
+		add("lichen_powder", "Lichen Powder", "", "assets/sprites/items/ingredients/lichen_powder.png", Brewable | Burnable);
+		add("dried_lichen", "Baked Lichen", "", "assets/sprites/items/ingredients/baked_lichen.png", Crushable | Burnable);
 
-		add("ash", "Ash", "N/A", "assets/sprites/items/ingredients/ash.png", None);
+		add("ash", "Ash", "Useless item", "assets/sprites/items/ingredients/ash.png", None);
 
 		// drinks
 		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
-		add("ale", "Ale", "Non-alchohol drink", "assets/sprites/items/potions/ale.png", Potion);
-		add("potent_ale", "Strong Ale", "", "assets/sprites/items/potions/potent_ale.png", Potion);
+		add("ale", "Ale", "Becomes faster and slightly stronger", "assets/sprites/items/potions/ale.png", Potion);
+		add("potent_ale", "Strong Ale", "(TBD)", "assets/sprites/items/potions/potent_ale.png", Potion);
 		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion);
 
-		add("red_potion", "Red Potion", "", "assets/sprites/items/potions/potent_red_potion.png", Potion);
-		add("potent_red_potion", "Potent Red Potion", "", "assets/sprites/items/potions/potent_red_potion.png", Potion);
-		add("muddy_red_potion", "Muddy Red Potion", "", "assets/sprites/items/potions/muddy_red_potion.png", Potion);
+		add("red_potion", "Red Potion", "Intermediate product", "assets/sprites/items/potions/potent_red_potion.png", Potion);
+		add("potent_red_potion", "Potent Red Potion", "Intermediate product", "assets/sprites/items/potions/potent_red_potion.png", Potion);
+		add("muddy_red_potion", "Muddy Red Potion", "Intermediate product???", "assets/sprites/items/potions/muddy_red_potion.png", Potion);
 
-		add("strength_potion", "Strength Potion", "", "assets/sprites/items/potions/strength_potion.png", Potion);
-		add("potent_strength_potion", "Potent Strength Potion", "", "assets/sprites/items/potions/potent_strength_potion.png", Potion);
+		add("strength_potion", "Strength Potion", "Mines harder rocks", "assets/sprites/items/potions/strength_potion.png", Potion);
+		add("potent_strength_potion", "Potent Strength Potion", "Mines harder rocks and lasts longer", "assets/sprites/items/potions/potent_strength_potion.png", Potion);
 
 		// placeables
-		add("pipe", "Pipe", "", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
-		add("chest", "Chest", "", "assets/sprites/items/placeables/chest_icon.png", Placeable);
-		add("crusher", "Crusher", "", "assets/sprites/items/placeables/crusher_icon.png", Placeable);
-		add("brewer", "brewer", "", "assets/sprites/items/placeables/brewer_icon.png", Placeable);
+		add("pipe", "Pipe", "Transmit items", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
+		add("chest", "Chest", "Contain items", "assets/sprites/items/placeables/chest_icon.png", Placeable);
+		add("crusher", "Crusher", "Crush ingredients", "assets/sprites/items/placeables/crusher_icon.png", Placeable);
+		add("brewer", "brewer", "Brew potions", "assets/sprites/items/placeables/brewer_icon.png", Placeable);
+		add("furnace", "furnace", "Bake ingredients", "assets/sprites/items/placeables/furnace_icon.png", Placeable);
 
 		// tools
 		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);

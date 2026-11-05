@@ -42,6 +42,7 @@ public:
 
 	// Buff
 	void add_effect(size_t effect_index, float time);
+	float get_effect(size_t effect_index);
 
 private:
 	void move_axis(int axis, float amount, World const &world);

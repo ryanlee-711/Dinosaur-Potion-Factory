@@ -12,7 +12,7 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 Cauldron::Cauldron() : inventory(3) {
-    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid });
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
     inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
     inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
 }

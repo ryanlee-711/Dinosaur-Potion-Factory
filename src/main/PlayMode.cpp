@@ -16,6 +16,9 @@
 #include "../world/entities/Crusher.hpp"
 #include "../world/entities/Cauldron.hpp"
 #include "../world/entities/AppleTree.hpp"
+#include "../world/entities/LichenRock.hpp"
+#include "../world/entities/Boulder.hpp"
+#include "../world/entities/Furnace.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -54,13 +57,21 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 	return best;
 }
 
+static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/items/missing_no.png"));
+});
+
 //----- inventory UI -----
 //Draws an item icon filling 'rect' with its count in the bottom-right corner (screen pixels).
 static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &record, Rect const &rect) {
 	if (record.second <= 0) return;
 	Item const *item = Item::get(record.first);
-	if (item == nullptr) return;
-	batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	if (item == nullptr) {
+		batch.draw(*missing_texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	} else {
+		batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	}
+	
 
 	float text_h = rect.w * 0.375f; //count text height in screen pixels
 	glm::vec3 anchor(rect.x + rect.w * 0.875f, rect.y + rect.h, 0.0f);
@@ -84,36 +95,81 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 
 	// ~~Demo~~
-	// initialize several boxes for demonstration (entities).
+	// initialize some existing machines for demonstration (entities).
 
 	for (size_t i = 0; i < 3; ++i) {
 		add_entity<Pipe>(entities, glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 	}
-
 	{
 		add_entity<Crusher>(entities, glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 		add_entity<Cauldron>(entities, glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 		add_entity<Chest>(entities, glm::vec2((3.0f * 4.0f + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE));
-	}
-	{
 		add_entity<Chest>(entities, glm::vec2((3.0f * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE));
-		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE));
+		add_entity<Furnace>(entities, Tilemap::tile_topleft(glm::ivec2(122, 70)));
 
-	}
-	{ // Add one item entity somewhere
+		// Apple trees
+		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE));
+		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE));
+
+		// more chests
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)));
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)));
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)));
+
+		// Add one item entity somewhere
 		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
 		entities.back()->position = glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE);
+
+		// Boulders scattered around
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)));
 	}
 
+	{ // boulders, and pickaxe stuck near it
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)));
+
+		// two small boulders, pushable...
+		entities.push_back(std::make_unique<Boulder>(false));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
+
+		entities.push_back(std::make_unique<Boulder>(false));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
+
+		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
+	}
+
+	{ // boulders on the left, and lichen rock
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)));
+
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)));
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)));
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)));
+
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)));
+	}
+
+
+
+
 	// initialize the inventory with two apple and one powder
-	inventory.add("pickaxe", 1);
-	inventory.add("ale", 20);
-	inventory.add("crushed_apple", 10);
 	inventory.add("water_bottle", 10);
-	inventory.add("pipe", 10);
-	inventory.add("chest", 10);
-	inventory.add("crusher", 10);
-	inventory.add("brewer", 10);
+	inventory.add("ale", 5);
+	inventory.add("strength_potion", 5);
 }
 
 PlayMode::~PlayMode() {
@@ -344,6 +400,24 @@ void PlayMode::do_world_interaction(float elapsed) {
 				if (item_id == "ale") {
 					player.add_effect(0, 30.0f);
 					inventory.remove("ale", 1);
+					spawn_item("empty_bottle", 1, player.position);	
+
+				} else if (item_id == "strength_potion") {
+					player.add_effect(1, 60.0f);
+					inventory.remove("strength_potion", 1);
+					spawn_item("empty_bottle", 1, player.position);	
+
+				} else if (item_id == "potent_strength_potion") {
+					player.add_effect(0, 240.0f);
+					inventory.remove("potent_strength_potion", 1);
+					spawn_item("empty_bottle", 1, player.position);	
+
+				} else if (item_id == "empty_bottle") {
+					auto tileid = map.tile_at(coord, 2);
+					if (7 <= tileid % 16 && tileid % 16 <= 10 && 9 <= tileid / 16 && tileid / 16 <= 11) {
+						inventory.remove("empty_bottle", 1);
+						spawn_item("water_bottle", 1, player.position);
+					}
 				} else if (entity == nullptr) {
 					if (place_machine(item_id, world_pos)) {
 						inventory.remove(item_id, 1);
@@ -365,6 +439,8 @@ void PlayMode::do_world_interaction(float elapsed) {
 				// keep breaking...
 				break_timer += elapsed;
 				int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
+				damages = damages > 5 ? 5 : damages;    // stop breaking heavy blocks
+				if (player.get_effect(1) > 0.0f) damages = damages * 2;  // bonus if player has used potion
 				if (damages >= target->get_hardness()) {
 					// breaked
 					entity->removed = true;
@@ -389,11 +465,23 @@ void PlayMode::do_world_interaction(float elapsed) {
 }
 
 bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
-	if (id == "chest") {
+	auto check_tile_empty = [this, world_pos](glm::ivec2 lo, glm::ivec2 hi) -> bool {
+		glm::ivec2 base = Tilemap::tile_at_point(world_pos);
+		for (int y = lo.y; y <= hi.y; ++y) {
+			for (int x = lo.x; x <= hi.x; ++x) {
+				if (entity_at(base + glm::ivec2(x, y)) != nullptr) {
+					return false;
+				}
+			}
+		}
+		return true;
+	};
+
+	if (id == "chest" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
 		add_entity<Chest>(entities, world_pos);
-	} else if (id == "crusher") {
+	} else if (id == "crusher" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_entity<Crusher>(entities, world_pos);
-	} else if (id == "brewer") {
+	} else if (id == "brewer" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_entity<Cauldron>(entities, world_pos);
 	} else if (id == "pipe") {
 		add_entity<Pipe>(entities, world_pos);
@@ -621,7 +709,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				lines.draw_text(message, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 			} else if (std::string sel_id = inventory.get_slot_id(hotbar_selected); !ui_slots.empty() && sel_id != "") {
 				auto item = Item::get(sel_id);
-				std::string text = item->name + (item->description != "" ? "  -  " + item->description : "");
+				std::string text = "";
+				if (item != nullptr) {
+					text = item->name + (item->description != "" ? "  -  " + item->description : "");
+				} else {
+					text = sel_id + " (error item)";
+				}
+				
 				Rect const &first = ui_slots.front().rect;
 				float text_h = slot * 0.4f;
 				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
@@ -775,4 +869,9 @@ void PlayMode::rebuild_coord_to_entities() {
 		return entities[0];
 	}
 	return nullptr;
+}
+
+void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
+	entities.push_back(std::make_unique<ItemEntity>(id, count));
+	entities.back()->position = position;
 }

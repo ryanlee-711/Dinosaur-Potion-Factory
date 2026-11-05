@@ -44,18 +44,18 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
         add("furnace", 
             ItemVector{ ItemRecord{"crushed_apple", 1} },
-            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
+            ItemVector{ ItemRecord{"apple_powder", 1} },
             4.0f
         );
 
         add("furnace", 
             ItemVector{ ItemRecord{"baked_apple", 1} },
-            ItemVector{ ItemRecord{"goo", 1} },
+            ItemVector{ ItemRecord{"ash", 1} },
             8.0f
         );
 
         add("furnace", 
-            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
+            ItemVector{ ItemRecord{"apple_powder", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             4.0f
         );
@@ -69,7 +69,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"baked_crushed_apple", 3} },
+            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"apple_powder", 3} },
             ItemVector{ ItemRecord{"apple_drink", 1} },
             10.0f
         );
@@ -77,49 +77,49 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         // --------------- LICHEN -----------------
         add("crusher", 
             ItemVector{ ItemRecord{"lichen", 1} },
-            ItemVector{ ItemRecord{"lichen_powder", 1} },
+            ItemVector{ ItemRecord{"crushed_lichen", 1} },
             2.0f
         );
 
         add("crusher", 
-            ItemVector{ ItemRecord{"baked_lichen", 1} },
-            ItemVector{ ItemRecord{"baked_lichen_powder", 1} },
+            ItemVector{ ItemRecord{"dried_lichen", 1} },
+            ItemVector{ ItemRecord{"lichen_powder", 1} },
             2.0f
         );
 
         add("furnace", 
             ItemVector{ ItemRecord{"lichen", 1} },
-            ItemVector{ ItemRecord{"baked_lichen", 1} },
+            ItemVector{ ItemRecord{"dried_lichen", 1} },
+            8.0f
+        );
+
+        add("furnace", 
+            ItemVector{ ItemRecord{"crushed_lichen", 1} },
+            ItemVector{ ItemRecord{"lichen_powder", 1} },
+            4.0f
+        );
+
+        add("furnace", 
+            ItemVector{ ItemRecord{"dried_lichen", 1} },
+            ItemVector{ ItemRecord{"ash", 1} },
             8.0f
         );
 
         add("furnace", 
             ItemVector{ ItemRecord{"lichen_powder", 1} },
-            ItemVector{ ItemRecord{"baked_lichen_powder", 1} },
-            4.0f
-        );
-
-        add("furnace", 
-            ItemVector{ ItemRecord{"baked_lichen", 1} },
-            ItemVector{ ItemRecord{"goo", 1} },
-            8.0f
-        );
-
-        add("furnace", 
-            ItemVector{ ItemRecord{"baked_lichen_powder", 1} },
             ItemVector{ ItemRecord{"ash", 1} },
             4.0f
         );
 
         // --------------- LICHEN POTIONS ---------------
         add("brewer", 
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"baked_lichen_powder", 5} },
+            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"lichen_powder", 5} },
             ItemVector{ ItemRecord{"red_potion", 1} },
             20.0f
         );
 
         add("brewer", 
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_lichen_powder", 5} },
+            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"lichen_powder", 5} },
             ItemVector{ ItemRecord{"potent_red_potion", 1} },
             20.0f
         );
@@ -138,7 +138,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
         // bad/hidden recipes
         add("brewer", 
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"lichen_powder", 5} },
+            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_lichen", 5} },
             ItemVector{ ItemRecord{"muddy_red_potion", 1} },
             20.0f
         );

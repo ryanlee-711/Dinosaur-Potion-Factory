@@ -28,6 +28,6 @@ public:
 
 private:
     Inventory inventory;
-    const float REGROW_COOLDOWN = 2.0f;
+    const float REGROW_COOLDOWN = 8.0f;
     float regrow_timer = 0.0f;
 };

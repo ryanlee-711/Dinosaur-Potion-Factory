@@ -39,6 +39,7 @@ struct PlayMode : Mode {
 	// Helper methods
 	template <typename EntityClass>
 	void add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position);
+	void spawn_item(item_id_t const &id, int count, glm::vec2 position);
 	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft);
 	Entity * entity_at(glm::ivec2 tile) const;
 	void rebuild_coord_to_entities();
