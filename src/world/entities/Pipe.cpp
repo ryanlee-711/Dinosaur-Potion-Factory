@@ -18,7 +18,6 @@ Pipe::Pipe() : inventory(1), frame(0), base_frame(0) {
 }
 
 void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
-    auto const &entities = world.entities;
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
         push_timer = 0.0f;
@@ -32,7 +31,7 @@ void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
     auto source_tile = origin + glm::ivec2(0, 0);
     auto target_tile = origin + out_dir;
 
-    Entity *target = entity_at(entities, target_tile);
+    Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;
 
     // get IItemPort!

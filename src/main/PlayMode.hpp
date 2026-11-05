@@ -10,7 +10,9 @@
 #include "../world/TileMap.hpp"
 #include "../world/Entity.hpp"
 #include "../inventory/Item.hpp"
+#include "../inventory/ItemCursor.hpp"
 #include "../world/Components.hpp"
+#include "Rect.hpp"
 
 #include <glm/glm.hpp>
 
@@ -29,25 +31,52 @@ struct PlayMode : Mode {
 
 	//update subroutines (make code cleaner)
 	void do_world_interaction(float elapsed);
+	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
+	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
+	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
 	void remove_objects(float elapsed);
 
 	// Helper methods
 	template <typename EntityClass>
-	void add_entity(std::vector<std::unique_ptr<Entity>> &entities, glm::vec2 position);
-
-	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &canvas, glm::vec2 camera_topleft);
+	void add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position);
+	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft);
+	Entity * entity_at(glm::ivec2 tile) const;
+	void rebuild_coord_to_entities();
 
 	//----- world -----
 	Tilemap map;
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
-	std::vector<std::unique_ptr<Entity>> entities; // TODO: add tilebased query for entities, and use hashmap to speedup lookup.
+	std::vector<std::unique_ptr<Entity>> entities;
+
+	// ----- entity lookup caching ------
+	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;
+
 	//----- inventory -----
 	Inventory inventory;                     // the player's hotbar
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
-	bool inventory_taking = false;  // switch the flow direction between inventory <-> opened inventory.
 	int hotbar_selected = -1;   // -1 = unselected
+
+	//----- inventory mouse UI -----
+	ItemCursor cursor;  // items held on the mouse while a panel is open
+
+	// Where one visible slot is on screen. Rebuilt every draw; also used for mouse hit-testing.
+	struct SlotView {
+		Inventory *inventory;
+		size_t slot;
+		Rect rect;  // drawable (physical) pixels
+	};
+	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
+
+	bool ui_mouse_down = false;  // a left press landed on a slot and hasn't been released yet
+
+	void layout_ui_slots(glm::uvec2 drawable_size, float slot_size);
+	SlotView const *slot_at(glm::vec2 window_pos) const; // window (SDL event) coordinates
+	bool mouse_over_ui() const;           // pointing at a slot or holding a slot press: the world ignores mouse buttons
+	void show_slot_result(ItemCursor::Result result);
+	void return_cursor_items();           // cursor -> player inventory (overflow dropped on the ground)
+	void close_container();               // close the open panel; returns cursor items
 	//----- input -----
 	FrameInput input;
 
@@ -58,6 +87,7 @@ struct PlayMode : Mode {
 		int downs = 0;
 		bool pressed = false;
 		bool popped = false;
+		bool latched = false;  // a press event arrived since the last update
 	} left_click, right_click;
 	glm::ivec2 hovered_coord = glm::ivec2{0};
 

@@ -13,8 +13,6 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 void Chest::update(FrameInput const &input, float elapsed, World const &world) {
-    auto const &entities = world.entities;
-
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
         push_timer = 0.0f;
@@ -29,7 +27,7 @@ void Chest::update(FrameInput const &input, float elapsed, World const &world) {
 
     for (auto delta : std::array<glm::ivec2, 3>{glm::ivec2{2, 0}, glm::ivec2{1, 1}, glm::ivec2{1, -1}}) {
         auto target_tile = origin + delta;
-        Entity *target = entity_at(entities, target_tile);
+        Entity *target = world.entity_at(target_tile);
         if (!target || target == this) continue;
 
         // get IItemPort!

@@ -21,5 +21,5 @@ if __name__ == "__main__":
             for y in range(height):
                 for x in range(width):
                     
-                    value = 0
+                    value = 0 if layer == 0 else 255
                     stream.write(struct.pack("<I", value))

@@ -12,43 +12,90 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 Cauldron::Cauldron() : inventory(3) {
-
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid });
+    inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+    inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
 }
 
 void Cauldron::update(FrameInput const &input, float elapsed, World const &world) {
-    auto const &entities = world.entities;
 
-    bool making_ale = inventory.count("water_bottle") > 0 && inventory.count("apple_powder") >= 2
-            && inventory.space_for_in_slot_range("ale", 2, 3) >= 1;
-    
-    bool making_juice = inventory.count("water_bottle") > 0 && inventory.count("apple") >= 1
-            && inventory.space_for_in_slot_range("apple_juice", 2, 3) >= 1;
+    // Cauldron Update:
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    //    find the new recipe from the registry (and reset timer).
+    // 2. Decrement timer accordingly.
+    // 3. If timer timeouts, add that new item to matching output slots.
+    // 4. Do container work (piping outputs)
 
-    // Processing
-    if (making_ale || making_juice) {
-        processing_timer -= elapsed;
+    // step 1a. verify current_recipe
+
+    bool recipe_stale = false;
+    if (current_recipe == nullptr) {
+        recipe_stale = true;
     } else {
-        processing_timer = BREW_COOLDOWN;
-    }
-    
-    if (processing_timer <= 0.0f) {
-        // Two apple powder + 1 water bottle
-        if (making_ale) {
-            int rejected = inventory.add_to_slot_range("ale", 1, 2, 3);
-            if (rejected == 0) {
-                inventory.remove("apple_powder", 2);
-                inventory.remove("water_bottle", 1);
-                processing_timer = BREW_COOLDOWN;
+        for (ItemRecord const &item : current_recipe->items_in) {
+            if (inventory.count(item.first) < item.second) {
+                recipe_stale = true;
+                break;
             }
-        } else if (making_juice) {
-            int rejected = inventory.add_to_slot_range("apple_juice", 1, 2, 3);
-            if (rejected == 0) {
-                inventory.remove("apple", 1);
-                inventory.remove("water_bottle", 1);
-                processing_timer = BREW_COOLDOWN;
+        }
+        for (ItemRecord const &item : current_recipe->items_out) {
+            if (inventory.space_for(item.first) < item.second) {
+                recipe_stale = true;
+                break;
             }
         }
     }
+    // if recipe is stale, current_recipe set to null
+    if (recipe_stale) {
+        current_recipe = nullptr;
+        processing_timer = 0.0f;
+
+        // try to find a new recipe
+        auto recipes = Recipe::get_recipes("brewer");
+        for (Recipe const &recipe : *recipes) {
+            bool ok = true;
+            // check that inputs are sufficient
+            for (ItemRecord const &item : recipe.items_in) {
+                if (inventory.count(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // check that there is space for outputs
+            for (ItemRecord const &item : recipe.items_out) {
+                if (inventory.space_for(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // if ok, then set recipe and break
+            if (ok) {
+                current_recipe = &recipe;
+                // also set timer
+                processing_timer = current_recipe->time_cost;
+                break;
+            }
+        }
+    }
+
+    // step 2. reduce processing_timer
+    if (current_recipe) {
+        processing_timer -= elapsed;
+    }
+
+    // step 3. if processing timer timeouts, brew
+    if (current_recipe != nullptr && processing_timer <= 0.0f) {
+        processing_timer = current_recipe->time_cost;
+        for (ItemRecord const &item : current_recipe->items_in) {
+            inventory.remove(item.first, item.second);
+        }
+        // check that there is space for outputs
+        for (ItemRecord const &item : current_recipe->items_out) {
+            inventory.add_to_slot_range(item.first, item.second, 2, 3);
+        }
+    }
+
+    // step 4. Item pushing
 
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
@@ -63,7 +110,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     auto source_tile = origin + glm::ivec2(1, 0);
     auto target_tile = origin + glm::ivec2{2, 0};
 
-    Entity *target = entity_at(entities, target_tile);
+    Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;
 
     // get IItemPort!
@@ -138,8 +185,11 @@ int Cauldron::push_item(ItemRecord item_record) {
         return 0;
     }
 
-    if (item_record.first == "water_bottle") {
-        return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 0, 1);
+    // goes into whichever input slot accepts it
+    for (size_t slot = 0; slot < 2; ++slot) {
+        if (!inventory.can_insert(slot, item_record.first)) continue;
+        int moved = inventory.insert_into_slot(slot, item_record.first, 1);
+        if (moved > 0) return moved;
     }
-    return item_record.second - inventory.add_to_slot_range(item_record.first, 1, 1, 2);
+    return 0;
 }

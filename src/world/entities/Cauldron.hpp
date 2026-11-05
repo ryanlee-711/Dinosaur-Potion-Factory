@@ -4,6 +4,7 @@
 #include "../Components.hpp"
 #include "../../main/Rect.hpp"
 #include "../../rendering/Sprites.hpp"
+#include "../../inventory/Recipe.hpp"
 
 #include <glm/glm.hpp>
 
@@ -29,11 +30,13 @@ public:
     PortType get_port(glm::ivec2 grid_coord) override;
     int push_item(ItemRecord item_record) override;
 
+    // IBreakable
+    item_id_t get_drop_id() override {return "brewer";}
 
 private:
     Inventory inventory;
     const float PUSH_COOLDOWN = 1.0f;
-    const float BREW_COOLDOWN = 3.0f;
     float push_timer = 0.0f;
     float processing_timer = 0.0f;
+    const Recipe *current_recipe;
 };
