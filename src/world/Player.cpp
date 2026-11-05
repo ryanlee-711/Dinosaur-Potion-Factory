@@ -21,6 +21,11 @@ static constexpr int PLAYER_FRAME_W = 32;
 static constexpr int PLAYER_FRAME_H = 32;
 
 void Player::update(FrameInput const &input, float elapsed, World const &world) {
+	// count down effect timers every frame
+	for (size_t idx = 0; idx < status_effects.size(); ++idx) {
+		status_effects[idx] = std::max(0.0f, status_effects[idx] - elapsed);
+	}
+
 	auto direction = input.direction;
 	//diagonal input shouldn't be faster than straight input
 	if (glm::length(direction) > 1.0f) direction = glm::normalize(direction);
@@ -35,16 +40,13 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 		facing = glm::ivec2(0, direction.y > 0.0f ? 1 : -1);
 	}
 
-	float speed_bonus = status_effects[0] > 0.0f ? 2.0f : 1.0f;
+	float speed = WALK_SPEED;
+	if (status_effects[0] > 0.0f) speed *= 2.0f;          // effect 0 = speed boost (ale)
+	if (input.sprint) speed *= SPRINT_MULTIPLIER;          // Shift; stacks with the boost
 	//move one axis at a time, this is what lets you slide along walls instead of sticking to them when moving diagonally
-	glm::vec2 step = direction * WALK_SPEED * elapsed * speed_bonus;
+	glm::vec2 step = direction * speed * elapsed;
 	move_axis(0, step.x, world);
 	move_axis(1, step.y, world);
-
-	// decrement effect timers
-	for (size_t idx = 0; idx < status_effects.size(); ++idx) {
-		status_effects[idx] = std::max(0.0f, status_effects[idx] - elapsed);
-	}
 }
 
 void Player::move_axis(int axis, float amount, World const &world) {
@@ -109,7 +111,7 @@ glm::ivec2 Player::facing_tile() const {
 
 void Player::get_occupied(std::vector<glm::ivec2> *ans) const {
 	glm::vec2 middle = position - glm::vec2(0.0f, HITBOX_H * 0.5f);
-	
+
 	ans->emplace_back(Tilemap::tile_at_point(middle));
 
 }

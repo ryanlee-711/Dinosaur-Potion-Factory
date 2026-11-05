@@ -17,6 +17,7 @@ public:
 	bool moving = false;
 
 	static constexpr float WALK_SPEED = 80.0f; // pixels per second (5 tiles/second)
+	static constexpr float SPRINT_MULTIPLIER = 1.5f; // holding Shift multiplies walking speed by this
 
 	// Collision box around the feet. Smaller than the sprite on purpose so only the feet collide
 	static constexpr float HITBOX_W = 14.0f;
@@ -45,5 +46,5 @@ public:
 
 private:
 	void move_axis(int axis, float amount, World const &world);
-	std::array<float, 4> status_effects;
+	std::array<float, 4> status_effects{}; // seconds left on each effect, {} starts them all at 0
 };

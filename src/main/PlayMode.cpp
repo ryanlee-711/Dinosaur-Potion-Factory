@@ -182,6 +182,8 @@ void PlayMode::update(float elapsed) {
 	if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) input.direction.x += 1.0f;
 	if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])    input.direction.y -= 1.0f; //y grows downward
 	if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])  input.direction.y += 1.0f;
+	//Shift + WASD sprints. Not while the inventory screen is open, where Shift is for shift-clicking.
+	input.sprint = (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) && !inventory_open;
 	if (keys[SDL_SCANCODE_E] || keys[SDL_SCANCODE_SPACE]) {
 		input.interact.pressed = true;
 		input.interact.downs += 1;
