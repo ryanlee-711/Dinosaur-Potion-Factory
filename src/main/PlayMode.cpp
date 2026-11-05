@@ -57,25 +57,25 @@ static constexpr float TOOL_REACH = 3.0f;
 static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
 
 	std::vector<std::string> {
-		"Cough cough... I'm sick...\nplease bring me medicine...\nBrew potion...", 
-		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHOOOO*.", 
-		"Your pickaxe is missing... \nwhere is it...?", 
-		"If a rock is too heavy...\nDrink some ale to bulk up...", 
+		"Cough cough... I'm sick...\nplease bring me medicine...\nBrew potion...",
+		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHOOOO*.",
+		"Your pickaxe is missing... \nwhere is it...?",
+		"If a rock is too heavy...\nDrink some ale to bulk up...",
 	},
 	std::vector<std::string> {
-		"You've brewed Ale... \ndrink it and find your pickaxe...\nAnd bring back the furnace...", 
-		"You can press `interact`\nto push a rock...\nafter a bottle of drink.", 
+		"You've brewed Ale... \ndrink it and find your pickaxe...\nAnd bring back the furnace...",
+		"You can press `interact`\nto push a rock...\nafter a bottle of drink.",
 	},
 	std::vector<std::string> {
-		"Collect some copper ore by mining...\nAnd give it to me, to smith pipes.", 
+		"Collect some copper ore by mining...\nAnd give it to me, to smith pipes.",
 	},
 	std::vector<std::string> {
-		"Furnace is very powerful...\nDry the lichens... and grind them.", 
-		"Lichen powder yields a red solution...\nAdd apples to it...\nto brew stronger potions...", 
-		"I can smith new machines for you...\nBring materials.", 
+		"Furnace is very powerful...\nDry the lichens... and grind them.",
+		"Lichen powder yields a red solution...\nAdd apples to it...\nto brew stronger potions...",
+		"I can smith new machines for you...\nBring materials.",
 	},
 	std::vector<std::string> {
-		"You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest", 
+		"You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest",
 	},
 };
 
@@ -285,7 +285,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	// initialize quest
 	quests.emplace_back(
-		Quest{"Collect apples, crush them, and brew ale.",
+		Quest{"Collect apples, crush them, and brew ale.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
 			std::vector<ItemRecord>{ItemRecord{"apple", 6}, ItemRecord{"crushed_apple", 3}, ItemRecord{"ale", 1}},
 			1
 		}
@@ -1264,13 +1264,13 @@ void PlayMode::clear_quest() {
 		req_idx++;
 		auto item = Item::get(record.first);
 		if (item == nullptr) continue;
-		
+
 		if (!quest_goals_cleared[req_idx]) return;
 	}
 	// should be cleared. proceed to next task
-	for (size_t i = 0; i < quest_goals_cleared.size(); ++i) 
+	for (size_t i = 0; i < quest_goals_cleared.size(); ++i)
 		quest_goals_cleared[i] = false;
-	
+
 	active_quest = quests[active_quest].next_quest_index;
 }
 
