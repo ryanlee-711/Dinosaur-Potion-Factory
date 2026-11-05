@@ -7,10 +7,11 @@
 
 #include <glm/glm.hpp>
 
-class CopperVein : public Entity, public IInteractable, public IInventoryHolder, public IBreakable {
-    /* CopperVein implementation for demo. */
+class CopperVein : public Entity, public IMineable {
+    /* A copper vein: click it with the pickaxe to knock loose one copper ore (it drops on the ground).
+       It holds a few ores and slowly regrows them, so it can't be mined endlessly. */
 public:
-    CopperVein();
+    CopperVein() = default;
     ~CopperVein() = default;
 
     // Entity
@@ -19,19 +20,12 @@ public:
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
-    // IInteractable
-    void on_interact(Context &ctx) override;
-
-    // IInventoryHolder
-    auto get_inventory() -> Inventory* override;
-
-    // IBreakable
-    int get_hardness() override {return 99;}
-    item_id_t get_drop_id() override {return "copper_ore";}
-
+    // IMineable
+    item_id_t mine() override;
 
 private:
-    Inventory inventory;
-    const float REGROW_COOLDOWN = 8.0f;
-    float regrow_timer = 0.0f;
+    static constexpr int MAX_ORES = 4;              // ores the vein can hold at once
+    static constexpr float REGROW_COOLDOWN = 6.0f;  // seconds to grow back one ore
+    int ores = MAX_ORES;                            // ores left to mine right now
+    float regrow_timer = REGROW_COOLDOWN;
 };

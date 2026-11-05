@@ -83,3 +83,13 @@ struct IProgress {
     virtual ~IProgress() = default;
     virtual float get_progress() const = 0;
 };
+
+struct IMineable {
+    /*
+     * Resource rocks you click with a tool (pickaxe) to knock something loose, e.g. copper veins.
+     * Unlike IBreakable, the rock itself stays; it just runs out for a while and regrows.
+     */
+    virtual ~IMineable() = default;
+    // Called on a tool click. Returns the item knocked loose, or "" if there's nothing to mine right now.
+    virtual item_id_t mine() = 0;
+};

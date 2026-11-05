@@ -472,8 +472,9 @@ void PlayMode::update(float elapsed) {
 		else hotbar_selected = index;
 		break;
 	}
-	// change Player's held item based on selection
-	player.held_item = inventory[hotbar_selected];
+	// change Player's held item based on selection (-1 = nothing selected: don't index the inventory with it)
+	if (hotbar_selected >= 0) player.held_item = inventory[size_t(hotbar_selected)];
+	else player.held_item = ItemRecord{"", 0};
 
 	// Update entities
 	for (auto &entity : entities) {
@@ -612,6 +613,26 @@ void PlayMode::do_world_interaction(float elapsed) {
 		if (7 <= tileid % 16 && tileid % 16 <= 10 && 9 <= tileid / 16 && tileid / 16 <= 11) {
 			inventory.remove("empty_bottle", 1);
 			spawn_item("water_bottle", 1, player.position);
+		}
+	}
+
+	// Click with a tool on a resource rock (copper vein): knock one item loose onto the ground
+	if (left_new && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
+		Entity *entity = entity_at(coord);
+		if (auto *rock = dynamic_cast< IMineable * >(entity); rock != nullptr) {
+			item_id_t mined = rock->mine();
+			if (mined != "") {
+				//pop out of the bottom of the rock, toward the dwarf, so it lands in front where you can see it
+				glm::vec2 from = entity->position + glm::vec2(float(GameConfig::TILE_SIZE));
+				spawn_item(mined, 1, from);
+				glm::vec2 toward = player.position - from;
+				if (glm::length(toward) > 0.001f) {
+					static_cast< ItemEntity * >(entities.back().get())->velocity = glm::normalize(toward) * 45.0f;
+				}
+			} else {
+				message = "Nothing left to mine. It grows back slowly";
+				message_timer = MESSAGE_SECONDS;
+			}
 		}
 	}
 
@@ -1011,19 +1032,18 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		ui_batch.end();
 	}
 
-	//--- active effects, top left ---
+	//--- active effects, top right (the quest list is top left) ---
 	if (!player.active_effects().empty()) {
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
 		DrawLines lines(screen_to_clip);
-		static char const *roman[] = {"", "I", " II", " III", " IV", " V"};
 		float text_h = 8.0f * float(canvas.scale);
 		float y = text_h * 1.5f;
 		for (auto const &[id, active] : player.active_effects()) {
 			Effect const *effect = Effect::get(id);
-			std::string text = (effect ? effect->name : id)
-				+ " " + (active.level < 6 ? roman[active.level] : " " + std::to_string(active.level))
+			std::string text = (effect ? effect->name : id) + roman_level(active.level)
 				+ ":  " + std::to_string(int(std::ceil(active.time_left))) + "s";
-			float x = std::floor(text_h * 0.5f);
+			//right-aligned: start one text width (plus a margin) in from the right edge
+			float x = std::floor(float(drawable_size.x) - text_h * 0.5f - text_width(text) * text_h);
 			glm::vec3 anchor(x, y, 0.0f);
 			lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 			lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xf0, 0xa0, 0xff));
@@ -1175,7 +1195,7 @@ void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 
 	// right-anchored rendering
 	float text_h = 8.0f * float(canvas.scale);
-	float y = text_h * (1.5f + 1.4f * player.active_effects().size());
+	float y = text_h * 1.5f; //top left (effects are drawn top right)
 
 	// draw description
 	std::stringstream ss("[Goals]  " + quests[active_quest].description);

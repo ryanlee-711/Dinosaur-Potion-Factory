@@ -7,10 +7,11 @@
 
 #include <glm/glm.hpp>
 
-class LichenRock : public Entity, public IInteractable, public IInventoryHolder, public IBreakable {
-    /* LichenRock implementation for demo. */
+class LichenRock : public Entity, public IInteractable {
+    /* A rock that grows lichen: face it and press E to pick all the lichen on it (straight into the bag).
+       It holds a few at a time and slowly regrows them. */
 public:
-    LichenRock();
+    LichenRock() = default;
     ~LichenRock() = default;
 
     // Entity
@@ -22,16 +23,9 @@ public:
     // IInteractable
     void on_interact(Context &ctx) override;
 
-    // IInventoryHolder
-    auto get_inventory() -> Inventory* override;
-
-    // IBreakable
-    int get_hardness() override {return 99;}
-    item_id_t get_drop_id() override {return "lichen";}
-
-
 private:
-    Inventory inventory;
-    const float REGROW_COOLDOWN = 8.0f;
-    float regrow_timer = 0.0f;
+    static constexpr int MAX_LICHEN = 5;            // lichen the rock can hold at once
+    static constexpr float REGROW_COOLDOWN = 5.0f;  // seconds to grow back one
+    int lichen = MAX_LICHEN;                        // lichen ready to pick right now
+    float regrow_timer = REGROW_COOLDOWN;
 };

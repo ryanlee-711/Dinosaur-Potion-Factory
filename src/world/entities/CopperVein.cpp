@@ -5,33 +5,36 @@
 #include "../../starter/data_path.hpp"
 
 #include <cmath>
-#include <array>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/entities/copper_vein.png"));
 });
 
-CopperVein::CopperVein() : inventory(1) {
-    inventory.set_rule(0, Inventory::SlotRule{ .can_insert = false });
-
-}
-
 void CopperVein::update(FrameInput const &input, float elapsed, World const &world) {
+    // regrow one ore every REGROW_COOLDOWN seconds, but only while it's not full
+    if (ores >= MAX_ORES) {
+        regrow_timer = REGROW_COOLDOWN;
+        return;
+    }
     regrow_timer -= elapsed;
     if (regrow_timer <= 0.0f) {
         regrow_timer = REGROW_COOLDOWN;
-        inventory.add("copper_ore", 1);
+        ores += 1;
     }
+}
 
-    return;
+item_id_t CopperVein::mine() {
+    if (ores <= 0) return ""; //mined out: wait for it to regrow
+    ores -= 1;
+    return "copper_ore";
 }
 
 void CopperVein::draw(Sprites &batch) const {
-    Rect src{inventory.count("copper_ore") ? 32.0f : 0.0f, 0.0f, 32.0f, 32.0f};
+    // frame 1 = has ore, frame 0 = mined out
+    Rect src{ores > 0 ? 32.0f : 0.0f, 0.0f, 32.0f, 32.0f};
     //round to whole pixels so the sprite never sits between pixels:
     glm::vec2 top_left = glm::round(position) - glm::vec2(0.0f, 16.0f);
     batch.draw(*box_texture, src, top_left);
-
 }
 
 auto CopperVein::hitbox() const -> Rect {
@@ -42,13 +45,4 @@ void CopperVein::get_occupied(std::vector<glm::ivec2> *ans) const {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 	ans->emplace_back(tile);
     ans->emplace_back(tile + glm::ivec2{1, 0});
-}
-
-void CopperVein::on_interact(Context &ctx) {
-    // should trigger inventory display through some mechanism
-    ctx.open_container = &inventory;
-}
-
-auto CopperVein::get_inventory() -> Inventory* {
-    return &inventory;
 }
