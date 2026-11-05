@@ -75,6 +75,8 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);
 		add("pickaxe", "Pickaxe", "A sturdy pick", "assets/sprites/items/pickaxe.png", Tool);
 
+		add("you_won", "You won!", "Thanks for playing the demo", "assets/sprites/items/missing_no.png", None);
+
 		return items.release();
 	}
 );

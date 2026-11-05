@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-class Furnace : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
+class Furnace : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress {
     /* Furnace implementation for demo. */
 public:
     Furnace();
@@ -32,6 +32,9 @@ public:
 
     // IBreakable
     item_id_t get_drop_id() override {return "furnace";}
+
+    // IProgress
+    float get_progress() const override;
 
 
 private:

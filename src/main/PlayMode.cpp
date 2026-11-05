@@ -75,7 +75,7 @@ static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
 		"I can smith new machines for you...\nBring materials.", 
 	},
 	std::vector<std::string> {
-		"You've mastered brewing...\nPlease bring me 8 Strength potion.", 
+		"You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest", 
 	},
 };
 
@@ -252,6 +252,11 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
+
+		entities.push_back(std::make_unique<ItemEntity>("rock", 40));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(96, 65));
+		entities.push_back(std::make_unique<ItemEntity>("rock", 35));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(95, 59));
 	}
 	{ // Dragon
 		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)));
@@ -277,7 +282,6 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	// initialize the inventory with two apple and one powder
 	inventory.add("water_bottle", 15);
-	inventory.add("apple", 2);
 
 	// initialize quest
 	quests.emplace_back(

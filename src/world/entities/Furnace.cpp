@@ -110,8 +110,8 @@ void Furnace::update(FrameInput const &input, float elapsed, World const &world)
     // push item to the right
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 
-    auto source_tile = origin + glm::ivec2(1, 0);
-    auto target_tile = origin + glm::ivec2{2, 0};
+    auto source_tile = origin + glm::ivec2(3, -1);
+    auto target_tile = origin + glm::ivec2{4, -1};
 
     Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;
@@ -187,4 +187,9 @@ int Furnace::push_item(ItemRecord item_record) {
         processing_timer = SMELT_COOLDOWN;
     }
     return inventory.insert_into_slot(0, item_record.first, 1);
+}
+
+float Furnace::get_progress() const {
+    if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
+    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
 }

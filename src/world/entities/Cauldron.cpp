@@ -112,8 +112,8 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     // push item to the right
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 
-    auto source_tile = origin + glm::ivec2(1, 0);
-    auto target_tile = origin + glm::ivec2{2, 0};
+    auto source_tile = origin + glm::ivec2(3, -1);
+    auto target_tile = origin + glm::ivec2{4, -1};
 
     Entity *target = world.entity_at(target_tile);
     if (!target || target == this) return;

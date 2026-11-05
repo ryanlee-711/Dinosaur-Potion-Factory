@@ -160,6 +160,26 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
 
         // Dragon crafting
+
+
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"lichen", 1} },
+            ItemVector{ ItemRecord{"furnace", 1} },
+            1.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"apple", 1} },
+            ItemVector{ ItemRecord{"brewer", 1} },
+            1.5f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"rock", 1} },
+            ItemVector{ ItemRecord{"crusher", 2} },
+            1.5f
+        );
+
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 1} },
             ItemVector{ ItemRecord{"pipe", 1} },
@@ -173,20 +193,8 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("dragon",
-            ItemVector{ ItemRecord{"lichen", 3} },
-            ItemVector{ ItemRecord{"furnace", 1} },
-            1.5f
-        );
-
-        add("dragon",
-            ItemVector{ ItemRecord{"apple_powder", 3} },
-            ItemVector{ ItemRecord{"brewer", 1} },
-            1.5f
-        );
-
-        add("dragon",
-            ItemVector{ ItemRecord{"apple", 3} },
-            ItemVector{ ItemRecord{"crusher", 2} },
+            ItemVector{ ItemRecord{"strength_potion", 5} },
+            ItemVector{ ItemRecord{"you_won", 1} },
             1.5f
         );
 
