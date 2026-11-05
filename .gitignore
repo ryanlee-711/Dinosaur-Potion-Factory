@@ -7,8 +7,6 @@ dist/game.pdb
 dist/game.pdb
 dist/editor.pdb
 dist/SDL3.dll
-dist/game
-dist/game.exe
 dist/editor
 dist/editor.exe
 *.blend[0-9]
