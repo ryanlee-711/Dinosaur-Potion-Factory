@@ -72,7 +72,7 @@ void Boulder::get_occupied(std::vector<glm::ivec2> *ans) const {
 
 void Boulder::on_interact(Context &ctx) {
     // only when powered by potion would it be movable
-    if (ctx.player.get_effect(0) <= 0.0f || big) {
+    if (ctx.player.effect_level("strength") <= 0 || big) {
         ctx.message = "Too heavy to move...";
         return;
     } else {

@@ -17,7 +17,7 @@
 
 float ABSORB_ACCEL_FACTOR = 85000.0f;
 float ABSORB_MAX_SPEED = 30.0f;
-float GRAVITATE_DISTANCE = 120.0f;
+float GRAVITATE_DISTANCE = 7.0f * GameConfig::TILE_SIZE;
 float FRICTION_FACTOR = 40.0f;
 float VERTICAL_GRAVITY = 6.0f;
 
@@ -30,6 +30,7 @@ ItemEntity::ItemEntity(): inventory(1) {
 }
 
 ItemEntity::ItemEntity(item_id_t item_id, int item_count): inventory(1) {
+    collision_mask = 0x0;
     inventory.add(item_id, item_count);
     vertical_velocity = -1.2f;
 }
@@ -45,7 +46,7 @@ void ItemEntity::update(FrameInput const &input, float elapsed, World const &wor
         ready_to_absorb = true;
     } else {
         // accelerating towards player
-        if (dist < GRAVITATE_DISTANCE) {
+        if (attract && dist < GRAVITATE_DISTANCE) {
             float accel = glm::pow(dist + 1e-6f, -2.0f) * ABSORB_ACCEL_FACTOR;
             velocity += glm::normalize(world.player.position - position) * accel * elapsed;
         }

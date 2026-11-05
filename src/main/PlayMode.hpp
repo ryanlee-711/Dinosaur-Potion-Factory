@@ -34,7 +34,9 @@ struct PlayMode : Mode {
 	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
 	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
 	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
+	void consume_selected(); // F to drink/eat selected hotbar item
 	void remove_objects(float elapsed);
+	bool tile_in_reach(glm::ivec2 tile, float reach) const;
 
 	// Helper methods
 	template <typename EntityClass>
@@ -54,7 +56,10 @@ struct PlayMode : Mode {
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;
 
 	//----- inventory -----
-	Inventory inventory;                     // the player's hotbar
+	static constexpr size_t HOTBAR_SLOTS = 10; // Number of slots in the hotbar
+	static constexpr size_t BACKPACK_ROWS = 2; // Number of inventory rows
+	Inventory inventory{HOTBAR_SLOTS * (1 + BACKPACK_ROWS)};
+	bool inventory_open = false; // Is inventory showing
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	int hotbar_selected = -1;   // -1 = unselected
@@ -69,6 +74,9 @@ struct PlayMode : Mode {
 		Rect rect;  // drawable (physical) pixels
 	};
 	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
+
+	bool show_arrow = false;
+	Rect arrow_rect;
 
 	bool ui_mouse_down = false;  // a left press landed on a slot and hasn't been released yet
 

@@ -21,6 +21,13 @@ static constexpr int PLAYER_FRAME_W = 32;
 static constexpr int PLAYER_FRAME_H = 32;
 
 void Player::update(FrameInput const &input, float elapsed, World const &world) {
+	// count down effect timers every frame, and drop the ones that ran out
+	for (auto it = effects.begin(); it != effects.end(); ) {
+		it->second.time_left -= elapsed;
+		if (it->second.time_left <= 0.0f) it = effects.erase(it);
+		else ++it;
+	}
+
 	auto direction = input.direction;
 	//diagonal input shouldn't be faster than straight input
 	if (glm::length(direction) > 1.0f) direction = glm::normalize(direction);
@@ -35,16 +42,13 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 		facing = glm::ivec2(0, direction.y > 0.0f ? 1 : -1);
 	}
 
-	float speed_bonus = status_effects[0] > 0.0f ? 2.0f : 1.0f;
+	float speed = WALK_SPEED;
+	speed *= 1.0f + SPEED_PER_LEVEL * float(effect_level("speed")); // "speed" effect
+	if (input.sprint) speed *= SPRINT_MULTIPLIER;  // Shift; stacks with the boost
 	//move one axis at a time, this is what lets you slide along walls instead of sticking to them when moving diagonally
-	glm::vec2 step = direction * WALK_SPEED * elapsed * speed_bonus;
+	glm::vec2 step = direction * speed * elapsed;
 	move_axis(0, step.x, world);
 	move_axis(1, step.y, world);
-
-	// decrement effect timers
-	for (size_t idx = 0; idx < status_effects.size(); ++idx) {
-		status_effects[idx] = std::max(0.0f, status_effects[idx] - elapsed);
-	}
 }
 
 void Player::move_axis(int axis, float amount, World const &world) {
@@ -109,15 +113,23 @@ glm::ivec2 Player::facing_tile() const {
 
 void Player::get_occupied(std::vector<glm::ivec2> *ans) const {
 	glm::vec2 middle = position - glm::vec2(0.0f, HITBOX_H * 0.5f);
-	
+
 	ans->emplace_back(Tilemap::tile_at_point(middle));
 
 }
 
-void Player::add_effect(size_t effect_index, float time) {
-	// add effects
-	if (effect_index >= status_effects.size()) return;
-	status_effects[effect_index] += time;
+void Player::add_effect(effect_id_t const &id, float seconds, int level) {
+	if (seconds <= 0.0f || level <= 0) return;
+	ActiveEffect &active = effects[id]; // creates {0s, level 0} if the player doesn't have it yet
+	if (level > active.level) {
+		active.level = level;
+		active.time_left = seconds;
+	} else if (level == active.level) {
+		active.time_left = std::max(active.time_left, seconds); // same level: keep the longer timer
+	}
 }
 
-float Player::get_effect(size_t effect_index) {return status_effects.at(effect_index);}
+int Player::effect_level(effect_id_t const &id) const {
+	auto it = effects.find(id);
+	return it != effects.end() ? it->second.level : 0;
+}

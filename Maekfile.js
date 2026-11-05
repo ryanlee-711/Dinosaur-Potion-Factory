@@ -186,6 +186,7 @@ const common_names = [
 	maek.CPP('src/inventory/Inventory.cpp'),
 	maek.CPP('src/inventory/ItemCursor.cpp'),
 	maek.CPP('src/inventory/Recipe.cpp'),
+	maek.CPP('src/inventory/Effect.cpp'),
 
 	//rendering:
 	maek.CPP('src/rendering/Texture.cpp'),

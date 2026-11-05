@@ -27,6 +27,7 @@ public:
     auto is_absorbable() -> bool;
 
     glm::vec2 velocity = glm::vec2{0.0f};
+    bool attract = true;
 
 private:
     Inventory inventory;

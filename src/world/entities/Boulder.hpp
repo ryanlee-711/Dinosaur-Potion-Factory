@@ -23,7 +23,7 @@ public:
     void on_interact(Context &ctx) override;
 
     // IBreakable
-    int get_hardness() override {return big ? 8 : 6;}
+    int get_hardness() override {return big ? 8 : 4;}
     item_id_t get_drop_id() override {return "";}
 
     bool big = true;
