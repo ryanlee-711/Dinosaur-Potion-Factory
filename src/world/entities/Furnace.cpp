@@ -1,0 +1,190 @@
+#include "Furnace.hpp"
+#include "../World.hpp"
+#include "../TileMap.hpp"
+#include "../../starter/Load.hpp"
+#include "../../starter/data_path.hpp"
+#include "../../inventory/Recipe.hpp"
+
+#include <algorithm>
+#include <cmath>
+
+static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/furnace.png"));
+});
+
+
+Furnace::Furnace() : inventory(2) {
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Burnable });
+    inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
+}
+
+void Furnace::update(FrameInput const &input, float elapsed, World const &world) {
+    // update frame animation
+    frame = 3 - std::clamp(static_cast<int>(std::round(std::abs((processing_timer - SMELT_COOLDOWN / 2.0f) * 6.0f))), 0, 3);
+
+    // Cauldron Update:
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    //    find the new recipe from the registry (and reset timer).
+    // 2. Decrement timer accordingly.
+    // 3. If timer timeouts, add that new item to matching output slots.
+    // 4. Do container work (piping outputs)
+
+    // step 1a. verify current_recipe
+
+    bool recipe_stale = false;
+    if (current_recipe == nullptr) {
+        recipe_stale = true;
+    } else {
+        for (ItemRecord const &item : current_recipe->items_in) {
+            if (inventory.count(item.first) < item.second) {
+                recipe_stale = true;
+                break;
+            }
+        }
+        for (ItemRecord const &item : current_recipe->items_out) {
+            if (inventory.space_for(item.first) < item.second) {
+                recipe_stale = true;
+                break;
+            }
+        }
+    }
+    // if recipe is stale, current_recipe set to null
+    if (recipe_stale) {
+        current_recipe = nullptr;
+        processing_timer = 0.0f;
+
+        // try to find a new recipe
+        auto recipes = Recipe::get_recipes("furnace");
+        for (Recipe const &recipe : *recipes) {
+            bool ok = true;
+            // check that inputs are sufficient
+            for (ItemRecord const &item : recipe.items_in) {
+                if (inventory.count(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // check that there is space for outputs
+            for (ItemRecord const &item : recipe.items_out) {
+                if (inventory.space_for(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // if ok, then set recipe and break
+            if (ok) {
+                current_recipe = &recipe;
+                // also set timer
+                processing_timer = current_recipe->time_cost;
+                break;
+            }
+        }
+    }
+
+    // step 2. reduce processing_timer
+    if (current_recipe) {
+        processing_timer -= elapsed;
+    }
+
+    // step 3. if processing timer timeouts, brew
+    if (current_recipe != nullptr && processing_timer <= 0.0f) {
+        processing_timer = current_recipe->time_cost;
+        for (ItemRecord const &item : current_recipe->items_in) {
+            inventory.remove(item.first, item.second);
+        }
+        // check that there is space for outputs
+        for (ItemRecord const &item : current_recipe->items_out) {
+            inventory.add_to_slot_range(item.first, item.second, 1, 2);
+        }
+    }
+
+    // step 4. Item pushing
+
+    push_timer -= elapsed;
+    if (push_timer <= 0.0f) {
+        push_timer = 0.0f;
+    } else {
+        return;
+    }
+
+    // push item to the right
+    auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+
+    auto source_tile = origin + glm::ivec2(1, 0);
+    auto target_tile = origin + glm::ivec2{2, 0};
+
+    Entity *target = world.entity_at(target_tile);
+    if (!target || target == this) return;
+
+    // get IItemPort!
+    auto *port = dynamic_cast<IItemPort*>(target);
+    if (!port) return;
+
+    auto type = port->get_port(source_tile);
+    if (type != PortType::In && type != PortType::Both) return;
+
+    if (inventory.slots[1].second <= 0) return;
+    int item_sent = port->push_item({inventory.slots[1].first, 1});
+
+    if (item_sent != 0) {
+        inventory.slots[1].second -= item_sent;
+        if (inventory.slots[1].second <= 0) {
+            inventory.slots[1].first = "";
+            inventory.slots[1].second = 0;
+        }
+        push_timer = PUSH_COOLDOWN;
+    }
+
+    return;
+}
+
+void Furnace::draw(Sprites &batch) const {
+    Rect src{64.0f * frame, 0.0f, 64.0f, 64.0f};
+    //round to whole pixels so the sprite never sits between pixels:
+    glm::vec2 top_left = glm::round(position);
+    batch.draw(*box_texture, src, top_left - glm::vec2(0.0f, 48.0f));
+
+}
+
+auto Furnace::hitbox() const -> Rect {
+    return Rect{position.x, position.y - 16.0f, 64.0f, 32.0f};
+}
+
+void Furnace::get_occupied(std::vector<glm::ivec2> *ans) const {
+    auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+    for (int i = 0; i < 8; ++i) ans->emplace_back(tile + glm::ivec2{i % 4, -i / 4});
+}
+
+void Furnace::on_interact(Context &ctx) {
+    // should trigger inventory display through some mechanism
+    ctx.open_container = &inventory;
+}
+
+auto Furnace::get_inventory() -> Inventory* {
+    return &inventory;
+}
+
+IItemPort::PortType Furnace::get_port(glm::ivec2 grid_coord) {
+    auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+    if (grid_coord == tile + glm::ivec2{-1, -1}) {
+        return IItemPort::PortType::In;
+    }
+    if (grid_coord == tile + glm::ivec2{4, 0}) {
+        return IItemPort::PortType::Out;
+    }
+    return IItemPort::PortType::None;
+}
+
+int Furnace::push_item(ItemRecord item_record) {
+
+    if (item_record.second <= 0) {
+        return 0;
+    }
+    if (!inventory.can_insert(0, item_record.first)) {
+        return 0;
+    }
+    if (inventory.get_slot_count(0) <= 0) {
+        processing_timer = SMELT_COOLDOWN;
+    }
+    return inventory.insert_into_slot(0, item_record.first, 1);
+}

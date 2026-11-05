@@ -1,4 +1,4 @@
-/* 
+/*
  * Recipe.hpp
  * recipe dataclass for automationing stuff.
  *
@@ -19,4 +19,11 @@
 
     // methods
     static std::vector<Recipe> const * get_recipes(item_id_t machine_id);
+    static std::vector<Recipe const *> all();
+
+    // Checks every recipe against the item table and prints a warning for each problem:
+    //   - an item id that isn't registered in Item.cpp (typo, or the item was never added)
+    //   - an input its machine would reject (missing the tag that machine's slots require)
+    // Call once after assets are loaded. Returns the number of problems found.
+    static int validate();
  };

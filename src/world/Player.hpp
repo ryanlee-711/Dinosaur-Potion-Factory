@@ -2,9 +2,10 @@
 
 #include "../main/Rect.hpp"
 #include "Entity.hpp"
+#include "../inventory/Effect.hpp"
 
-#include <array>
 #include <glm/glm.hpp>
+#include <map>
 
 struct World;
 
@@ -17,6 +18,8 @@ public:
 	bool moving = false;
 
 	static constexpr float WALK_SPEED = 80.0f; // pixels per second (5 tiles/second)
+	static constexpr float SPRINT_MULTIPLIER = 1.5f; // holding Shift multiplies walking speed by this
+	static constexpr float SPEED_PER_LEVEL = 0.5f; // +50% speed per level
 
 	// Collision box around the feet. Smaller than the sprite on purpose so only the feet collide
 	static constexpr float HITBOX_W = 14.0f;
@@ -40,10 +43,22 @@ public:
 	// The tile directly in front of the dwarf (for tile-based things later, like placing machines).
 	glm::ivec2 facing_tile() const;
 
-	// Buff
-	void add_effect(size_t effect_index, float time);
+	// ---- effects (speed, strength, ... see Effect.cpp) ----
+	struct ActiveEffect {
+		float time_left = 0.0f; // seconds
+		int level = 0;
+	};
+
+	// Give an effect. Same effect again: a higher level replaces it, the same level keeps the
+	// longer of the two timers, a lower level is ignored (the stronger one keeps running).
+	void add_effect(effect_id_t const &id, float seconds, int level);
+
+	// Level of an active effect, 0 if the player doesn't have it.
+	int effect_level(effect_id_t const &id) const;
+
+	std::map< effect_id_t, ActiveEffect > const &active_effects() const { return effects; }
 
 private:
 	void move_axis(int axis, float amount, World const &world);
-	std::array<float, 4> status_effects;
+	std::map< effect_id_t, ActiveEffect > effects; // active effects by id
 };

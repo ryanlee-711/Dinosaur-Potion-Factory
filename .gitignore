@@ -5,6 +5,7 @@ dist/README-libpng.txt
 dist/game.ilk
 dist/game.pdb
 dist/game.pdb
+dist/editor.pdb
 dist/SDL3.dll
 dist/game
 dist/game.exe

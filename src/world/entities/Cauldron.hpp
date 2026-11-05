@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-class Cauldron : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
+class Cauldron : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress{
     /* Cauldron implementation for demo. */
 public:
     Cauldron();
@@ -29,6 +29,7 @@ public:
     // IItemPort
     PortType get_port(glm::ivec2 grid_coord) override;
     int push_item(ItemRecord item_record) override;
+    float get_progress() const override;
 
     // IBreakable
     item_id_t get_drop_id() override {return "brewer";}
@@ -39,5 +40,5 @@ private:
     float push_timer = 0.0f;
     float processing_timer = 0.0f;
     float anim_timer = 0.0f;
-    const Recipe *current_recipe;
+    const Recipe *current_recipe = nullptr;
 };

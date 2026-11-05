@@ -6,6 +6,10 @@
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
 #include "../starter/gl_errors.hpp"
+#include "../starter/PathFont.hpp"
+
+#include "../inventory/Effect.hpp"
+#include "../inventory/Recipe.hpp"
 
 #include "../world/Components.hpp"
 #include "../world/World.hpp"
@@ -16,6 +20,9 @@
 #include "../world/entities/Crusher.hpp"
 #include "../world/entities/Cauldron.hpp"
 #include "../world/entities/AppleTree.hpp"
+#include "../world/entities/LichenRock.hpp"
+#include "../world/entities/Boulder.hpp"
+#include "../world/entities/Furnace.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -38,6 +45,10 @@ static constexpr float CONTAINER_CLOSE_DISTANCE = float(GameConfig::TILE_SIZE);
 //How long it takes to cause one damage by pickaxe to a machine
 static constexpr float SECOND_PER_DAMAGE = 0.25f;
 
+// Reach distances
+static constexpr float PLACE_REACH = 6.0f;
+static constexpr float TOOL_REACH = 3.0f;
+
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
 	Entity *best = nullptr;
@@ -54,19 +65,83 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 	return best;
 }
 
+static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/items/missing_no.png"));
+});
+
 //----- inventory UI -----
 //Draws an item icon filling 'rect' with its count in the bottom-right corner (screen pixels).
 static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &record, Rect const &rect) {
 	if (record.second <= 0) return;
 	Item const *item = Item::get(record.first);
-	if (item == nullptr) return;
-	batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	if (item == nullptr) {
+		batch.draw(*missing_texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	} else {
+		batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+	}
+
 
 	float text_h = rect.w * 0.375f; //count text height in screen pixels
 	glm::vec3 anchor(rect.x + rect.w * 0.875f, rect.y + rect.h, 0.0f);
 	std::string text = std::to_string(record.second);
 	lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 	lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+}
+
+//Width of 'text' as DrawLines::draw_text would draw it at height 1 (same glyph lookup), for centering text.
+static float text_width(std::string const &text) {
+	float width = 0.0f;
+	size_t start = 0;
+	while (start < text.size()) {
+		size_t end = start;
+		uint32_t glyph = -1U;
+		while (end < text.size()) {
+			end += 1;
+			auto f = PathFont::font.glyph_map.find(text.substr(start, end - start));
+			if (f == PathFont::font.glyph_map.end()) { end -= 1; break; }
+			glyph = f->second;
+		}
+		if (glyph == -1U) { end = start + 1; width += 0.6f; } //unknown character: drawn as a 0.6-wide box
+		else width += PathFont::font.glyph_widths[glyph];
+		start = end;
+	}
+	return width;
+}
+
+//Background color of a slot, from its rule, so you can see what goes where.
+static glm::u8vec4 slot_color(Inventory::SlotRule const &rule) {
+	if (!rule.can_insert)                        return glm::u8vec4(0x8a, 0x6d, 0x1e, 0xc0); //output: gold
+	if (rule.required_tags & ItemTag::Liquid)    return glm::u8vec4(0x24, 0x4c, 0x8c, 0xc0); //liquid: blue
+	if (rule.required_tags & ItemTag::Crushable) return glm::u8vec4(0x6e, 0x68, 0x62, 0xc0); //crushable: stone
+	return glm::u8vec4(0x22, 0x22, 0x22, 0x80);                                              //anything: dark
+}
+
+//A pixel-art arrow pointing right, filling 'r', built from 8 columns (shaft, then the head).
+//The left 'progress' (0..1) of it is drawn in 'fill', the rest in 'empty'.
+static void draw_arrow(Sprites &batch, Rect const &r, float progress, glm::u8vec4 empty, glm::u8vec4 fill, bool point_left = false) {
+	static constexpr int heights[8] = {2, 2, 2, 2, 7, 5, 3, 1}; //column heights, in eighths of r.h
+	float column = r.w / 8.0f;
+	for (int c = 0; c < 8; ++c) {
+		float h = r.h * float(heights[c]) / 8.0f;
+		bool filled = (float(c) + 0.5f) / 8.0f <= progress;
+		float x = point_left ? r.x + r.w - column * float(c + 1) : r.x + column * float(c); //mirror for left
+		batch.fill_rect(Rect{x, r.y + (r.h - h) * 0.5f, column, h}, filled ? fill : empty);
+	}
+}
+
+//----- recipe book colors -----
+static glm::u8vec4 const BOOK_COVER(0x5a, 0x34, 0x1c, 0xff); //leather around the pages
+static glm::u8vec4 const BOOK_PAPER(0xec, 0xdf, 0xbf, 0xff);
+static glm::u8vec4 const BOOK_SPINE(0xc4, 0xb2, 0x8e, 0xff); //fold between the pages
+static glm::u8vec4 const BOOK_INK(0x1c, 0x10, 0x08, 0xff);   //normal text
+static glm::u8vec4 const BOOK_RED(0x6e, 0x12, 0x08, 0xff);   //effect lines
+static glm::u8vec4 const BOOK_FADED(0x5a, 0x48, 0x30, 0xff); //page numbers, locked-page hint
+
+//" I", " II", ... for an effect level
+static std::string roman_level(int level) {
+	static char const *numerals[] = {"", " I", " II", " III", " IV", " V"};
+	if (level >= 0 && level <= 5) return numerals[level];
+	return " " + std::to_string(level);
 }
 
 std::mt19937 mt(0x64696e6f);   // "dino"
@@ -84,45 +159,84 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 
 	// ~~Demo~~
-	// initialize several boxes for demonstration (entities).
+	// initialize some existing machines for demonstration (entities).
 
 	for (size_t i = 0; i < 3; ++i) {
-		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-	}
-
-	{
-		entities.push_back(std::make_unique<Crusher>());
-		entities.back()->position = glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<Cauldron>());
-		entities.back()->position = glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 4 + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE);
+		add_entity<Pipe>(entities, glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
 	}
 	{
-		entities.push_back(std::make_unique<Chest>());
-		entities.back()->position = glm::vec2((3 * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE);
+		add_entity<Crusher>(entities, glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
+		add_entity<Cauldron>(entities, glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
+		add_entity<Chest>(entities, glm::vec2((3.0f * 4.0f + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE));
+		add_entity<Chest>(entities, glm::vec2((3.0f * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE));
+		add_entity<Furnace>(entities, Tilemap::tile_topleft(glm::ivec2(122, 70)));
 
-		entities.push_back(std::make_unique<AppleTree>());
-		entities.back()->position = glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE);
+		// Apple trees
+		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE));
+		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE));
 
-	}
-	{ // Add one item entity somewhere
+		// more chests
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)));
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)));
+		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)));
+
+		// Add one item entity somewhere
 		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
 		entities.back()->position = glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE);
+
+		// Boulders scattered around
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)));
+	}
+
+	{ // boulders, and pickaxe stuck near it
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)));
+
+		// two small boulders, pushable...
+		entities.push_back(std::make_unique<Boulder>(false));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
+
+		entities.push_back(std::make_unique<Boulder>(false));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
+
+		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
+		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
+	}
+
+	{ // boulders on the left, and lichen rock
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)));
+
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)));
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)));
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)));
+
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)));
+	}
+
+	// recipe book: one page per recipe that makes a potion
+	for (Recipe const *recipe : Recipe::all()) {
+		if (recipe->items_out.empty()) continue;
+		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion) book_recipes.push_back(recipe);
 	}
 
 	// initialize the inventory with two apple and one powder
-	inventory.add("pickaxe", 1);
-	inventory.add("ale", 20);
-	inventory.add("apple_powder", 10);
 	inventory.add("water_bottle", 10);
-	inventory.add("pipe", 10);
-	inventory.add("chest", 10);
-	inventory.add("crusher", 10);
-	inventory.add("brewer", 10);
+	inventory.add("ale", 5);
+	inventory.add("strength_potion", 5);
 }
 
 PlayMode::~PlayMode() {
@@ -134,8 +248,32 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		show_debug = !show_debug;
 		return true;
 	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_F) {
+		//F: drink / eat the selected consumable
+		if (!inventory_open) consume_selected();
+		return true;
+	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_J) {
+		//J: open / close the recipe book
+		if (book_open) {
+			book_open = false;
+		} else {
+			close_container();
+			book_open = true;
+		}
+		return true;
+	}
+	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_TAB) {
+		if (inventory_open) close_container();
+		else {
+			inventory_open = true;
+			book_open = false;
+		}
+		return true;
+	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_ESCAPE) {
 		//close the open container (and put anything on the cursor back in the bag)
+		book_open = false;
 		close_container();
 		return true;
 	}
@@ -143,8 +281,16 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	//----- inventory mouse controls (see ItemCursor.hpp for the full scheme) -----
 	// Clicks are handled here, as events, so even very fast clicks are never missed.
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT) {
+		if (book_open) {
+			//recipe book: the arrows turn two pages at a time
+			glm::vec2 p = glm::vec2(evt.button.x, evt.button.y) * window_scale;
+			if (book_prev_rect.contains(p) && book_page >= 2) book_page -= 2;
+			else if (book_next_rect.contains(p) && book_page + 2 < book_recipes.size()) book_page += 2;
+			if (book_rect.contains(p)) return true;
+		}
+
 		if (SlotView const *hit = slot_at(glm::vec2(evt.button.x, evt.button.y)); hit != nullptr) {
-			if (opened_inventory == nullptr) {
+			if (!inventory_open) {
 				//no panel open: clicking the hotbar selects that slot (click again to unselect), like the number keys
 				int slot = int(hit->slot);
 				hotbar_selected = (hotbar_selected == slot) ? -1 : slot;
@@ -157,10 +303,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 		left_click.latched = true; //for the world: remembered until the next update, so quick clicks aren't missed
-		return false;
-	}
-	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_RIGHT) {
-		right_click.latched = true;
 		return false;
 	}
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_LEFT && ui_mouse_down) {
@@ -177,6 +319,8 @@ void PlayMode::update(float elapsed) {
 	if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) input.direction.x += 1.0f;
 	if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])    input.direction.y -= 1.0f; //y grows downward
 	if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])  input.direction.y += 1.0f;
+	//Shift + WASD sprints. Not while the inventory screen is open, where Shift is for shift-clicking.
+	input.sprint = (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) && !inventory_open;
 	if (keys[SDL_SCANCODE_E] || keys[SDL_SCANCODE_SPACE]) {
 		input.interact.pressed = true;
 		input.interact.downs += 1;
@@ -208,7 +352,8 @@ void PlayMode::update(float elapsed) {
 	}
 
 	//everything entities can collide with this frame:
-	World world{map, entities, player, coord_to_entities};
+	std::vector<std::unique_ptr<Entity>> spawned;
+	World world{map, entities, player, coord_to_entities, &spawned, &made_items};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -236,7 +381,7 @@ void PlayMode::update(float elapsed) {
 
 	// numkeys select/unselect hotbar items (1..9, 0 = tenth slot).
 	// Moving items between inventories is done with the mouse (see handle_event).
-	for (size_t raw_index = 0; raw_index < 10; ++raw_index) {
+	for (size_t raw_index = 0; raw_index < 10 && !inventory_open; raw_index++) {
 		int index = int((raw_index + 9) % 10);
 		if (input.numkeys[raw_index].downs != 1) continue;
 		if (hotbar_selected == index) hotbar_selected = -1;
@@ -250,14 +395,21 @@ void PlayMode::update(float elapsed) {
 		entity->update(input, elapsed, world);
 	}
 
+	// Add entities spawned during the updates
+	for (auto &entity : spawned) {
+		entities.push_back(std::move(entity));
+	}
+	spawned.clear();
+
 	// collect ItemEntities on ground by player
 	{
 		for (auto &entity : world.entities) {
 			if (auto *target = dynamic_cast< ItemEntity * >(entity.get()); target) {
+				auto target_inventory = target->get_inventory();
 				// If the item is close enough, then the flag for absorption will be set true;
 				// Then, we consume it
+				target->attract = inventory.space_for(target_inventory->get_slot_id(0)) > 0;
 				if (!target->is_absorbable()) continue;
-				auto target_inventory = target->get_inventory();
 				item_id_t item_id = target_inventory->get_slot_id(0);
 				int item_count = target_inventory->get_slot_count(0);
 				if (item_id == "") continue;
@@ -305,29 +457,32 @@ void PlayMode::do_world_interaction(float elapsed) {
 		left_click.popped = true;
 	}
 
-	bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
-	right_click.latched = false;
-	if (right_clicked) {
-		right_click.downs += 1;
-		right_click.pressed = true;
-	} else {
-		right_click.downs = 0;
-		right_click.pressed = false;
-		right_click.popped = true;
-	}
+	// bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
+	// right_click.latched = false;
+	// if (right_clicked) {
+	// 	right_click.downs += 1;
+	// 	right_click.pressed = true;
+	// } else {
+	// 	right_click.downs = 0;
+	// 	right_click.pressed = false;
+	// 	right_click.popped = true;
+	// }
 
 	// The inventory UI owns the mouse while it points at a slot or a press on a slot is still held.
 	// While an inventory panel is open, the hotbar can't be used in the world: left click doesn't
 	// place/use/break anything (the mouse is for moving items). Right click and E / Space can
 	// still interact.
 	bool over_ui = mouse_over_ui();
-	bool panel_open = (opened_inventory != nullptr);
+	bool panel_open = inventory_open || book_open;
 	if (over_ui || panel_open) break_timer = 0.0f;
 	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
 	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
-	bool right_new = !over_ui && right_click.downs == 1;
+	// bool right_new = !over_ui && right_click.downs == 1;
 
 	item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+	uint32_t item_tags = Item::tags_of(item_id);
+	bool holding_placeable = (item_tags & ItemTag::Placeable) != 0;
+	bool holding_tool = (item_tags & ItemTag::Tool) != 0;
 	glm::ivec2 coord = find_tilemap_coord(glm::vec2{mx, my}, canvas, camera.view_min(canvas.size));
 
 	// overwrite coords when player used interact key instead (compare Stardew Valley again)
@@ -342,55 +497,46 @@ void PlayMode::do_world_interaction(float elapsed) {
 		interact_facing();
 	}
 
-	if (glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - coord)) <= 6) {
-		// get left click target
-		if ((left_new && item_id != "pickaxe") || right_new) {
-			auto entity = entity_at(coord);
-
-			if (!panel_open && hotbar_selected != -1 && item_id != "" && item_id != "pickaxe") {
-				// cases A. player has a selected item. Try to use it
-				glm::vec2 world_pos = coord * GameConfig::TILE_SIZE;
-				if (item_id == "ale") {
-					player.add_effect(0, 30.0f);
-					inventory.remove("ale", 1);
-				} else if (entity == nullptr) {
-					if (place_machine(item_id, world_pos)) {
-						inventory.remove(item_id, 1);
-					}
-				} else {
-					message = "Action failed";
-					message_timer = MESSAGE_SECONDS;
-				}
-			} else {
-				interact_with(entity);
-			}
-		} else if (left_held) {
-			// being held for more than one frames
-			// start breaking things. But first, find entity
-			auto entity = entity_at(coord);
-			auto *target = dynamic_cast< IBreakable * >(entity);
-
-			if (target != nullptr && target == currently_breaking && item_id == "pickaxe") {
-				// keep breaking...
-				break_timer += elapsed;
-				int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
-				if (damages >= target->get_hardness()) {
-					// breaked
-					entity->removed = true;
-				}
-
-			} else {
-				// changed breaking target or target is just null!
-				break_timer = 0.0f;
-				currently_breaking = target;
-			}
+	// Left click with a machine selected: place it (within PLACE_REACH, on an empty tile)
+	if (left_new && holding_placeable && tile_in_reach(coord, PLACE_REACH)) {
+		glm::vec2 world_pos = glm::vec2(coord) * float(GameConfig::TILE_SIZE);
+		if (entity_at(coord) == nullptr && place_machine(item_id, world_pos)) {
+			inventory.extract_from_slot(size_t(hotbar_selected), 1);
+		} else {
+			message = "Can't place that there";
+			message_timer = MESSAGE_SECONDS;
 		}
+	}
 
-		if (left_click.popped) {
+	if (left_new && item_id == "empty_bottle") {
+		auto tileid = map.tile_at(coord, 2);
+		if (7 <= tileid % 16 && tileid % 16 <= 10 && 9 <= tileid / 16 && tileid / 16 <= 11) {
+			inventory.remove("empty_bottle", 1);
+			spawn_item("water_bottle", 1, player.position);
+		}
+	}
+
+	// Hold left click with a tool: break the machine under the mouse (within TOOL_REACH)
+	if (left_held && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
+		auto entity = entity_at(coord);
+		auto *target = dynamic_cast< IBreakable * >(entity);
+		if (target != nullptr && target == currently_breaking) {
+			break_timer += elapsed;
+			int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
+			damages = damages > 5 ? 5 : damages;
+			if (player.effect_level("strength") > 0) {
+				damages *= player.effect_level("strength");
+			}
+			if (damages >= target->get_hardness()) {
+				entity->removed = true;
+			}
+		} else {
+			// changed breaking target or target is just null
 			break_timer = 0.0f;
-			// keep the currently_breaking pointer for continuous breaking.
-			// let's dont think about stale pointers...
+			currently_breaking = target;
 		}
+	} else if (!left_held) {
+		break_timer = 0.0f;
 	}
 
 	left_click.popped = false;
@@ -398,11 +544,23 @@ void PlayMode::do_world_interaction(float elapsed) {
 }
 
 bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
-	if (id == "chest") {
+	auto check_tile_empty = [this, world_pos](glm::ivec2 lo, glm::ivec2 hi) -> bool {
+		glm::ivec2 base = Tilemap::tile_at_point(world_pos);
+		for (int y = lo.y; y <= hi.y; ++y) {
+			for (int x = lo.x; x <= hi.x; ++x) {
+				if (entity_at(base + glm::ivec2(x, y)) != nullptr) {
+					return false;
+				}
+			}
+		}
+		return true;
+	};
+
+	if (id == "chest" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
 		add_entity<Chest>(entities, world_pos);
-	} else if (id == "crusher") {
+	} else if (id == "crusher" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_entity<Crusher>(entities, world_pos);
-	} else if (id == "brewer") {
+	} else if (id == "brewer" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_entity<Cauldron>(entities, world_pos);
 	} else if (id == "pipe") {
 		add_entity<Pipe>(entities, world_pos);
@@ -426,6 +584,8 @@ bool PlayMode::interact_with(Entity *entity) {
 	if (ctx.open_container != nullptr) {
 		opened_inventory = ctx.open_container;
 		opened_entity = entity;
+		inventory_open = true;
+		book_open = false;
 	}
 	if (!ctx.message.empty()) {
 		message = ctx.message;
@@ -444,11 +604,26 @@ void PlayMode::interact_facing() {
 	}
 
 	//a panel is open then E closes it
-	if (opened_inventory != nullptr && (target == nullptr || target == opened_entity)) {
+	if (inventory_open && (target == nullptr || target == opened_entity)) {
 		close_container();
 		return;
 	}
 	interact_with(target); //(closes the old panel first if it's a different entity)
+}
+
+void PlayMode::consume_selected() {
+	item_id_t id = inventory.get_slot_id(hotbar_selected);
+	Consumable const *consumable = Consumable::get(id);
+	if (consumable == nullptr) return; //nothing selected, or not something you can drink
+
+	for (EffectGrant const &grant : consumable->grants) {
+		player.add_effect(grant.effect, grant.seconds, grant.level);
+	}
+	inventory.extract_from_slot(size_t(hotbar_selected), 1);
+}
+
+bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const {
+	return glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - tile)) <= reach;
 }
 
 void PlayMode::remove_objects(float elapsed) {
@@ -557,10 +732,16 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 
 	if (!mouse_over_ui()) { // hovered-tile highlight (hidden while the mouse is on the inventory UI)
-		batch.fill_rect(Tilemap::tile_rect(hovered_coord), glm::u8vec4(
-			0xee,
-			inventory.get_slot_id(hotbar_selected) == "pickaxe" ? 0x88 : glm::length(glm::vec2(Tilemap::tile_at_point(player.position) - hovered_coord)) > 6 ? 0x44 : 0xdd,
-			0x44, 0x28));
+		uint32_t tags = Item::tags_of(inventory.get_slot_id(hotbar_selected));
+		bool placeable = (tags & ItemTag::Placeable) != 0;
+		bool tool = (tags & ItemTag::Tool) != 0;
+		if ((placeable || tool) && !inventory_open && !book_open && !mouse_over_ui()) {
+			float reach = tool ? TOOL_REACH : PLACE_REACH;
+			bool in_reach = tile_in_reach(hovered_coord, reach);
+			glm::u8vec4 color = in_reach ? glm::u8vec4(0xee, 0xdd, 0x44, 0x28)  //yellow: in reach
+			                             : glm::u8vec4(0xee, 0x44, 0x44, 0x28); //red: too far
+			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
+		}
 	}
 
 	batch.end();
@@ -600,6 +781,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		{
 			DrawLines lines(screen_to_clip);
 			ui_batch.begin(screen_to_clip);
+			if (inventory_open && !ui_slots.empty()) {
+				//dark backdrop behind all visible slots so the open inventory reads as one panel
+				glm::vec2 lo = ui_slots.front().rect.min(), hi = ui_slots.front().rect.max();
+				for (SlotView const &view : ui_slots) {
+					lo = glm::min(lo, view.rect.min());
+					hi = glm::max(hi, view.rect.max());
+				}
+				float pad = slot * 0.3f;
+				ui_batch.fill_rect(Rect{lo.x - pad, lo.y - pad, hi.x - lo.x + 2.0f * pad, hi.y - lo.y + 2.0f * pad},
+					glm::u8vec4(0x10, 0x10, 0x18, 0xb0));
+			}
 			for (SlotView const &view : ui_slots) {
 				Rect const &r = view.rect;
 				bool selected = (view.inventory == &inventory && int(view.slot) == hotbar_selected);
@@ -611,7 +803,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				if (is_hovered) border_color = glm::u8vec4(0xdd, 0xdd, 0xdd, 0xff);
 				if (selected) border_color = glm::u8vec4(0xbb, 0xbb, 0x66, 0xff);
 				ui_batch.fill_rect(Rect{r.x - border, r.y - border, r.w + 2.0f * border, r.h + 2.0f * border}, border_color);
-				ui_batch.fill_rect(r, glm::u8vec4(0x22, 0x22, 0x22, 0x80));
+				ui_batch.fill_rect(r, slot_color(view.inventory->rule(view.slot)));
 
 				draw_item_stack(ui_batch, lines, view.inventory->slots[view.slot], r);
 
@@ -621,16 +813,58 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				}
 			}
 
+			if (show_arrow) {
+				//arrow from a machine's inputs to its outputs; fills up while the machine works
+				float progress = 0.0f;
+				if (auto *machine = dynamic_cast< IProgress * >(opened_entity)) progress = machine->get_progress();
+				draw_arrow(ui_batch, arrow_rect, progress, glm::u8vec4(0x55, 0x55, 0x55, 0xff), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			}
+
 			if (!message.empty() && !ui_slots.empty()) {
-				//interaction message, just above the hotbar's left end (hotbar slots come first in ui_slots):
-				Rect const &first = ui_slots.front().rect;
+				//interaction message, just above the topmost row
+				Rect first = ui_slots.front().rect;
+				for (SlotView const &view : ui_slots) {
+					if (view.inventory == &inventory && view.rect.y < first.y) first = view.rect;
+				}
 				float text_h = slot * 0.4f;
 				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
 				lines.draw_text(message, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 				lines.draw_text(message, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			} else if (std::string sel_id = inventory.get_slot_id(hotbar_selected); !ui_slots.empty() && sel_id != "") {
+				auto item = Item::get(sel_id);
+				std::string text = "";
+				if (item != nullptr) {
+					text = item->name + (item->description != "" ? "  -  " + item->description : "");
+				} else {
+					text = sel_id + " (error item)";
+				}
+
+				Rect const &first = ui_slots.front().rect;
+				float text_h = slot * 0.4f;
+				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
+				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+				lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 			}
 			ui_batch.end();
 		} //(lines draw here, on top of the slots)
+
+		//name of the hovered item, centered above its slot
+		if (hovered != nullptr && cursor.empty() && !hovered->inventory->slot_empty(hovered->slot)) {
+			if (Item const *item = Item::get(hovered->inventory->slots[hovered->slot].first)) {
+				Rect const &r = hovered->rect;
+				float text_h = slot * 0.4f;
+				float text_w = text_width(item->name) * text_h;
+				float pad = slot * 0.12f;
+				//background box, just above the slot
+				Rect box{std::floor(r.x + (r.w - text_w) * 0.5f - pad), std::floor(r.y - slot * 0.15f - text_h - 2.0f * pad), text_w + 2.0f * pad, text_h + 2.0f * pad};
+				DrawLines lines(screen_to_clip);
+				ui_batch.begin(screen_to_clip);
+				ui_batch.fill_rect(box, glm::u8vec4(0x18, 0x10, 0x28, 0xe8));
+				ui_batch.end();
+				glm::vec3 anchor(box.x + pad, box.y + pad + text_h, 0.0f); //text baseline
+				lines.draw_text(item->name, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+			}
+		}
 
 		//the stack held on the cursor, drawn last so it sits above everything
 		if (!cursor.empty()) {
@@ -643,7 +877,169 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 
+	//--- recipe book ---
+	if (book_open) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		float slot = 16.0f * float(canvas.scale);
+		DrawLines lines(screen_to_clip);
+		ui_batch.begin(screen_to_clip);
+		draw_book(ui_batch, lines, drawable_size, slot);
+		ui_batch.end();
+	}
+
+	//--- active effects, top left ---
+	if (!player.active_effects().empty()) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		DrawLines lines(screen_to_clip);
+		static char const *roman[] = {"", "I", " II", " III", " IV", " V"};
+		float text_h = 8.0f * float(canvas.scale);
+		float y = text_h * 1.5f;
+		for (auto const &[id, active] : player.active_effects()) {
+			Effect const *effect = Effect::get(id);
+			std::string text = (effect ? effect->name : id)
+				+ " " + (active.level < 6 ? roman[active.level] : " " + std::to_string(active.level))
+				+ ":  " + std::to_string(int(std::ceil(active.time_left))) + "s";
+			float x = std::floor(text_h * 0.5f);
+			glm::vec3 anchor(x, y, 0.0f);
+			lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+			lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xf0, 0xa0, 0xff));
+			y += text_h * 1.4f;
+		}
+	}
+
 	GL_ERRORS();
+}
+
+// =================== Recipe book ================= //
+
+void PlayMode::draw_book(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot) {
+	glm::vec2 screen = glm::vec2(drawable_size);
+
+	//two pages side by side, centered in the space above the hotbar
+	float page_w = std::floor(slot * 9.0f);
+	float page_h = std::floor(slot * 8.0f);
+	float gutter = std::floor(slot * 0.25f); //fold between the pages
+	float border = std::floor(slot * 0.3f);  //cover showing around the pages
+	glm::vec2 top_left = glm::floor(glm::vec2(
+		(screen.x - 2.0f * page_w - gutter) * 0.5f,
+		(screen.y - slot * 2.0f - page_h) * 0.5f
+	));
+	Rect left{top_left.x, top_left.y, page_w, page_h};
+	Rect right{top_left.x + page_w + gutter, top_left.y, page_w, page_h};
+	book_rect = Rect{left.x - border, left.y - border, 2.0f * page_w + gutter + 2.0f * border, page_h + 2.0f * border};
+
+	sprites.fill_rect(book_rect, BOOK_COVER);
+	sprites.fill_rect(left, BOOK_PAPER);
+	sprites.fill_rect(right, BOOK_PAPER);
+	sprites.fill_rect(Rect{left.x + page_w, left.y, gutter, page_h}, BOOK_SPINE);
+
+	book_prev_rect = Rect{};
+	book_next_rect = Rect{};
+	if (book_recipes.empty()) return;
+
+	//left page shows an even index; the right page the one after it (if any)
+	book_page = std::min(book_page, (book_recipes.size() - 1) / 2 * 2);
+	draw_book_page(sprites, lines, *book_recipes[book_page], left, slot, book_page + 1);
+	if (book_page + 1 < book_recipes.size()) {
+		draw_book_page(sprites, lines, *book_recipes[book_page + 1], right, slot, book_page + 2);
+	}
+
+	//page-turn arrows in the bottom outer corners, only when there's a page that way
+	float a = std::floor(slot * 0.75f);
+	float arrow_y = left.y + page_h - a - std::floor(slot * 0.25f);
+	if (book_page >= 2) {
+		book_prev_rect = Rect{left.x + std::floor(slot * 0.3f), arrow_y, a, a};
+		draw_arrow(sprites, book_prev_rect, 0.0f, BOOK_INK, BOOK_INK, true);
+	}
+	if (book_page + 2 < book_recipes.size()) {
+		book_next_rect = Rect{right.x + page_w - a - std::floor(slot * 0.3f), arrow_y, a, a};
+		draw_arrow(sprites, book_next_rect, 0.0f, BOOK_INK, BOOK_INK);
+	}
+}
+
+
+void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &recipe, Rect const &page, float slot, size_t page_number) {
+	//draws 'str' with the left end of its baseline at (x, y), 'h' pixels tall
+	auto text = [&](std::string const &str, float x, float y, float h, glm::u8vec4 color) {
+		lines.draw_text(str, glm::vec3(x, y, 0.0f), glm::vec3(h, 0.0f, 0.0f), glm::vec3(0.0f, -h, 0.0f), color);
+	};
+	Rect const sprite_src{0.0f, 0.0f, 16.0f, 16.0f};
+
+	float pad = std::floor(slot * 0.5f);
+	float x = page.x + pad;
+	float body_h = std::floor(slot * 0.35f);
+	float line = std::floor(body_h * 1.6f);
+
+	item_id_t potion = recipe.items_out.empty() ? "" : recipe.items_out[0].first;
+	Item const *item = Item::get(potion);
+
+	//--- potion sprite, top right corner ---
+	float icon = std::floor(slot * 1.5f);
+	Rect icon_rect{page.x + page.w - pad - icon, page.y + std::floor(pad * 0.6f), icon, icon};
+
+	//--- locked: not brewed yet. Show "????" and a dark silhouette of the potion, nothing else ---
+	if (made_items.count(potion) == 0) {
+		if (item) sprites.draw(*item->texture, sprite_src, icon_rect, glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		float title_h = std::floor(slot * 0.55f);
+		text("????", x, page.y + pad + title_h, title_h, BOOK_INK);
+		text("Brew this potion once", x, icon_rect.y + icon + line, body_h, BOOK_FADED);
+		text("to learn its recipe.", x, icon_rect.y + icon + 2.0f * line, body_h, BOOK_FADED);
+	} else {
+		if (item) sprites.draw(*item->texture, sprite_src, icon_rect);
+
+		//--- name, shrunk if needed so it never runs into the sprite ---
+		std::string name = item ? item->name : potion;
+		float title_space = icon_rect.x - x - slot * 0.2f;
+		float title_h = std::min(slot * 0.55f, title_space / std::max(text_width(name), 0.01f));
+		text(name, x, page.y + pad + title_h, title_h, BOOK_INK);
+
+		//--- effects (from the consumables table) ---
+		float y = icon_rect.y + icon + line;
+		if (Consumable const *drink = Consumable::get(potion)) {
+			for (EffectGrant const &grant : drink->grants) {
+				Effect const *effect = Effect::get(grant.effect);
+				std::string str = (effect ? effect->name : grant.effect) + roman_level(grant.level)
+					+ " for " + std::to_string(int(grant.seconds)) + "s";
+				text(str, x, y, body_h, BOOK_RED);
+				y += line;
+			}
+		} else {
+			text("No effect: brewing base", x, y, body_h, BOOK_RED);
+			y += line;
+		}
+
+		//--- ingredients: small sprite as the bullet, then "3 x Apple Powder" ---
+		y += std::floor(line * 0.5f);
+		float header_h = std::floor(body_h * 1.15f);
+		text("Ingredients", x, y, header_h, BOOK_INK);
+		float underline = std::max(1.0f, std::floor(slot / 16.0f));
+		sprites.fill_rect(Rect{x, y + std::floor(body_h * 0.25f), text_width("Ingredients") * header_h, underline}, BOOK_INK);
+		y += line;
+
+		float bullet = std::floor(body_h * 1.4f);
+		for (ItemRecord const &in : recipe.items_in) {
+			Item const *ingredient = Item::get(in.first);
+			if (ingredient) {
+				//centered on the text's middle (the text sits between y - body_h and y)
+				Rect bullet_rect{x, std::floor(y - body_h * 0.5f - bullet * 0.5f), bullet, bullet};
+				sprites.draw(*ingredient->texture, sprite_src, bullet_rect);
+			}
+			std::string str = std::to_string(in.second) + " x " + (ingredient ? ingredient->name : in.first);
+			text(str, x + bullet + std::floor(slot * 0.15f), y, body_h, BOOK_INK);
+			y += std::floor(bullet * 1.2f);
+		}
+
+		//--- machine (and how long it takes) ---
+		y += std::floor(line * 0.5f);
+		Item const *machine = Item::get(recipe.machine_id);
+		std::string machine_name = machine ? machine->name : recipe.machine_id;
+		text("Made in: " + machine_name + " (" + std::to_string(int(recipe.time_cost)) + "s)", x, y, body_h, BOOK_INK);
+	}
+
+	//--- page number, bottom center ---
+	std::string number = std::to_string(page_number);
+	float number_h = std::floor(body_h * 0.9f);
+	text(number, std::floor(page.x + (page.w - text_width(number) * number_h) * 0.5f), page.y + page.h - std::floor(pad * 0.6f), number_h, BOOK_FADED);
 }
 
 // =================== Inventory mouse UI ================= //
@@ -655,18 +1051,50 @@ void PlayMode::layout_ui_slots(glm::uvec2 drawable_size, float slot) {
 		float row_width = step * float(slots - 1) + slot;
 		return std::floor((screen.x - row_width) * 0.5f);
 	};
-	auto add_row = [&](Inventory &inv, glm::vec2 top_left) {
-		for (size_t i = 0; i < inv.size(); ++i) {
-			ui_slots.emplace_back(SlotView{&inv, i, Rect{top_left.x + float(i) * step, top_left.y, slot, slot}});
+	auto add_row = [&](Inventory &inv, size_t first, size_t count, glm::vec2 top_left) {
+		for (size_t i = 0; i < count; ++i) {
+			ui_slots.emplace_back(SlotView{&inv, first + i, Rect{top_left.x + float(i) * step, top_left.y, slot, slot}});
 		}
 	};
 
 	ui_slots.clear();
 	//hotbar first (the message is drawn relative to its first slot), along the bottom:
-	add_row(inventory, glm::vec2(centered_x(inventory.size()), std::floor(screen.y - slot * 1.5f)));
+	float player_x = centered_x(HOTBAR_SLOTS);
+	float hotbar_y = std::floor(screen.y - slot * 1.5f);
+	add_row(inventory, 0, HOTBAR_SLOTS, glm::vec2(player_x, hotbar_y));
+
+	float top_y = hotbar_y;
+	if (inventory_open) {
+		//backpack rows stacked above the hotbar, with a small gap
+		for (size_t row = 0; row < BACKPACK_ROWS; row++) {
+			float y = std::floor(hotbar_y - slot * 0.4f - step * float(BACKPACK_ROWS - row));
+			add_row(inventory, HOTBAR_SLOTS * (row + 1), HOTBAR_SLOTS, glm::vec2(player_x, y));
+			top_y = std::min(top_y, y);
+		}
+	}
+	show_arrow = false;
 	if (opened_inventory != nullptr) {
-		//opened container: centered in the window
-		add_row(*opened_inventory, glm::vec2(centered_x(opened_inventory->size()), std::floor((screen.y - slot) * 0.5f)));
+		//opened container: above the player's inventory
+		Inventory &inv = *opened_inventory;
+		float y = std::floor(top_y - slot * 0.9f - step);
+
+		//machines: outputs are the take-only slots after the inputs
+		size_t first_output = inv.size();
+		for (size_t i = 1; i < inv.size(); ++i) {
+			if (!inv.rule(i).can_insert) { first_output = i; break; }
+		}
+		bool has_arrow = (first_output < inv.size());
+
+		float x = centered_x(inv.size() + (has_arrow ? 1 : 0));
+		for (size_t i = 0; i < inv.size(); ++i) {
+			if (has_arrow && i == first_output) {
+				arrow_rect = Rect{x, y, slot, slot};
+				show_arrow = true;
+				x += step;
+			}
+			ui_slots.emplace_back(SlotView{&inv, i, Rect{x, y, slot, slot}});
+			x += step;
+		}
 	}
 }
 
@@ -713,6 +1141,7 @@ void PlayMode::return_cursor_items() {
 
 void PlayMode::close_container() {
 	return_cursor_items();
+	inventory_open = false;
 	opened_inventory = nullptr;
 	opened_entity = nullptr;
 	//slot views may point into the closed container; they're rebuilt on the next draw
@@ -724,6 +1153,18 @@ template <typename EntityClass>
 void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position) {
 	list.push_back(std::make_unique<EntityClass>());
 	list.back()->position = position;
+
+	std::vector<glm::ivec2> occupied_tiles;
+	list.back()->get_occupied(&occupied_tiles);
+
+	for (auto const &tile: occupied_tiles) {
+		if (coord_to_entities.find(tile) != coord_to_entities.end()) {
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		} else {
+			coord_to_entities[tile] = std::vector<Entity *>{ };
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		}
+	}
 }
 
 // =================== Other helpers ================= //
@@ -759,9 +1200,14 @@ void PlayMode::rebuild_coord_to_entities() {
 
  auto PlayMode::entity_at(glm::ivec2 tile) const -> Entity* {
 	if (coord_to_entities.find(tile) != coord_to_entities.end()) {
-		auto &entities = coord_to_entities.at(tile);
-		if (entities.size() == 0) return nullptr;
-		return entities[0];
+		auto &here = coord_to_entities.at(tile);
+		if (here.size() == 0) return nullptr;
+		return here[0];
 	}
 	return nullptr;
+}
+
+void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
+	entities.push_back(std::make_unique<ItemEntity>(id, count));
+	entities.back()->position = position;
 }

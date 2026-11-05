@@ -23,7 +23,7 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
     frame = 3 - std::clamp(static_cast<int>(std::round(std::abs((processing_timer - CRUSH_COOLDOWN / 2.0f) * 6.0f))), 0, 3);
 
     // Cauldron Update:
-    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items,
     //    find the new recipe from the registry (and reset timer).
     // 2. Decrement timer accordingly.
     // 3. If timer timeouts, add that new item to matching output slots.
@@ -55,7 +55,7 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
 
         // try to find a new recipe
         auto recipes = Recipe::get_recipes("crusher");
-        for (Recipe const &recipe : *recipes) {
+        if (recipes != nullptr) for (Recipe const &recipe : *recipes) {
             bool ok = true;
             // check that inputs are sufficient
             for (ItemRecord const &item : recipe.items_in) {
@@ -166,10 +166,10 @@ auto Crusher::get_inventory() -> Inventory* {
 
 IItemPort::PortType Crusher::get_port(glm::ivec2 grid_coord) {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
-    if (grid_coord == tile + glm::ivec2{-1, 0}) {
+    if (grid_coord == tile + glm::ivec2{-1, -1}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{2, 0}) {
+    if (grid_coord == tile + glm::ivec2{4, 0}) {
         return IItemPort::PortType::Out;
     }
     return IItemPort::PortType::None;
@@ -187,4 +187,9 @@ int Crusher::push_item(ItemRecord item_record) {
         processing_timer = CRUSH_COOLDOWN;
     }
     return inventory.insert_into_slot(0, item_record.first, 1);
+}
+
+float Crusher::get_progress() const {
+    if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
+    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
 }

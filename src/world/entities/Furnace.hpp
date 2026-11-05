@@ -1,0 +1,45 @@
+#pragma once
+
+#include "../Entity.hpp"
+#include "../Components.hpp"
+#include "../../main/Rect.hpp"
+#include "../../rendering/Sprites.hpp"
+#include "../../inventory/Recipe.hpp"
+
+#include <glm/glm.hpp>
+
+class Furnace : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable {
+    /* Furnace implementation for demo. */
+public:
+    Furnace();
+    ~Furnace() = default;
+
+    // Entity
+    void update(FrameInput const &input, float elapsed, World const &world) override;
+	auto hitbox() const -> Rect override;
+    void draw(Sprites &batch) const override;
+    void get_occupied(std::vector<glm::ivec2> *ans) const override;
+
+    // IInteractable
+    void on_interact(Context &ctx) override;
+
+    // IInventoryHolder
+    auto get_inventory() -> Inventory* override;
+
+    // IItemPort
+    PortType get_port(glm::ivec2 grid_coord) override;
+    int push_item(ItemRecord item_record) override;
+
+    // IBreakable
+    item_id_t get_drop_id() override {return "furnace";}
+
+
+private:
+    Inventory inventory;
+    const float PUSH_COOLDOWN = 1.0f;
+    const float SMELT_COOLDOWN = 3.0f;
+    float push_timer = 0.0f;
+    float processing_timer = 0.0f;
+    size_t frame = 0;
+    const Recipe *current_recipe = nullptr;
+};

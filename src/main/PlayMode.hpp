@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../starter/Mode.hpp"
+#include "../starter/DrawLines.hpp"
 
 #include "../rendering/Camera2D.hpp"
 #include "../rendering/PixelCanvas.hpp"
@@ -18,6 +19,9 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
+
+struct Recipe;
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
@@ -34,11 +38,14 @@ struct PlayMode : Mode {
 	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
 	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
 	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
+	void consume_selected(); // F to drink/eat selected hotbar item
 	void remove_objects(float elapsed);
+	bool tile_in_reach(glm::ivec2 tile, float reach) const;
 
 	// Helper methods
 	template <typename EntityClass>
 	void add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position);
+	void spawn_item(item_id_t const &id, int count, glm::vec2 position);
 	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft);
 	Entity * entity_at(glm::ivec2 tile) const;
 	void rebuild_coord_to_entities();
@@ -52,8 +59,21 @@ struct PlayMode : Mode {
 	// ----- entity lookup caching ------
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;
 
+	//----- recipe book -----
+	bool book_open = false;
+	size_t book_page = 0;                        // index of the recipe on the left page
+	std::vector< Recipe const * > book_recipes;  // every potion recipe, one per page
+	std::unordered_set< item_id_t > made_items;  // potions brewed at least once; their pages are unlocked
+	Rect book_rect;                              // the whole open book on screen
+	Rect book_prev_rect, book_next_rect;         // page-turn arrows
+	void draw_book(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot);
+	void draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &recipe, Rect const &page, float slot, size_t page_number);
+
 	//----- inventory -----
-	Inventory inventory;                     // the player's hotbar
+	static constexpr size_t HOTBAR_SLOTS = 10; // Number of slots in the hotbar
+	static constexpr size_t BACKPACK_ROWS = 2; // Number of inventory rows
+	Inventory inventory{HOTBAR_SLOTS * (1 + BACKPACK_ROWS)};
+	bool inventory_open = false; // Is inventory showing
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	int hotbar_selected = -1;   // -1 = unselected
@@ -68,6 +88,9 @@ struct PlayMode : Mode {
 		Rect rect;  // drawable (physical) pixels
 	};
 	std::vector< SlotView > ui_slots;  // hotbar slots first, then the open container's
+
+	bool show_arrow = false;
+	Rect arrow_rect;
 
 	bool ui_mouse_down = false;  // a left press landed on a slot and hasn't been released yet
 

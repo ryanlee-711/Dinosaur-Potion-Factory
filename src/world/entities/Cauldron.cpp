@@ -12,7 +12,7 @@ static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 
 
 Cauldron::Cauldron() : inventory(3) {
-    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid });
+    inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
     inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
     inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
 }
@@ -24,7 +24,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
     if (anim_timer > 8.0f) anim_timer -= 8.0f;
 
     // Cauldron Update:
-    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items,
     //    find the new recipe from the registry (and reset timer).
     // 2. Decrement timer accordingly.
     // 3. If timer timeouts, add that new item to matching output slots.
@@ -56,7 +56,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
 
         // try to find a new recipe
         auto recipes = Recipe::get_recipes("brewer");
-        for (Recipe const &recipe : *recipes) {
+        if (recipes != nullptr) for (Recipe const &recipe : *recipes) {
             bool ok = true;
             // check that inputs are sufficient
             for (ItemRecord const &item : recipe.items_in) {
@@ -96,6 +96,7 @@ void Cauldron::update(FrameInput const &input, float elapsed, World const &world
         // check that there is space for outputs
         for (ItemRecord const &item : current_recipe->items_out) {
             inventory.add_to_slot_range(item.first, item.second, 2, 3);
+            if (world.made_items) world.made_items->insert(item.first);
         }
     }
 
@@ -168,16 +169,16 @@ auto Cauldron::get_inventory() -> Inventory* {
 
 IItemPort::PortType Cauldron::get_port(glm::ivec2 grid_coord) {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
-    if (grid_coord == tile + glm::ivec2{-1, 0}) {
+    if (grid_coord == tile + glm::ivec2{-1, -1}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{0, 1}) {
+    if (grid_coord == tile + glm::ivec2{1, 2}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{0, -1}) {
+    if (grid_coord == tile + glm::ivec2{1, -1}) {
         return IItemPort::PortType::In;
     }
-    if (grid_coord == tile + glm::ivec2{2, 0}) {
+    if (grid_coord == tile + glm::ivec2{4, -1}) {
         return IItemPort::PortType::Out;
     }
     return IItemPort::PortType::None;
@@ -196,4 +197,9 @@ int Cauldron::push_item(ItemRecord item_record) {
         if (moved > 0) return moved;
     }
     return 0;
+}
+
+float Cauldron::get_progress() const {
+    if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
+    return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
 }

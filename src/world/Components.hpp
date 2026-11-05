@@ -46,7 +46,7 @@ struct IInteractable {
 };
 
 struct IItemPort {
-    /* 
+    /*
      * Entities that have I/O support.
      * Each port s logically a coord and a port_type (I/O).
      * Given a grid position, the machine may be able to push to/pull from that position.
@@ -67,7 +67,7 @@ struct IItemPort {
 };
 
 struct IBreakable {
-    /* 
+    /*
      * Entities that can be broken.
      * Have a hardness. There is no callback for breaking, because it entirely resides in PlayMode.
      * Inheritance = breakable.
@@ -76,4 +76,10 @@ struct IBreakable {
     virtual ~IBreakable() = default;
     virtual int get_hardness() {return 3;};
     virtual item_id_t get_drop_id() = 0;
+};
+
+struct IProgress {
+    // Machine that work over time like brewer
+    virtual ~IProgress() = default;
+    virtual float get_progress() const = 0;
 };
