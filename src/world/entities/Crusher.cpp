@@ -3,6 +3,7 @@
 #include "../TileMap.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
+#include "../../inventory/Recipe.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -21,23 +22,83 @@ void Crusher::update(FrameInput const &input, float elapsed, World const &world)
     // update frame animation
     frame = 3 - std::clamp(static_cast<int>(std::round(std::abs((processing_timer - CRUSH_COOLDOWN / 2.0f) * 6.0f))), 0, 3);
 
-    // Processing
-    processing_timer -= elapsed;
-    if (processing_timer <= 0.0f) {
-        if (inventory.slots[0].first == "apple" && inventory.slots[0].second > 0) {
-            inventory.slots[0].second--;
+    // Cauldron Update:
+    // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items, 
+    //    find the new recipe from the registry (and reset timer).
+    // 2. Decrement timer accordingly.
+    // 3. If timer timeouts, add that new item to matching output slots.
+    // 4. Do container work (piping outputs)
 
-            if (inventory.slots[1].first == "") {
-                inventory.slots[1].first = "apple_powder";  // hardcoding the only recipe now
-                inventory.slots[1].second = 0;
+    // step 1a. verify current_recipe
+
+    bool recipe_stale = false;
+    if (current_recipe == nullptr) {
+        recipe_stale = true;
+    } else {
+        for (ItemRecord const &item : current_recipe->items_in) {
+            if (inventory.count(item.first) < item.second) {
+                recipe_stale = true;
+                break;
             }
-            inventory.slots[1].second++;
-            if (inventory.slots[0].second == 0) {
-                inventory.slots[0].first = "";
+        }
+        for (ItemRecord const &item : current_recipe->items_out) {
+            if (inventory.space_for(item.first) < item.second) {
+                recipe_stale = true;
+                break;
             }
-            processing_timer = CRUSH_COOLDOWN;
         }
     }
+    // if recipe is stale, current_recipe set to null
+    if (recipe_stale) {
+        current_recipe = nullptr;
+        processing_timer = 0.0f;
+
+        // try to find a new recipe
+        auto recipes = Recipe::get_recipes("brewer");
+        for (Recipe const &recipe : *recipes) {
+            bool ok = true;
+            // check that inputs are sufficient
+            for (ItemRecord const &item : recipe.items_in) {
+                if (inventory.count(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // check that there is space for outputs
+            for (ItemRecord const &item : recipe.items_out) {
+                if (inventory.space_for(item.first) < item.second) {
+                    ok = false;
+                    break;
+                }
+            }
+            // if ok, then set recipe and break
+            if (ok) {
+                current_recipe = &recipe;
+                // also set timer
+                processing_timer = current_recipe->time_cost;
+                break;
+            }
+        }
+    }
+
+    // step 2. reduce processing_timer
+    if (current_recipe) {
+        processing_timer -= elapsed;
+    }
+
+    // step 3. if processing timer timeouts, brew
+    if (current_recipe != nullptr && processing_timer <= 0.0f) {
+        processing_timer = current_recipe->time_cost;
+        for (ItemRecord const &item : current_recipe->items_in) {
+            inventory.remove(item.first, item.second);
+        }
+        // check that there is space for outputs
+        for (ItemRecord const &item : current_recipe->items_out) {
+            inventory.add_to_slot_range(item.first, item.second, 1, 2);
+        }
+    }
+
+    // step 4. Item pushing
 
     push_timer -= elapsed;
     if (push_timer <= 0.0f) {
