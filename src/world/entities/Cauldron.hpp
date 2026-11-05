@@ -38,5 +38,6 @@ private:
     const float PUSH_COOLDOWN = 1.0f;
     float push_timer = 0.0f;
     float processing_timer = 0.0f;
+    float anim_timer = 0.0f;
     const Recipe *current_recipe;
 };

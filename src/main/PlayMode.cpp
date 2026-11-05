@@ -86,17 +86,17 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// ~~Demo~~
 	// initialize several boxes for demonstration (entities).
 
-	for (size_t i = 0; i < 4; ++i) {
+	for (size_t i = 0; i < 3; ++i) {
 		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((3 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 	}
 
 	{
 		entities.push_back(std::make_unique<Crusher>());
-		entities.back()->position = glm::vec2((3 * 2 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 
 		entities.push_back(std::make_unique<Cauldron>());
-		entities.back()->position = glm::vec2((3 * 3 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
+		entities.back()->position = glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
 
 		entities.push_back(std::make_unique<Chest>());
 		entities.back()->position = glm::vec2((3 * 4 + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE);
@@ -104,12 +104,6 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	{
 		entities.push_back(std::make_unique<Chest>());
 		entities.back()->position = glm::vec2((3 * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE);
-
-		entities.push_back(std::make_unique<Pipe>());
-		entities.back()->position = glm::vec2((3 * 3 + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE);
-		if (auto* pipe = dynamic_cast<Pipe*>(entities.back().get())) {
-			pipe->configure(1);
-		}
 
 		entities.push_back(std::make_unique<AppleTree>());
 		entities.back()->position = glm::vec2((138.0f) * TILE_SIZE, 92.0f * TILE_SIZE);
