@@ -413,8 +413,9 @@ void PlayMode::update(float elapsed) {
 		input.interact.downs = 0;
 	}
 	if (keys[SDL_SCANCODE_KP_ENTER] || keys[SDL_SCANCODE_X]) {
-		input.destroy.pressed = true;
-		input.destroy.downs += 1;
+		// nope
+		input.destroy.pressed = false;
+		input.destroy.downs += 0;
 	} else {
 		input.destroy.pressed = false;
 		input.destroy.downs = 0;
@@ -756,6 +757,10 @@ void PlayMode::consume_selected() {
 	for (EffectGrant const &grant : consumable->grants) {
 		player.add_effect(grant.effect, grant.seconds, grant.level);
 	}
+
+	// pop empty bottle out of nowhere
+	spawn_item("empty_bottle", 1, player.position);
+
 	inventory.extract_from_slot(size_t(hotbar_selected), 1);
 }
 
