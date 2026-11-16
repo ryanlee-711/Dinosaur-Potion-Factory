@@ -16,6 +16,8 @@ struct Player : Entity {
 public:
 	glm::ivec2 facing = glm::ivec2(0, 1);  // last direction moved: (0,1)=down, (0,-1)=up, (+-1,0)=right/left
 	bool moving = false;
+	float dust_distance = 0.0f;
+	static constexpr float DUST_STEP = 10.0f;
 
 	static constexpr float WALK_SPEED = 80.0f; // pixels per second (5 tiles/second)
 	static constexpr float SPRINT_MULTIPLIER = 1.5f; // holding Shift multiplies walking speed by this

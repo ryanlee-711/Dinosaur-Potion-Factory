@@ -52,3 +52,7 @@ Special notes:
 - If you drew something but saw nothing, maybe it is because another layer above it is covering it?
 - You can technically draw tiles out of the tileset range. It will be buggy but why not
 - If you are enlarging tileset sheet, please modify EditorMode.cpp:22-23.
+
+## References
+
+- [Game Programming Patterns: Object Pool](https://gameprogrammingpatterns.com/object-pool.html)

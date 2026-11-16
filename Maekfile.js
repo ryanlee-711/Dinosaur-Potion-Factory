@@ -193,6 +193,7 @@ const common_names = [
 	//rendering:
 	maek.CPP('src/rendering/Texture.cpp'),
 	maek.CPP('src/rendering/Sprites.cpp'),
+	maek.CPP('src/rendering/Particles.cpp'),
 	maek.CPP('src/rendering/PixelCanvas.cpp'),
 	maek.CPP('src/rendering/TextRenderer.cpp'),
 
