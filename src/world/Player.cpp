@@ -6,6 +6,7 @@
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
 #include "../inventory/Item.hpp"
+#include "../rendering/Particles.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -48,8 +49,15 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 	if (input.sprint) speed *= SPRINT_MULTIPLIER;  // Shift; stacks with the boost
 	//move one axis at a time, this is what lets you slide along walls instead of sticking to them when moving diagonally
 	glm::vec2 step = direction * speed * elapsed;
+	glm::vec2 before = position;
 	move_axis(0, step.x, world);
 	move_axis(1, step.y, world);
+
+	dust_distance += glm::length(position - before);
+	if (dust_distance >= DUST_STEP) {
+		dust_distance -= DUST_STEP;
+		world.particles->burst(Presets::StepDust, position - glm::vec2(facing) * 4.0f);
+	}
 }
 
 void Player::move_axis(int axis, float amount, World const &world) {

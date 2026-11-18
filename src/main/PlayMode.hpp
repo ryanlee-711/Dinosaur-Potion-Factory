@@ -5,6 +5,7 @@
 
 #include "../rendering/Camera2D.hpp"
 #include "../rendering/PixelCanvas.hpp"
+#include "../rendering/Particles.hpp"
 #include "../rendering/Sprites.hpp"
 #include "../rendering/Texture.hpp"
 #include "../world/Player.hpp"
@@ -138,6 +139,7 @@ struct PlayMode : Mode {
 	Sprites batch;
 	Sprites ui_batch;
 	PixelCanvas canvas;
+	ParticleSystem particles;
 	float window_scale = 1.0f;   // related to retina schenanigans
 
 	bool show_debug = false; // toggled with F3

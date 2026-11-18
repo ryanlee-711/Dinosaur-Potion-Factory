@@ -11,6 +11,7 @@
 
 struct Tilemap;
 struct Entity;
+struct ParticleSystem;
 
 // A read-only view of everything an entity can bump into this frame:
 // (Read only in the sense that the vector can't be modified. But entities can!)
@@ -23,6 +24,7 @@ struct World {
 	//spawned entities
 	std::vector<std::unique_ptr<Entity>> *spawned = nullptr;
 	std::unordered_set<item_id_t> *made_items = nullptr;
+	ParticleSystem *particles = nullptr;
 
 	// Appends to 'out' every solid thing 'box' overlaps that 'mover' can't walk through
 	void solids_overlapping(Rect const &box, Entity const &mover, std::vector< Rect > &out) const;

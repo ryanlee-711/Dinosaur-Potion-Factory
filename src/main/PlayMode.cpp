@@ -438,7 +438,7 @@ void PlayMode::update(float elapsed) {
 
 	//everything entities can collide with this frame:
 	std::vector<std::unique_ptr<Entity>> spawned;
-	World world{map, entities, player, coord_to_entities, &spawned, &made_items};
+	World world{map, entities, player, coord_to_entities, &spawned, &made_items, &particles};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -488,6 +488,7 @@ void PlayMode::update(float elapsed) {
 		entities.push_back(std::move(entity));
 	}
 	spawned.clear();
+	particles.update(elapsed);
 
 	// collect ItemEntities on ground by player
 	{
@@ -654,6 +655,8 @@ void PlayMode::do_world_interaction(float elapsed) {
 				break_timer -= 5.0f * SECOND_PER_DAMAGE;
 			}
 			if (damages >= target->get_hardness()) {
+				Rect hb = entity->hitbox();
+				particles.burst(Presets::RockDebris, (hb.min() + hb.max()) * 0.5f);
 				entity->removed = true;
 			}
 		} else {
@@ -839,6 +842,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	batch.begin(camera.world_to_clip(canvas.size));
 
 	map.draw(batch, *tileset, view_min, view_max);
+	particles.draw(batch, true);
 
 	{ //player + entities, sorted so whatever stands lower on screen (bigger position.y) draws on top
 		std::vector< Entity const * > sorted;
@@ -852,6 +856,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			entity->draw(batch);
 		}
 	}
+	particles.draw(batch, false);
 
 	if (show_debug) {
 		//solid tiles in red:
