@@ -10,6 +10,9 @@ struct Rect {
 	float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
 	glm::vec2 min() const { return glm::vec2(x, y); }  //top-left
 	glm::vec2 max() const { return glm::vec2(x + w, y + h); }  //bottom-right
+	inline Rect offset_by(glm::vec2 const &other) const {
+		return Rect{other.x + x, other.y + y, w, h};
+	}
 
 	// True if point 'p' is inside the rectangle
 	bool contains(glm::vec2 p) const {
