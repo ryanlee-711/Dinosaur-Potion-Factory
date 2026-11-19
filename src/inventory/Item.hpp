@@ -40,6 +40,4 @@ struct Item {
 
 	// Tags of an item id. 0 if the id is empty or unknown
 	static uint32_t tags_of(item_id_t const &id);
-private:
-	static const ItemRegistry registry;
 };

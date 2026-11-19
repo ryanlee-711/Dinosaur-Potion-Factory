@@ -93,3 +93,15 @@ struct IMineable {
     // Called on a tool click. Returns the item knocked loose, or "" if there's nothing to mine right now.
     virtual item_id_t mine() = 0;
 };
+
+struct ISaveable {
+    /*
+     * Save and Load interface.
+     * TODO
+     */
+    virtual ~ISaveable() = default;
+    // virtual void save() const = 0;
+    // virtual void load() = 0;
+    // virtual uint32_t get_uid() const = 0;
+    // virtual void overwrite_uid(uint32_t new_uid) = 0;
+};

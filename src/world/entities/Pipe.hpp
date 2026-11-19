@@ -36,6 +36,7 @@ public:
     void configure(size_t mode) {
         queue_reconnect = true;
     }
+    void draw_hint(Sprites &batch) const;
 
 
 private:

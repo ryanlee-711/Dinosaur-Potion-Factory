@@ -15,14 +15,11 @@
 #include "../world/World.hpp"
 #include "../world/ItemEntity.hpp"
 // Make macro for this?
-#include "../world/entities/Chest.hpp"
 #include "../world/entities/Pipe.hpp"
-#include "../world/entities/Crusher.hpp"
-#include "../world/entities/Cauldron.hpp"
+#include "../world/entities/Machine.hpp"
 #include "../world/entities/AppleTree.hpp"
 #include "../world/entities/LichenRock.hpp"
 #include "../world/entities/Boulder.hpp"
-#include "../world/entities/Furnace.hpp"
 #include "../world/entities/CopperVein.hpp"
 #include "../world/entities/Dragon.hpp"
 
@@ -51,7 +48,6 @@ static constexpr float SECOND_PER_DAMAGE = 0.25f;
 // Reach distances
 static constexpr float PLACE_REACH = 6.0f;
 static constexpr float TOOL_REACH = 3.0f;
-
 
 // DRAGON DIALOGUES
 static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
@@ -97,6 +93,12 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 	}
 	return best;
 }
+
+// Global textures
+
+static Load< Texture > wavey_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/misc/waves.png"));
+});
 
 static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/items/missing_no.png"));
@@ -199,24 +201,28 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// ~~Demo~~
 	// initialize some existing machines for demonstration (entities).
 
+	auto tile2pos = [](float x, float y) -> glm::vec2 {
+		return glm::vec2(x * TILE_SIZE, y * TILE_SIZE);
+	};
+
 	for (size_t i = 0; i < 3; ++i) {
-		add_entity<Pipe>(entities, glm::vec2((1 * i + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
+		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f));
 	}
 	{
-		add_entity<Crusher>(entities, glm::vec2((3.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
-		add_entity<Cauldron>(entities, glm::vec2((9.0f + 138.0f) * TILE_SIZE, 82.0f * TILE_SIZE));
-		add_entity<Chest>(entities, glm::vec2((3.0f * 4.0f + 138.0f) * TILE_SIZE, 78.0f * TILE_SIZE));
-		add_entity<Chest>(entities, glm::vec2((3.0f * 3 + 137.0f) * TILE_SIZE, 75.0f * TILE_SIZE));
-		add_entity<Furnace>(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)));
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher");
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer");
+		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest");
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest");
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace");
 
 		// Apple trees
 		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE));
 		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE));
 
 		// more chests
-		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)));
-		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)));
-		add_entity<Chest>(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)));
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest");
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest");
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest");
 
 		// Add one item entity somewhere
 		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
@@ -282,6 +288,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	// initialize the inventory with two apple and one powder
 	inventory.add("water_bottle", 15);
+	inventory.add("pipe", 15);
 
 	// initialize quest
 	quests.emplace_back(
@@ -686,15 +693,15 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 	};
 
 	if (id == "chest" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
-		add_entity<Chest>(entities, world_pos);
+		add_machine(entities, world_pos, "chest");
 	} else if (id == "crusher" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
-		add_entity<Crusher>(entities, world_pos);
+		add_machine(entities, world_pos, "crusher");
 	} else if (id == "brewer" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
-		add_entity<Cauldron>(entities, world_pos);
+		add_machine(entities, world_pos, "brewer");
 	} else if (id == "pipe") {
 		add_entity<Pipe>(entities, world_pos);
 	} else if (id == "furnace" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
-		add_entity<Furnace>(entities, world_pos);
+		add_machine(entities, world_pos, "furnace");
 	} else {
 		return false; //not a machine
 	}
@@ -878,6 +885,23 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		batch.fill_rect(player.hitbox(), glm::u8vec4(0xff, 0xee, 0x00, 0xb0));
 	}
 
+	{ // draw hints for pipes and machines
+		// only if holding an item.
+		item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+		uint32_t item_tags = Item::tags_of(item_id);
+		bool holding_hintable = (item_tags & ItemTag::Placeable) != 0;
+
+		if (holding_hintable) {
+			for (auto &entity : entities) {
+				if (auto machine = dynamic_cast<Machine *>(entity.get()); machine) {
+					machine->draw_hint(batch, wavey_texture, 0.0f);
+				} else if (auto pipe = dynamic_cast<Pipe *>(entity.get()); pipe) {
+					pipe->draw_hint(batch);
+				}
+			}
+		}
+	}
+
 	if (!mouse_over_ui()) { // hovered-tile highlight (hidden while the mouse is on the inventory UI)
 		uint32_t tags = Item::tags_of(inventory.get_slot_id(hotbar_selected));
 		bool placeable = (tags & ItemTag::Placeable) != 0;
@@ -888,6 +912,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4 color = in_reach ? glm::u8vec4(0xee, 0xdd, 0x44, 0x28)  //yellow: in reach
 			                             : glm::u8vec4(0xee, 0x44, 0x44, 0x28); //red: too far
 			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
+			// for placeable machines, draw a ghost sprite over
+			if (auto def = MachineDef::get(inventory.get_slot_id(hotbar_selected))) {
+				batch.draw(*def->texture, def->texture_rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
+			}
 		}
 	}
 
@@ -1429,6 +1457,31 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 		}
 	}
 }
+
+void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type) {
+
+	size_t inventory_size = 0;
+	if (machine_type == "brewer") inventory_size = 3;	
+	else if (machine_type == "furnace") inventory_size = 2;
+	else if (machine_type == "crusher") inventory_size = 2;
+	else if (machine_type == "chest") inventory_size = 10;
+	
+	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
+	list.back()->position = position;
+
+	std::vector<glm::ivec2> occupied_tiles;
+	list.back()->get_occupied(&occupied_tiles);
+
+	for (auto const &tile: occupied_tiles) {
+		if (coord_to_entities.find(tile) != coord_to_entities.end()) {
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		} else {
+			coord_to_entities[tile] = std::vector<Entity *>{ };
+			coord_to_entities.at(tile).emplace_back(list.back().get());
+		}
+	}
+}
+
 
 // =================== Other helpers ================= //
 

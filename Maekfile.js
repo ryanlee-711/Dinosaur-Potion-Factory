@@ -153,11 +153,8 @@ const game_names = [
 	maek.CPP('src/main/PlayMode.cpp'),
 
 	// particular entities
-	maek.CPP('src/world/entities/Chest.cpp'),
 	maek.CPP('src/world/entities/Pipe.cpp'),
-	maek.CPP('src/world/entities/Crusher.cpp'),
-	maek.CPP('src/world/entities/Cauldron.cpp'),
-	maek.CPP('src/world/entities/Furnace.cpp'),
+	maek.CPP('src/world/entities/Machine.cpp'),
 	maek.CPP('src/world/entities/AppleTree.cpp'),
 	maek.CPP('src/world/entities/LichenRock.cpp'),
 	maek.CPP('src/world/entities/Boulder.cpp'),
