@@ -49,7 +49,6 @@ static constexpr float SECOND_PER_DAMAGE = 0.25f;
 static constexpr float PLACE_REACH = 6.0f;
 static constexpr float TOOL_REACH = 3.0f;
 
-
 // DRAGON DIALOGUES
 static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
 
@@ -94,6 +93,12 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 	}
 	return best;
 }
+
+// Global textures
+
+static Load< Texture > wavey_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/misc/waves.png"));
+});
 
 static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/items/missing_no.png"));
@@ -878,6 +883,23 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		//the dwarf's reach (what E interacts with) in blue, collision box in yellow:
 		batch.fill_rect(player.interact_box(), glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
 		batch.fill_rect(player.hitbox(), glm::u8vec4(0xff, 0xee, 0x00, 0xb0));
+	}
+
+	{ // draw hints for pipes and machines
+		// only if holding an item.
+		item_id_t item_id = inventory.get_slot_id(hotbar_selected);
+		uint32_t item_tags = Item::tags_of(item_id);
+		bool holding_hintable = (item_tags & ItemTag::Placeable) != 0;
+
+		if (holding_hintable) {
+			for (auto &entity : entities) {
+				if (auto machine = dynamic_cast<Machine *>(entity.get()); machine) {
+					machine->draw_hint(batch, wavey_texture, 0.0f);
+				} else if (auto pipe = dynamic_cast<Pipe *>(entity.get()); pipe) {
+					pipe->draw_hint(batch);
+				}
+			}
+		}
 	}
 
 	if (!mouse_over_ui()) { // hovered-tile highlight (hidden while the mouse is on the inventory UI)

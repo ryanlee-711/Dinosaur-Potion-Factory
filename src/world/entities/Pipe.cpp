@@ -133,6 +133,13 @@ void Pipe::draw(Sprites &batch) const {
 
 }
 
+void Pipe::draw_hint(Sprites &batch) const {
+    // Redraw it, for some reason.
+    Rect src{frame * 16.0f, 0.0f, 16.0f, 16.0f};
+    glm::vec2 top_left = glm::round(position);
+    batch.draw(*box_texture, src, top_left, glm::u8vec4{0xff, 0xff, 0x00, 0x80});
+}
+
 auto Pipe::hitbox() const -> Rect {
     return Rect{position.x, position.y, 16.0f, 16.0f};
 }

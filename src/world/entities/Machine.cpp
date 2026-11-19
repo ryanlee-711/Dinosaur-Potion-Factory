@@ -76,10 +76,10 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
             }
         });
 
@@ -310,6 +310,44 @@ void Machine::draw(Sprites &batch) const {
     batch.draw(*def->texture, Rect{def->texture_rect.w * frame, def->texture_rect.h * rot2idx(rotation), def->texture_rect.w, def->texture_rect.h}, top_left);
 
 }
+
+void Machine::draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const {
+    // draw the hints for this Machine
+    if (!def) return;
+
+    constexpr float TILESIZE = 16.0f;
+    constexpr float GRIDSIZE = 18.0f;
+    constexpr float OFFSET = 2.0f;
+
+    auto port_pair_to_texrect = [](glm::ivec2 dir, int md = 2) -> Rect {
+        if (dir.x == 1 && dir.y == 0) {
+            return Rect{GRIDSIZE * 0 + OFFSET, GRIDSIZE * md + OFFSET, TILESIZE, TILESIZE};
+        }
+        if (dir.x == 0 && dir.y == -1) {
+            return Rect{GRIDSIZE * 1 + OFFSET, GRIDSIZE * md + OFFSET, TILESIZE, TILESIZE};
+        }
+        if (dir.x == -1 && dir.y == 0) {
+            return Rect{GRIDSIZE * 2 + OFFSET, GRIDSIZE * md + OFFSET, TILESIZE, TILESIZE};
+        }
+        if (dir.x == 0 && dir.y == 1) {
+            return Rect{GRIDSIZE * 3 + OFFSET, GRIDSIZE * md + OFFSET, TILESIZE, TILESIZE};
+        }
+        return Rect{0.0f, 5.0f, 1.0f, 1.0f};
+    };
+
+    glm::vec2 top_left = glm::round(position);
+    for (auto const &[src, dst] : def->port_locs_in[rot2idx(rotation)]) {
+        Rect rect = port_pair_to_texrect(src - dst);
+        glm::vec2 target_pos = top_left + glm::vec2(src) * TILESIZE;
+        batch.draw(*tex, rect, target_pos, glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
+    }
+    for (auto const &[src, dst] : def->port_locs_out[rot2idx(rotation)]) {
+        Rect rect = port_pair_to_texrect(dst - src, 3);
+        glm::vec2 target_pos = top_left + glm::vec2(src) * TILESIZE;
+        batch.draw(*tex, rect, target_pos, glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
+    }
+}
+
 
 auto Machine::hitbox() const -> Rect {
     return def->hitbox_rect.offset_by(position);

@@ -83,6 +83,8 @@ public:
         return static_cast<size_t>(rot);
     }
 
+    void draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const;
+
 
 private:
     [[maybe_unused]]
