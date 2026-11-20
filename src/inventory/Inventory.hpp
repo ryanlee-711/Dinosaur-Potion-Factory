@@ -59,6 +59,16 @@ struct Inventory {
 	// Returns how many were actually taken
 	int extract_from_slot(size_t slot, int count);
 
+	// Overwrite the data in one slot
+	// Ignore all rules; must only be use when loading savefile
+	void set_slot(size_t slot, item_id_t item_id, int count) {
+		if (slot >= slots.size()) {
+			return;
+		}
+		slots[slot].first = item_id;
+		slots[slot].second = count;
+	}
+
 	// ---------- helpers ----------
 	bool slot_empty(size_t slot) const { return slot >= size() || slots[slot].second <= 0; }
 

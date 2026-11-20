@@ -31,6 +31,9 @@ struct Entity {
 	// Default 0x1 = solid. Set to 0 for things you can walk through
 	uint32_t collision_mask = 0x1;
 
+	// A unique ID for this object, randomly generated in uninitialized; must be unique.
+	uint32_t uid = 0x0;
+
 	// Set to true to delete this entity (picked up, harvested away, destroyed by a potion...).
 	// PlayMode erases removed entities once per frame, after everything has updated
 	bool removed = false;
@@ -41,6 +44,9 @@ struct Entity {
 	virtual Rect hitbox() const = 0;
 	virtual void draw(Sprites &batch) const = 0;
 	virtual void get_occupied(std::vector<glm::ivec2> *ans) const = 0;
+
+	virtual std::string save() const = 0;
+    virtual void load(std::string line) = 0;
 
 	bool blocks(Entity const &other) const {
 		return (collision_mask & other.collision_mask) != 0;

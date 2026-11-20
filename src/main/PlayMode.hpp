@@ -45,8 +45,8 @@ struct PlayMode : Mode {
 
 	// Helper methods
 	template <typename EntityClass>
-	void add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position);
-	void add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type);
+	void add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, uint32_t uid=0);
+	void add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type, uint32_t uid=0);
 	void spawn_item(item_id_t const &id, int count, glm::vec2 position);
 	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft);
 	Entity * entity_at(glm::ivec2 tile) const;
@@ -94,6 +94,12 @@ struct PlayMode : Mode {
 	Inventory *opened_inventory = nullptr;   // container panel currently open (nullptr = none)
 	Entity *opened_entity = nullptr;         // the entity that owns opened_inventory
 	int hotbar_selected = -1;   // -1 = unselected
+
+	//----- save and load -----
+	static constexpr std::string initfile_path = "data/level1_init.save";
+	static constexpr std::string savefile_path = "level1.save";
+	void save();
+	void load();
 
 	//----- inventory mouse UI -----
 	ItemCursor cursor;  // items held on the mouse while a panel is open

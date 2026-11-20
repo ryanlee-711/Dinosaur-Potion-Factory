@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <array>
+#include <sstream>
 
 static Load< Texture > big_boulder_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/entities/big_boulder.png"));
@@ -84,4 +85,36 @@ void Boulder::on_interact(Context &ctx) {
         }
         rolling = true;
     }
+}
+
+std::string Boulder::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "boulder";
+    ss << ' ' << position.x << ' ' << position.y << ' ' << static_cast<int>(big);
+    return ss.str();
+}
+
+void Boulder::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y> <big>
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    int use_big;
+    if (!(ss >> position.x >> position.y >> use_big)) {
+        throw std::runtime_error{"Didn't read position / big flag"};
+    }
+    big = static_cast<bool>(use_big);
 }

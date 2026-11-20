@@ -5,6 +5,7 @@
 #include "../../starter/data_path.hpp"
 
 #include <cmath>
+#include <sstream>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/lichen_rock.png"));
@@ -50,4 +51,35 @@ void LichenRock::get_occupied(std::vector<glm::ivec2> *ans) const {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 	ans->emplace_back(tile);
     ans->emplace_back(tile + glm::ivec2{1, 0});
+}
+
+
+std::string LichenRock::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "lichen_rock";
+    ss << ' ' << position.x << ' ' << position.y << ' ' << lichen;
+    return ss.str();
+}
+
+void LichenRock::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y>
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y >> lichen)) {
+        throw std::runtime_error{"Didn't read position / lichen count"};
+    }
 }

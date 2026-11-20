@@ -38,6 +38,9 @@ public:
 	void draw(Sprites &batch) const override;
 	void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
+	std::string save() const override;
+    void load(std::string line) override;
+
 	// The area right in front of the feet, in the facing direction.
 	// Whatever entity this overlaps is what pressing E interacts with.
 	Rect interact_box() const;

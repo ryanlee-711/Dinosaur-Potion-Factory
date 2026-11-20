@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <sstream>
 
 using GameConfig::TILE_SIZE;
 
@@ -130,6 +131,60 @@ Rect Player::interact_box() const {
 	if (facing.x < 0) return Rect{hb.x - REACH, hb.y, REACH, hb.h}; //left
 	if (facing.y < 0) return Rect{hb.x, hb.y - REACH, hb.w, REACH}; //up
 	return Rect{hb.x, hb.y + hb.h, hb.w, REACH};                    //down
+}
+
+
+std::string Player::save() const {
+    std::ostringstream ss;
+    ss << uid;
+	ss << ' ' << "player";
+    ss << ' ' << position.x << ' ' << position.y;
+	ss << ' ' << effects.size();
+	for (auto &[effect_id, effect] : effects) {
+		ss << ' ' << effect_id << ' ' << effect.level << ' ' << effect.time_left;
+	}
+    return ss.str();
+}
+
+void Player::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y> <effect_count> [EFFECTS]
+     */
+    uint32_t read_uid;
+	std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y)) {
+        throw std::runtime_error{"Didn't read position"};
+    }
+	int effect_count;
+	if (!(ss >> effect_count)) {
+        throw std::runtime_error{"Invalid effect count"};
+    }
+
+	effects.clear();
+	for (int idx = 0; idx < effect_count; ++idx) {
+		effect_id_t effect;
+		int level;
+		float length;
+		if (!(ss >> effect >> level >> length)) {
+			throw std::runtime_error{"Invalid effect"};
+		}
+		add_effect(effect, length, level);
+	}
+
+
+	held_item.first = "";
+	held_item.second = 0;
 }
 
 glm::ivec2 Player::facing_tile() const {

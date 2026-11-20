@@ -42,7 +42,7 @@ struct MachineDef {
 
 
 
-class Machine : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress, public ISaveable {
+class Machine : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress {
     /* General purpose machine implementation, shared by all machines.
      */
 public:
@@ -55,6 +55,9 @@ public:
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
+
+    std::string save() const override;
+    void load(std::string line) override;
 
     // IInteractable
     void on_interact(Context &ctx) override;
@@ -70,12 +73,6 @@ public:
     // IBreakable
     item_id_t get_drop_id() override {return "brewer";}
 
-    // ISaveable
-    // virtual void save() const = 0;
-    // virtual void load() = 0;
-    // virtual uint32_t get_uid() const = 0;
-    // virtual void overwrite_uid(uint32_t new_uid) = 0;
-
     // Machine-specific
     enum Rotation {EAST, NORTH, WEST, SOUTH};
     Rotation const get_rotation() {return rotation;}
@@ -86,10 +83,7 @@ public:
     void draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const;
 
 
-private:
-    [[maybe_unused]]
-    uint32_t uid;
-    
+private:    
     MachineDef const *def = nullptr;
 
     // These may not change once placed.

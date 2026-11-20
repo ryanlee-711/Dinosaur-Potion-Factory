@@ -8,6 +8,7 @@
 #include <cmath>
 #include <array>
 #include <random>
+#include <sstream>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/apple_tree.png"));
@@ -72,4 +73,36 @@ void AppleTree::get_occupied(std::vector<glm::ivec2> *ans) const {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 	ans->emplace_back(tile);
     ans->emplace_back(tile + glm::ivec2{1, 0});
+}
+
+
+std::string AppleTree::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "apple_tree";
+    ss << ' ' << position.x << ' ' << position.y;
+    return ss.str();
+}
+
+void AppleTree::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y>
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y)) {
+        throw std::runtime_error{"Didn't read position"};
+    }
 }

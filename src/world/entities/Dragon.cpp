@@ -5,6 +5,7 @@
 #include "../../starter/data_path.hpp"
 
 #include <cmath>
+#include <sstream>
 
 
 Dragon::Dragon() : inventory(3) {
@@ -123,4 +124,34 @@ auto Dragon::get_inventory() -> Inventory* {
 float Dragon::get_progress() const {
     if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
     return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
+}
+
+std::string Dragon::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "dragon";
+    ss << ' ' << position.x << ' ' << position.y;
+    return ss.str();
+}
+
+void Dragon::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y>
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y)) {
+        throw std::runtime_error{"Didn't read position"};
+    }
 }

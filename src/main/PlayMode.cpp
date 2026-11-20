@@ -31,6 +31,7 @@
 #include <vector>
 #include <random>
 #include <sstream>
+#include <fstream>
 
 using GameConfig::TILE_SIZE;
 
@@ -197,87 +198,93 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	tileset = std::make_unique< Texture >(data_path("assets/tileset.png"));
 	//stand in the middle of the spawn tile, feet near its bottom:
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+	player.uid = 15213;
 
 	// ~~Demo~~
 	// initialize some existing machines for demonstration (entities).
 
+	/*
 	auto tile2pos = [](float x, float y) -> glm::vec2 {
 		return glm::vec2(x * TILE_SIZE, y * TILE_SIZE);
 	};
-
 	for (size_t i = 0; i < 3; ++i) {
-		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f));
+		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f), mt());
 	}
 	{
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher");
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer");
-		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest");
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest");
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace");
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher", mt());
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer", mt());
+		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest", mt());
+		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest", mt());
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace", mt());
 
 		// Apple trees
-		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE));
-		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE));
+		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE), mt());
+		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE), mt());
 
 		// more chests
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest");
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest");
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest");
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest", mt());
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest", mt());
+		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest", mt());
 
 		// Add one item entity somewhere
-		entities.push_back(std::make_unique<ItemEntity>("apple", 3));
-		entities.back()->position = glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE);
+		spawn_item("apple", 3, glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE));
 
 		// Boulders scattered around
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)));
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)));
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)), mt());
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)), mt());
 	}
 
 	{ // boulders, and pickaxe stuck near it
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)));
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)), mt());
+		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)), mt());
 
 		// two small boulders, pushable...
 		entities.push_back(std::make_unique<Boulder>(false));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
+		entities.back()->uid = mt();
 
 		entities.push_back(std::make_unique<Boulder>(false));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
+		entities.back()->uid = mt();
 
 		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
+		entities.back()->uid = mt();
 
 		entities.push_back(std::make_unique<ItemEntity>("rock", 40));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(96, 65));
+		entities.back()->uid = mt();
+
 		entities.push_back(std::make_unique<ItemEntity>("rock", 35));
 		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(95, 59));
+		entities.back()->uid = mt();
 	}
 	{ // Dragon
-		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)));
+		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)), mt());
 	}
 
 	{ // boulders on the left, and lichen rock
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)), mt());
 
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)));
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)));
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)));
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)));
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)), mt());
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)), mt());
+		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)), mt());
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
 
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)));
+		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
 	}
 
 	// recipe book: one page per recipe that makes a potion
@@ -289,6 +296,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	// initialize the inventory with two apple and one powder
 	inventory.add("water_bottle", 15);
 	inventory.add("pipe", 15);
+	*/
 
 	// initialize quest
 	quests.emplace_back(
@@ -327,6 +335,8 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	);
 
 	for (size_t i = 0; i < 10; ++i) quest_goals_cleared.emplace_back(false);
+
+	load();
 
 }
 
@@ -421,8 +431,8 @@ void PlayMode::update(float elapsed) {
 	}
 	if (keys[SDL_SCANCODE_KP_ENTER] || keys[SDL_SCANCODE_X]) {
 		// nope
-		input.destroy.pressed = false;
-		input.destroy.downs += 0;
+		input.destroy.pressed = true;
+		input.destroy.downs += 1;
 	} else {
 		input.destroy.pressed = false;
 		input.destroy.downs = 0;
@@ -463,11 +473,8 @@ void PlayMode::update(float elapsed) {
 	do_world_interaction(elapsed);
 
 	if (input.destroy.downs == 1) {
-		glm::ivec2 target_tile = player.facing_tile();
-		Entity *target = world.entity_at(target_tile);
-		if (auto breakable = dynamic_cast< IInteractable * >(target); breakable != nullptr) {
-			target->removed = true;
-		}
+		// Using this as the save button
+		save();
 
 	}
 
@@ -1441,9 +1448,10 @@ void PlayMode::close_container() {
 }
 
 template <typename EntityClass>
-void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position) {
+void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, uint32_t uid) {
 	list.push_back(std::make_unique<EntityClass>());
 	list.back()->position = position;
+	list.back()->uid = uid;
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1458,7 +1466,7 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 	}
 }
 
-void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type) {
+void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type, uint32_t uid) {
 
 	size_t inventory_size = 0;
 	if (machine_type == "brewer") inventory_size = 3;	
@@ -1468,6 +1476,7 @@ void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2
 	
 	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
 	list.back()->position = position;
+	list.back()->uid = uid;
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1526,4 +1535,149 @@ void PlayMode::rebuild_coord_to_entities() {
 void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
 	entities.push_back(std::make_unique<ItemEntity>(id, count));
 	entities.back()->position = position;
+	entities.back()->uid = mt();
+}
+
+// ********************************************************************* //
+// ============================    SAVE    ============================= //
+// ********************************************************************* //
+
+void PlayMode::save() {
+	/**
+	 * FORMAT:
+	 * <version> <quest_idx> <quest_req_count> [QUEST_REQS] <inventory_size> [INVENTORIES]  <entity_count>
+	 * (each line = entity line)
+	 * 
+	 */
+
+	
+	std::cout << "SAVING!\n";
+	std::ofstream fs(data_path(savefile_path));
+	if (!fs) {
+		return;
+	}
+	// int version, quest_idx, quest_req_count;
+	fs << 1 << ' ' << active_quest << ' ' << quests[active_quest].required_items.size();
+
+	// [QUEST_REQS]
+	for (int idx = 0; idx < quests[active_quest].required_items.size(); ++idx) {
+		fs << ' ' << static_cast<int>(quest_goals_cleared[idx]);
+	}
+
+	// [INVENTORY_SIZE]
+	fs << ' ' << inventory.size();
+	for (int idx = 0; idx < inventory.size(); ++idx) {
+		item_id_t item_id = inventory[idx].first;
+		if (item_id == "") item_id = "null";
+		fs << ' ' << item_id << ' ' << inventory[idx].second;
+	}
+
+	// <entity_count>
+	fs << ' ' << entities.size() + 1 << '\n';   // +1 for player, which is saved separately
+	{ // player
+		std::string line = player.save();
+		fs << line << '\n';
+	}
+
+	// Each entity!
+	for (auto const &entity : entities) {
+		std::string line = entity->save();
+		fs << line << '\n';
+	}
+
+	std::cout << "Save done!\n";
+}
+
+// LOAD
+void PlayMode::load() {
+
+
+
+	std::ifstream fs(data_path(savefile_path));
+	if (!fs.is_open()) {
+		fs.open(initfile_path);
+		if (!fs.is_open()) {
+			throw std::runtime_error{"Unloadable savefile!"};
+		}
+	}
+
+	std::string line;
+	std::getline(fs, line);
+
+	int version, quest_req_count, entity_count;
+	{ // QUEST & INVENTORY
+		quest_goals_cleared.clear();
+		std::istringstream ss(line);
+		ss >> version >> active_quest >> quest_req_count;
+		for (int idx = 0; idx < quest_req_count; ++idx) {
+			int flag;
+			ss >> flag;
+			quest_goals_cleared.emplace_back(static_cast<bool>(flag));
+		}
+
+		int inventory_size;
+		ss >> inventory_size;
+		if (inventory_size != inventory.size()) {
+			throw std::runtime_error{"loaded inventory size mismatches expected size"};
+		}
+		for (int idx = 0; idx < inventory_size; ++idx) {
+			item_id_t item_id;
+			int count;
+			if (item_id == "null") item_id = "";
+			ss >> item_id >> count;
+			inventory.set_slot(idx, item_id, count);
+		}
+		ss >> entity_count;
+		// done
+	}
+
+	entities.clear();
+	for (int idx = 0; idx < entity_count; ++idx) {
+		std::getline(fs, line);
+		if (line == "") {
+			throw std::runtime_error{"Number of entity lines is invalid"};
+		}
+		std::istringstream ss(line);
+		uint32_t uid;
+		item_id_t entity_type;
+		item_id_t machine_type = "";
+		if (!(ss >> uid >> entity_type)) {
+			throw std::runtime_error{"couldn't read entity type & uid for line: " + line};
+		}
+		if (entity_type == "machine") {
+			if (!(ss >> machine_type)) {
+				throw std::runtime_error{"couldn't read machine for line: " + line};
+			}
+		}
+
+		// starts adding entities
+		if (entity_type == "machine") {
+			add_machine(entities, glm::vec2{0.0f, 0.0f}, machine_type, uid);
+		} else if (entity_type == "apple_tree") {
+			add_entity<AppleTree>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "boulder") {
+			add_entity<Boulder>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "copper_vein") {
+			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "dragon") {
+			add_entity<Dragon>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "lichen_rock") {
+			add_entity<LichenRock>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "copper_vein") {
+			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "pipe") {
+			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "item_entity") {
+			add_entity<ItemEntity>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "player") {
+			player.load(line);
+		} else {
+			// broken
+			throw std::runtime_error{"Unrecognized entity name!"};
+		}
+
+		if (entity_type != "player") {
+			entities.back()->load(line);
+		}
+	}
 }
