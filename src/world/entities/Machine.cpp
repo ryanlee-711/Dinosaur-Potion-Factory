@@ -6,6 +6,8 @@
 #include "../../starter/data_path.hpp"
 #include <cmath>
 
+#include <sstream>
+
 
 
 #include <iostream>
@@ -149,7 +151,7 @@ Machine::Machine() : inventory(3) { }
 
 Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inventory_size) {
     if (def = MachineDef::get(machine_type); def == nullptr) {
-        throw std::runtime_error("Not implemented!");
+        throw std::runtime_error("Machine Not implemented! " + machine_type);
     }
     if (machine_type == "brewer") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
@@ -164,7 +166,7 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
     } else if (machine_type == "chest") {
         // pass
     } else {
-        throw std::runtime_error{"Not Implemented!"};
+        throw std::runtime_error{"Machine Not Implemented: " + machine_type};
     }
 }
 
@@ -412,4 +414,58 @@ int Machine::push_item(ItemRecord item_record) {
 float Machine::get_progress() const {
     if (current_recipe == nullptr || current_recipe->time_cost <= 0.0f) return 0.0f;
     return std::clamp(1.0f - processing_timer / current_recipe->time_cost, 0.0f, 1.0f);
+}
+
+
+
+std::string Machine::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "machine";
+    ss << ' ' << def->machine_type;
+    ss << ' ' << position.x << ' ' << position.y << ' ' << rot2idx(rotation);
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id = inventory.get_slot_id(idx);
+        if (item_id == "") item_id = "null";
+        int count = inventory.get_slot_count(idx);
+        ss << ' ' << item_id << ' ' << count;
+    }    
+    return ss.str();
+}
+
+void Machine::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y> <rotation_idx> [Inventory]
+     */
+    uint32_t read_uid;
+    std::string entity_type, machine_type;
+    
+    if (!(ss >> read_uid >> entity_type >> machine_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    int rot_idx = 0;
+    if (!(ss >> position.x >> position.y >> rot_idx)) {
+        throw std::runtime_error{"Didn't read position/rotation"};
+    }
+    if (rot_idx < 0 || rot_idx > 3) {
+        throw std::runtime_error{"Invalid Rotation"};
+    }
+    rotation = static_cast<Rotation>(rot_idx);
+
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id;
+        int count;
+        if (!(ss >> item_id >> count)) {
+            throw std::runtime_error{"Invalid inventory item_id / count while loading"};
+        }
+        if (item_id == "null") item_id = "";
+        inventory.set_slot(idx, item_id, count);
+    }
 }

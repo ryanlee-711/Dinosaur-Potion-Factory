@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cmath>
+#include <sstream>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/machines/pipe.png"));
@@ -178,4 +179,51 @@ int Pipe::push_item(ItemRecord item_record) {
         push_timer = PUSH_COOLDOWN;
     }
     return item_record.second - val;
+}
+
+
+std::string Pipe::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "pipe";
+    ss << ' ' << position.x << ' ' << position.y << ' ' << in_dir.x << ' ' << in_dir.y << ' ' << out_dir.x << ' ' << out_dir.y;
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id = inventory.get_slot_id(idx);
+        int count = inventory.get_slot_count(idx);
+        if (item_id == "") item_id = "null";
+        ss << ' ' << item_id << ' ' << count;
+    }
+    return ss.str();
+}
+
+void Pipe::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y> [IN] [OUT] [Inventory]
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y >> in_dir.x >> in_dir.y >> out_dir.x >> out_dir.y)) {
+        throw std::runtime_error{"Didn't read position / in_dir / out_dir"};
+    }
+
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id;
+        int count;
+        if (!(ss >> item_id >> count)) {
+            throw std::runtime_error{"Invalid inventory item_id / count while loading"};
+        }
+        if (item_id == "null") item_id = "";
+        inventory.set_slot(idx, item_id, count);
+    }
 }

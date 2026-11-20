@@ -6,7 +6,7 @@
 
 #include <cmath>
 #include <array>
-#include <iostream>
+#include <sstream>
 
 /*
  * --- ItemEntity ---
@@ -97,4 +97,50 @@ auto ItemEntity::get_inventory() -> Inventory* {
 
 bool ItemEntity::is_absorbable() {
     return ready_to_absorb && no_absorb_cooldown > 0.5f;
+}
+
+std::string ItemEntity::save() const {
+    std::ostringstream ss;
+    ss << uid;
+    ss << ' ' << "item_entity";
+    ss << ' ' << position.x << ' ' << position.y;
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id = inventory.get_slot_id(idx);
+        int count = inventory.get_slot_count(idx);
+        if (item_id == "") item_id = "null";
+        ss << ' ' << item_id << ' ' << count;
+    }    
+    return ss.str();
+}
+
+void ItemEntity::load(std::string line) {
+    std::istringstream ss(line);
+
+    /**
+     * Store Format:
+     *   <uid> <pos.x> <pos.y> [Inventory]
+     */
+    uint32_t read_uid;
+    std::string entity_type;
+    
+    if (!(ss >> read_uid >> entity_type)) {
+        throw std::runtime_error{"UID read failure"};
+    }
+    if (read_uid != uid && uid != 0) {
+        throw std::runtime_error{"Loaded data mismatches the entity's UID!"};
+    }
+
+    if (!(ss >> position.x >> position.y)) {
+        throw std::runtime_error{"Didn't read position"};
+    }
+
+    for (int idx = 0; idx < inventory.size(); ++idx) {
+        item_id_t item_id;
+        int count;
+        if (!(ss >> item_id >> count)) {
+            throw std::runtime_error{"Invalid inventory item_id / count while loading"};
+        }
+        if (item_id == "null") item_id = "";
+        inventory.set_slot(idx, item_id, count);
+    }
 }

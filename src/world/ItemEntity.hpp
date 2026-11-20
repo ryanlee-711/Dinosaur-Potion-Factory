@@ -20,6 +20,9 @@ public:
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
+    std::string save() const override;
+    void load(std::string line) override;
+
     // IInventoryHolder
     auto get_inventory() -> Inventory* override;
 
