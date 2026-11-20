@@ -1595,7 +1595,7 @@ void PlayMode::load() {
 
 	std::ifstream fs(data_path(savefile_path));
 	if (!fs.is_open()) {
-		fs.open(initfile_path);
+		fs.open(data_path(initfile_path));
 		if (!fs.is_open()) {
 			throw std::runtime_error{"Unloadable savefile!"};
 		}
