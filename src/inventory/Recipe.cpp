@@ -5,17 +5,22 @@
 #include <memory>
 #include <unordered_map>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 #include "../starter/Load.hpp"
+#include "../starter/data_path.hpp"
+
 
 using RecipeRegistry = Recipe::RecipeRegistry;
 
+constexpr std::string RECIPE_PATH = "data/recipes.tsv";
 
 static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 	[]() -> RecipeRegistry const* {
 		auto recipes = std::make_unique<RecipeRegistry>();
 
-		auto add = [&](item_id_t const &machine_id, std::vector<ItemRecord> items_in, std::vector<ItemRecord> items_out, float time_cost) {
-			Recipe recipe{ machine_id, items_in, items_out, time_cost };
+		auto add = [&](item_id_t const &machine_id, std::vector<ItemRecord> items_in, std::vector<ItemRecord> items_out, float time_cost, float probability) {
+			Recipe recipe{ machine_id, items_in, items_out, time_cost, probability };
 
             if (recipes->find(machine_id) == recipes->end()) {
                 recipes->emplace(machine_id, std::vector<Recipe>{ });
@@ -25,138 +30,53 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
 		using ItemVector = std::vector<ItemRecord>;
 
-        // -------------- APPLE -------------
-        add("crusher",
-            ItemVector{ ItemRecord{"apple", 1} },
-            ItemVector{ ItemRecord{"crushed_apple", 1} },
-            2.0f
-        );
+        std::ifstream file(data_path(RECIPE_PATH));
+        if (!file.is_open()) {
+            throw std::runtime_error{"Recipe data file is not found"};
+        }
 
-        add("crusher",
-            ItemVector{ ItemRecord{"baked_apple", 1} },
-            ItemVector{ ItemRecord{"baked_crushed_apple", 1} },
-            2.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"apple", 1} },
-            ItemVector{ ItemRecord{"baked_apple", 1} },
-            8.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"crushed_apple", 1} },
-            ItemVector{ ItemRecord{"apple_powder", 1} },
-            4.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"baked_apple", 1} },
-            ItemVector{ ItemRecord{"ash", 1} },
-            8.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"apple_powder", 1} },
-            ItemVector{ ItemRecord{"ash", 1} },
-            4.0f
-        );
-
-        // ------- Apple potions ---------
-
-        add("brewer",
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_apple", 3} },
-            ItemVector{ ItemRecord{"ale", 1} },
-            10.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"apple_powder", 3} },
-            ItemVector{ ItemRecord{"apple_juice", 1} },
-            10.0f
-        );
-
-        // --------------- LICHEN -----------------
-        add("crusher",
-            ItemVector{ ItemRecord{"lichen", 1} },
-            ItemVector{ ItemRecord{"crushed_lichen", 1} },
-            2.0f
-        );
-
-        add("crusher",
-            ItemVector{ ItemRecord{"dried_lichen", 1} },
-            ItemVector{ ItemRecord{"lichen_powder", 1} },
-            2.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"lichen", 1} },
-            ItemVector{ ItemRecord{"dried_lichen", 1} },
-            8.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"crushed_lichen", 1} },
-            ItemVector{ ItemRecord{"lichen_powder", 1} },
-            4.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"dried_lichen", 1} },
-            ItemVector{ ItemRecord{"ash", 1} },
-            8.0f
-        );
-
-        add("furnace",
-            ItemVector{ ItemRecord{"lichen_powder", 1} },
-            ItemVector{ ItemRecord{"ash", 1} },
-            4.0f
-        );
-
-        // --------------- LICHEN POTIONS ---------------
-        add("brewer",
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"lichen_powder", 5} },
-            ItemVector{ ItemRecord{"red_potion", 1} },
-            20.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"lichen_powder", 5} },
-            ItemVector{ ItemRecord{"potent_red_potion", 1} },
-            20.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"crushed_apple", 3} },
-            ItemVector{ ItemRecord{"strength_potion", 1} },
-            10.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"potent_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
-            ItemVector{ ItemRecord{"potent_strength_potion", 1} },
-            10.0f
-        );
-
-        // bad/hidden recipes
-        add("brewer",
-            ItemVector{ ItemRecord{"water_bottle", 1}, ItemRecord{"crushed_lichen", 5} },
-            ItemVector{ ItemRecord{"muddy_red_potion", 1} },
-            20.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"muddy_red_potion", 1}, ItemRecord{"crushed_apple", 3} },
-            ItemVector{ ItemRecord{"strong_ale", 1} },
-            10.0f
-        );
-
-        add("brewer",
-            ItemVector{ ItemRecord{"red_potion", 1}, ItemRecord{"baked_crushed_apple", 3} },
-            ItemVector{ ItemRecord{"sweetened_potion", 1} },
-            10.0f
-        );
-
+        std::string line;
+        item_id_t machine_id;
+        item_id_t in_1, in_2, out_1, out_2;
+        float time_cost, probability;
+        int in_1_count, in_2_count, out_1_count, out_2_count;
+        while (std::getline(file, line)) {
+            std::istringstream ss(line);
+            if (!(ss >> machine_id)) {
+                continue;
+            }
+            if (machine_id == "brewer") {
+                ss >> probability >> time_cost >> in_1 >> in_1_count >> in_2 >> in_2_count >> out_1 >> out_1_count;
+                add(machine_id,
+                    ItemVector{ItemRecord{in_1, in_1_count}, ItemRecord{in_2, in_2_count}},
+                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    time_cost, probability);
+            } else if (machine_id == "crusher") {
+                ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
+                add(machine_id,
+                    ItemVector{ItemRecord{in_1, in_1_count}},
+                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    time_cost, probability);         
+            } else if (machine_id == "furnace") {
+                ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
+                add(machine_id,
+                    ItemVector{ItemRecord{in_1, in_1_count}},
+                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    time_cost, probability);         
+            } else if (machine_id == "distiller") {
+                ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
+                add(machine_id,
+                    ItemVector{ItemRecord{in_1, in_1_count}},
+                    ItemVector{ItemRecord{out_1, out_2_count}, ItemRecord{out_2, out_2_count}},
+                    time_cost, probability);         
+            } else if (machine_id == "fermenter") {
+                ss >> probability >> time_cost >> in_1 >> in_1_count >> in_2 >> in_2_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
+                add(machine_id,
+                    ItemVector{ItemRecord{in_1, in_1_count}, ItemRecord{in_2, in_2_count}},
+                    ItemVector{ItemRecord{out_1, out_2_count}, ItemRecord{out_2, out_2_count}},
+                    time_cost, probability);         
+            } 
+        }
 
 
         // Dragon crafting
@@ -165,37 +85,37 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"lichen", 1} },
             ItemVector{ ItemRecord{"furnace", 1} },
-            1.5f
+            1.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"apple", 1} },
             ItemVector{ ItemRecord{"brewer", 1} },
-            1.5f
+            1.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"rock", 1} },
             ItemVector{ ItemRecord{"crusher", 2} },
-            1.5f
+            1.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 1} },
             ItemVector{ ItemRecord{"pipe", 1} },
-            0.5f
+            0.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"rock", 3} },
             ItemVector{ ItemRecord{"chest", 1} },
-            1.5f
+            1.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"strength_potion", 5} },
             ItemVector{ ItemRecord{"you_won", 1} },
-            1.5f
+            1.5f, 1.0f
         );
 
 

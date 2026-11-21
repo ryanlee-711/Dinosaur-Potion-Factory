@@ -294,7 +294,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	}
 
 	// initialize the inventory with two apple and one powder
-	inventory.add("water_bottle", 15);
+	inventory.add("water", 15);
 	inventory.add("pipe", 15);
 	*/
 
@@ -455,7 +455,7 @@ void PlayMode::update(float elapsed) {
 
 	//everything entities can collide with this frame:
 	std::vector<std::unique_ptr<Entity>> spawned;
-	World world{map, entities, player, coord_to_entities, &spawned, &made_items, &particles};
+	World world{map, entities, player, coord_to_entities, mt, &spawned, &made_items, &particles};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -628,7 +628,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 		auto tileid = map.tile_at(coord, 2);
 		if (7 <= tileid % 16 && tileid % 16 <= 10 && 9 <= tileid / 16 && tileid / 16 <= 11) {
 			inventory.remove("empty_bottle", 1);
-			spawn_item("water_bottle", 1, player.position);
+			spawn_item("water", 1, player.position);
 		}
 	}
 
@@ -786,7 +786,7 @@ bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const {
 }
 
 void PlayMode::remove_objects(float elapsed) {
-	World world{map, entities, player, coord_to_entities};
+	World world{map, entities, player, coord_to_entities, mt};
 	// Remove entities that asked to be removed this frame.
 	if (opened_entity != nullptr && opened_entity->removed) {
 		//its panel is open: close it before the inventory it points at is deleted

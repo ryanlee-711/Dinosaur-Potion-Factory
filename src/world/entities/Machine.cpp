@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include <sstream>
+#include <random>
 
 
 
@@ -243,14 +244,23 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
         processing_timer -= elapsed;
     }
 
+    // step 2.5. roll RNG
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    float dice = dist(world.rng);
+
     // step 3. if processing timer timeouts, produce
     if (current_recipe != nullptr && processing_timer <= 0.0f) {
         processing_timer = current_recipe->time_cost;
-        for (ItemRecord const &item : current_recipe->items_in) {
+        for (size_t idx = 0; idx < current_recipe->items_in.size(); ++idx) {
+            if (dice > current_recipe->probability && (def->machine_type == "fermenter" && idx == 0)) continue;
+            ItemRecord const &item = current_recipe->items_in[idx];
             inventory.remove(item.first, item.second);
         }
         // check that there is space for outputs
-        for (ItemRecord const &item : current_recipe->items_out) {
+        for (size_t idx = 0; idx < current_recipe->items_out.size(); ++idx) {
+            if (dice > current_recipe->probability && 
+                ((def->machine_type == "distiller" && idx == 0) || (def->machine_type == "fermenter" && idx == 0))) continue;
+            ItemRecord const &item = current_recipe->items_out[idx];
             inventory.add_to_slot_range(item.first, item.second, def->output_slot_begin, def->output_slot_end);
             if (world.made_items) world.made_items->insert(item.first);
         }
