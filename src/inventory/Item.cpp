@@ -50,7 +50,7 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 			}
 			uint32_t tag = 0x0;
 			for (int idx = 0; idx < 8; ++idx) {
-				if (parts[idx + 4] == "c") {
+				if (parts[idx + 4] == "1") {
 					tag |= 1 << idx;
 				}
 			}

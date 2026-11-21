@@ -200,108 +200,17 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 	player.uid = 15213;
 
-	// ~~Demo~~
-	// initialize some existing machines for demonstration (entities).
-
-	/*
-	auto tile2pos = [](float x, float y) -> glm::vec2 {
-		return glm::vec2(x * TILE_SIZE, y * TILE_SIZE);
-	};
-	for (size_t i = 0; i < 3; ++i) {
-		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f), mt());
-	}
-	{
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer", mt());
-		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace", mt());
-
-		// Apple trees
-		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE), mt());
-		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE), mt());
-
-		// more chests
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest", mt());
-
-		// Add one item entity somewhere
-		spawn_item("apple", 3, glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE));
-
-		// Boulders scattered around
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)), mt());
-	}
-
-	{ // boulders, and pickaxe stuck near it
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)), mt());
-
-		// two small boulders, pushable...
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 40));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(96, 65));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 35));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(95, 59));
-		entities.back()->uid = mt();
-	}
-	{ // Dragon
-		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)), mt());
-	}
-
-	{ // boulders on the left, and lichen rock
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)), mt());
-
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
-
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
-	}
-
-	// recipe book: one page per recipe that makes a potion
+	// Populate recipes
 	for (Recipe const *recipe : Recipe::all()) {
 		if (recipe->items_out.empty()) continue;
-		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion) book_recipes.push_back(recipe);
+		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion)
+			book_recipes.push_back(recipe);
 	}
-
-	// initialize the inventory with two apple and one powder
-	inventory.add("water", 15);
-	inventory.add("pipe", 15);
-	*/
 
 	// initialize quest
 	quests.emplace_back(
-		Quest{"Collect apples, crush them, and brew ale.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
-			std::vector<ItemRecord>{ItemRecord{"apple", 6}, ItemRecord{"crushed_apple", 3}, ItemRecord{"ale", 1}},
+		Quest{"Collect drupes, crush them, and brew a drink.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
+			std::vector<ItemRecord>{ItemRecord{"drupe", 6}, ItemRecord{"crushed_drupe", 3}, ItemRecord{"drupe_drink", 1}},
 			1
 		}
 	);
@@ -321,7 +230,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	);
 
 	quests.emplace_back(
-		Quest{"Brew stronger potion from dried lichen and apple crush.",
+		Quest{"Brew stronger potion from dried lichen and drupe crush.",
 			std::vector<ItemRecord>{ItemRecord{"dried_lichen", 5}, ItemRecord{"red_potion", 1}, ItemRecord{"strength_potion", 1}},
 			4
 		}
@@ -1625,6 +1534,7 @@ void PlayMode::load() {
 			int count;
 			if (item_id == "null") item_id = "";
 			ss >> item_id >> count;
+			if (item_id == "null") continue;
 			inventory.set_slot(idx, item_id, count);
 		}
 		ss >> entity_count;

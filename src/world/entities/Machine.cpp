@@ -28,6 +28,15 @@ static Load< Texture > chest_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/chest.png"));
 });
 
+static Load< Texture > distiller_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/distiller.png"));
+});
+
+static Load< Texture > fermenter_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/fermenter.png"));
+});
+
+
 // MACHINE DEFINITIONS
 using ivec2 = glm::ivec2;
 using MachineRegistry = MachineDef::MachineRegistry;
@@ -136,6 +145,56 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             }
         });
 
+        machines->emplace("distiller", MachineDef{
+            /* machine_type= */ "distiller",
+            /* texture= */ distiller_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -32.0f},
+            /* output_slot_begin= */ 1,
+            /* output_slot_end= */ 3,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+            }
+        });
+
+        machines->emplace("fermenter", MachineDef{
+            /* machine_type= */ "fermenter",
+            /* texture= */ distiller_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -32.0f},
+            /* output_slot_begin= */ 2,
+            /* output_slot_end= */ 4,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+            }
+        });
+
 		return machines.release();
 	}
 );
@@ -155,8 +214,8 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
         throw std::runtime_error("Machine Not implemented! " + machine_type);
     }
     if (machine_type == "brewer") {
-        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
-        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
         inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "crusher") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Crushable });
@@ -166,6 +225,15 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "chest") {
         // pass
+    } else if (machine_type == "distiller") {
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
+        inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
+        inventory.set_rule(2, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+    } else if (machine_type == "fermenter") {
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Fermentable });
+        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
+        inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
+        inventory.set_rule(3, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
     } else {
         throw std::runtime_error{"Machine Not Implemented: " + machine_type};
     }
@@ -264,6 +332,7 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
             inventory.add_to_slot_range(item.first, item.second, def->output_slot_begin, def->output_slot_end);
             if (world.made_items) world.made_items->insert(item.first);
         }
+        current_recipe = nullptr;
     }
 
     // step 4. Item pushing
@@ -278,30 +347,35 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
     // push item to the right
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
 
-    auto source_tile = origin + glm::ivec2(3, -1);
-    auto target_tile = origin + glm::ivec2{4, -1};
+    int output_idx = def->output_slot_begin - 1;
+    for (auto const &[src, dst] : def->port_locs_out[rot2idx(rotation)]) {
+        ++output_idx;
+        auto source_tile = origin + src;
+        auto target_tile = origin + dst;
+        Entity *target = world.entity_at(target_tile);
+        if (!target || target == this) continue;
 
-    Entity *target = world.entity_at(target_tile);
-    if (!target || target == this) return;
+        // get IItemPort!
+        auto *port = dynamic_cast<IItemPort*>(target);
+        if (!port) continue;
 
-    // get IItemPort!
-    auto *port = dynamic_cast<IItemPort*>(target);
-    if (!port) return;
+        auto type = port->get_port(source_tile);
+        if (type != PortType::In && type != PortType::Both) continue;
 
-    auto type = port->get_port(source_tile);
-    if (type != PortType::In && type != PortType::Both) return;
+        if (inventory.slots[output_idx].second <= 0) continue;
+        int item_sent = port->push_item({inventory.slots[output_idx].first, 1});
 
-    if (inventory.slots[2].second <= 0) return;
-    int item_sent = port->push_item({inventory.slots[2].first, 1});
+        if (item_sent != 0) {
+            inventory.slots[output_idx].second -= item_sent;
+            if (inventory.slots[output_idx].second <= 0) {
+                inventory.slots[output_idx].first = "";
+                inventory.slots[output_idx].second = 0;
+            }
 
-    if (item_sent != 0) {
-        inventory.slots[2].second -= item_sent;
-        if (inventory.slots[2].second <= 0) {
-            inventory.slots[2].first = "";
-            inventory.slots[2].second = 0;
+            push_timer = PUSH_COOLDOWN;
         }
-        push_timer = PUSH_COOLDOWN;
     }
+
     return;
 }
 

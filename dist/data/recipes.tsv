@@ -55,7 +55,6 @@ brewer	1	30	flower_essence	5	cocktail_3	1	elixir	1
 								
 								
 brewer	1	10	crushed_apple	4	water	1	apple_brew	1
-brewer	1	10	apple_jam	4	water	1	sticky_brew	1
 brewer	1	10	faegrass_powder	4	drupe_brew	1	drupegrass_cocktail	1
 brewer	1	10	feather_dust	4	fragrant_brew	1	faefeather_cocktail	1
 brewer	1	10	flower_powder	4	feather_brew	1	featherflower_cocktail	1
@@ -71,7 +70,7 @@ brewer	1	15	haste_crystal	2	base_potion	1	extended_haste_potion	1
 brewer	1	15	float_crystal	2	water	1	float_potion	1
 brewer	1	15	float_crystal	2	base_potion	1	extended_float_potion	1
 brewer	1	15	warmth_crystal	2	water	1	warmth_potion	1
-brewer	1	15	warmth_crysral	2	base_potion	1	extended_warmth_potion	1
+brewer	1	15	warmth_crystal	2	base_potion	1	extended_warmth_potion	1
 
 fermenter	0.1	12	feather	1	water	1	spoiled_feather	1	dandery_water	1
 fermenter	0.1	12	feather	1	base_potion	1	fermented_feather	1	float_potion	1
@@ -118,19 +117,21 @@ distiller	0.5	12	diluted_warmth_potion	1	flower_crystal	1	water	1
 crusher	1	3	drupe	1	crushed_drupe	1
 crusher	1	3	cooked_drupe	1	drupe_powder	1
 crusher	1	3	fermented_drupe	1	drupe_essence	1
+
+crusher	1	3	apple	1	crushed_apple	1
+crusher	1	3	cooked_apple	1	apple_jam	1
 						
 crusher	1	3	faegrass	1	faegrass_powder	1
-crusher						
+
 crusher	1	3	feather	1	feather_dust	10
 crusher	1	3	fermented_feather	1	feather_dust	5
 crusher						
 crusher	1	3	flower	1	flower_powder	1
 crusher	1	3	glowing_flower	1	flower_powder	2
-crusher	1	3	druped_glowing_flower	1	flower_essence	1
 crusher	1	6	snowgem	1	snowgem_dust	1
 						
 crusher	1	3	lichen	1	crushed_lichen	1
-crusher	1	3	cooked_lichen	1	cooked_lichen_powder	1
+crusher	1	3	cooked_lichen	1	lichen_powder	1
 
 furnace	1	12	drupe	1	cooked_drupe	1
 furnace	1	6	crushed_drupe	1	drupe_powder	1

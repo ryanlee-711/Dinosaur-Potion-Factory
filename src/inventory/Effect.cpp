@@ -37,14 +37,13 @@ static Load< ConsumableRegistry > consumable_registry(LoadTagDefault, []() -> Co
 	};
 
 	// ---- cave I: ale lets you push the rocks ----
-	add("ale", { {"strength", 60.0f, 1}, {"speed", 30.0f, 1} });
-	add("apple_juice", { {"speed", 30.0f, 1} });
+	add("drupe_drink", { {"strength", 60.0f, 1}, {"speed", 30.0f, 1} });
+	add("drupe_brew", { {"speed", 30.0f, 1} });
 
 	// ---- cave II: strength potion breaks large boulders ----
-	add("strong_ale", { {"strength", 120.0f, 1} });
+	add("sweet_brew", { {"strength", 120.0f, 1} });
 	add("strength_potion", { {"strength", 60.0f, 2} });
-	add("potent_strength_potion", { {"strength", 120.0f, 2} });
-	add("sweetened_potion", { {"speed", 45.0f, 2} });
+	add("extended_strength_potion", { {"strength", 180.0f, 2} });
 
 	return consumables.release();
 });

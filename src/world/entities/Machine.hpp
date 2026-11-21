@@ -71,7 +71,7 @@ public:
     float get_progress() const override;
 
     // IBreakable
-    item_id_t get_drop_id() override {return "brewer";}
+    item_id_t get_drop_id() override {return def->machine_type;}
 
     // Machine-specific
     enum Rotation {EAST, NORTH, WEST, SOUTH};

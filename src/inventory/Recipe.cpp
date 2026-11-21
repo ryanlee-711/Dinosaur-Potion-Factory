@@ -49,33 +49,33 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> in_2 >> in_2_count >> out_1 >> out_1_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}, ItemRecord{in_2, in_2_count}},
-                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    ItemVector{ItemRecord{out_1, out_1_count}},
                     time_cost, probability);
             } else if (machine_id == "crusher") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
-                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    ItemVector{ItemRecord{out_1, out_1_count}},
                     time_cost, probability);         
             } else if (machine_id == "furnace") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
-                    ItemVector{ItemRecord{out_1, out_2_count}},
+                    ItemVector{ItemRecord{out_1, out_1_count}},
                     time_cost, probability);         
             } else if (machine_id == "distiller") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
-                    ItemVector{ItemRecord{out_1, out_2_count}, ItemRecord{out_2, out_2_count}},
+                    ItemVector{ItemRecord{out_1, out_1_count}, ItemRecord{out_2, out_2_count}},
                     time_cost, probability);         
             } else if (machine_id == "fermenter") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> in_2 >> in_2_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}, ItemRecord{in_2, in_2_count}},
-                    ItemVector{ItemRecord{out_1, out_2_count}, ItemRecord{out_2, out_2_count}},
+                    ItemVector{ItemRecord{out_1, out_1_count}, ItemRecord{out_2, out_2_count}},
                     time_cost, probability);         
-            } 
+            }
         }
 
 
@@ -111,13 +111,6 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             ItemVector{ ItemRecord{"chest", 1} },
             1.5f, 1.0f
         );
-
-        add("dragon",
-            ItemVector{ ItemRecord{"strength_potion", 5} },
-            ItemVector{ ItemRecord{"you_won", 1} },
-            1.5f, 1.0f
-        );
-
 
 		return recipes.release();
 	}

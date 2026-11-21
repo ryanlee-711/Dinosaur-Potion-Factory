@@ -95,7 +95,7 @@ pickaxe	Pickaxe	TODO	assets/sprites/items/pickaxe.png								1
 pipe	Pipe	TODO	assets/sprites/items/placeables/pipe_icon.png							1	
 brewer	Brewing Cauldron	TODO	assets/sprites/items/placeables/brewer_icon.png							1	
 crusher	Stone Press	TODO	assets/sprites/items/placeables/crusher_icon.png							1	
-furance	Furnace	TODO	assets/sprites/items/placeables/furnace_icon.png							1	
+furnace	Furnace	TODO	assets/sprites/items/placeables/furnace_icon.png							1	
 distiller	Distiller	TODO	assets/sprites/items/missing_no.png							1	
 chest	Chest	TODO	assets/sprites/items/placeables/chest_icon.png							1	
 fermenter	Fermenter	TODO	assets/sprites/items/missing_no.png							1	
@@ -103,7 +103,8 @@ joiner	Joiner	TODO	assets/sprites/items/missing_no.png							1
 splitter	Splitter	TODO	assets/sprites/items/missing_no.png							1	
 sieve	Sieve	TODO	assets/sprites/items/missing_no.png							1	
 altar	Altar	TODO	assets/sprites/items/missing_no.png							1	
-copper_ore	Copper Ore	TODO	assets/sprites/items/missing_no.png								
+copper_ore	Copper Ore	TODO	assets/sprites/items/ingredients/copper_ore.png								
 timber	Timber	TODO	assets/sprites/items/missing_no.png								
-rock	Rock	TODO	assets/sprites/items/missing_no.png								
+rock	Rock	TODO	assets/sprites/items/ingredients/rock.png								
 quartz	Quartz	TODO	assets/sprites/items/missing_no.png								
+empty_bottle	Empty Bottle	TODO	assets/sprites/items/potions/empty_bottle.png								

@@ -47,6 +47,10 @@ void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
                     }
                 }
                 if (auto *other = dynamic_cast<Pipe*>(entity); other) {
+                    if (other->color != color) {
+                        // must be in the same color
+                        continue;
+                    }
                     if (other->in_dir == glm::ivec2{0} && other->out_dir != glm::ivec2{0}) {
                         out_dir = dir;
                         other->configure(0);

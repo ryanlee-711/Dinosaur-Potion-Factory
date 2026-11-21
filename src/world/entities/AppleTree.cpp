@@ -29,7 +29,7 @@ void AppleTree::update(FrameInput const &input, float elapsed, World const &worl
         if (entity->removed) continue;
         auto *item = dynamic_cast< ItemEntity * >(entity.get());
         if (item == nullptr) continue;
-        if (item->get_inventory()->get_slot_id(0) != "apple") continue;
+        if (item->get_inventory()->get_slot_id(0) != "drupe") continue;
         if (glm::length(item->position - center) > COUNT_RADIUS) continue;
         nearby_apples += item->get_inventory()->get_slot_count(0);
     }
@@ -48,7 +48,7 @@ void AppleTree::update(FrameInput const &input, float elapsed, World const &worl
         glm::vec2 spot = center + distance * glm::vec2(std::cos(angle), std::sin(angle));
         if (world.map.is_solid(Tilemap::tile_at_point(spot))) continue;
 
-        auto apple = std::make_unique< ItemEntity >("apple", 1);
+        auto apple = std::make_unique< ItemEntity >("drupe", 1);
         apple->position = spot;
         world.spawned->push_back(std::move(apple));
         nearby_apples += 1;
