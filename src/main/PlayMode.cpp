@@ -287,16 +287,16 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
 	}
 
+	// initialize the inventory with two apple and one powder
+	inventory.add("water_bottle", 15);
+	inventory.add("pipe", 15);
+	*/
+
 	// recipe book: one page per recipe that makes a potion
 	for (Recipe const *recipe : Recipe::all()) {
 		if (recipe->items_out.empty()) continue;
 		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion) book_recipes.push_back(recipe);
 	}
-
-	// initialize the inventory with two apple and one powder
-	inventory.add("water_bottle", 15);
-	inventory.add("pipe", 15);
-	*/
 
 	// initialize quest
 	quests.emplace_back(
@@ -1469,11 +1469,11 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type, uint32_t uid) {
 
 	size_t inventory_size = 0;
-	if (machine_type == "brewer") inventory_size = 3;	
+	if (machine_type == "brewer") inventory_size = 3;
 	else if (machine_type == "furnace") inventory_size = 2;
 	else if (machine_type == "crusher") inventory_size = 2;
 	else if (machine_type == "chest") inventory_size = 10;
-	
+
 	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
 	list.back()->position = position;
 	list.back()->uid = uid;
@@ -1547,10 +1547,10 @@ void PlayMode::save() {
 	 * FORMAT:
 	 * <version> <quest_idx> <quest_req_count> [QUEST_REQS] <inventory_size> [INVENTORIES]  <entity_count>
 	 * (each line = entity line)
-	 * 
+	 *
 	 */
 
-	
+
 	std::cout << "SAVING!\n";
 	std::ofstream fs(data_path(savefile_path));
 	if (!fs) {
@@ -1566,7 +1566,7 @@ void PlayMode::save() {
 
 	// [INVENTORY_SIZE]
 	fs << ' ' << inventory.size();
-	for (int idx = 0; idx < inventory.size(); ++idx) {
+	for (int idx = 0; idx < int(inventory.size()); ++idx) {
 		item_id_t item_id = inventory[idx].first;
 		if (item_id == "") item_id = "null";
 		fs << ' ' << item_id << ' ' << inventory[idx].second;
@@ -1617,14 +1617,14 @@ void PlayMode::load() {
 
 		int inventory_size;
 		ss >> inventory_size;
-		if (inventory_size != inventory.size()) {
+		if (inventory_size < 0 || size_t(inventory_size) != inventory.size()) {
 			throw std::runtime_error{"loaded inventory size mismatches expected size"};
 		}
-		for (int idx = 0; idx < inventory_size; ++idx) {
+		for (int idx = 0; idx < int(inventory_size); ++idx) {
 			item_id_t item_id;
 			int count;
-			if (item_id == "null") item_id = "";
 			ss >> item_id >> count;
+			if (item_id == "null") item_id = "";
 			inventory.set_slot(idx, item_id, count);
 		}
 		ss >> entity_count;

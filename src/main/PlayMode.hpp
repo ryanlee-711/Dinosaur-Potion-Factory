@@ -96,8 +96,8 @@ struct PlayMode : Mode {
 	int hotbar_selected = -1;   // -1 = unselected
 
 	//----- save and load -----
-	static constexpr std::string initfile_path = "data/level1_init.save";
-	static constexpr std::string savefile_path = "level1.save";
+	static constexpr char const *initfile_path = "data/level1_init.save";
+	static constexpr char const *savefile_path = "level1.save";
 	void save();
 	void load();
 
