@@ -20,7 +20,7 @@ struct FrameInput {
 
     glm::vec2 direction;
     bool sprint = false;   // Shift held and not in inventory
-    Button interact, destroy;
+    Button interact, quicksave, flip;
     Button numkeys[10];
 };
 

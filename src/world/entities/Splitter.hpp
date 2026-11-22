@@ -33,7 +33,7 @@ public:
 
     // IBreakable
     int get_hardness() override {return 1;}
-    item_id_t get_drop_id() override {return "splitter";}
+    item_id_t get_drop_id() override;
 
     // Splitter
     void draw_hint(Sprites &batch) const;

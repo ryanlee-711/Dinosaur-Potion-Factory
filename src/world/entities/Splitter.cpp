@@ -185,6 +185,15 @@ int Splitter::push_item(ItemRecord item_record) {
     return item_record.second - val;
 }
 
+item_id_t Splitter::get_drop_id() {
+    if (work_mode == WorkMode::CROSSOVER) {
+        return "crossover";
+    } else if (work_mode == WorkMode::JOIN) {
+        return "joiner";
+    } else {
+        return "splitter";
+    }
+}
 
 std::string Splitter::save() const {
     std::ostringstream ss;

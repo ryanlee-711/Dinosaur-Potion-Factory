@@ -342,11 +342,19 @@ void PlayMode::update(float elapsed) {
 	}
 	if (keys[SDL_SCANCODE_KP_ENTER] || keys[SDL_SCANCODE_X]) {
 		// nope
-		input.destroy.pressed = true;
-		input.destroy.downs += 1;
+		input.quicksave.pressed = true;
+		input.quicksave.downs += 1;
 	} else {
-		input.destroy.pressed = false;
-		input.destroy.downs = 0;
+		input.quicksave.pressed = false;
+		input.quicksave.downs = 0;
+	}
+	if (keys[SDL_SCANCODE_R]) {
+		// nope
+		input.flip.pressed = true;
+		input.flip.downs += 1;
+	} else {
+		input.flip.pressed = false;
+		input.flip.downs = 0;
 	}
 	{//K0...K9
 		const SDL_Scancode scancodes[10] = {
@@ -384,10 +392,15 @@ void PlayMode::update(float elapsed) {
 	// Handle interact (only on the first frame E is down):
 	do_world_interaction(elapsed);
 
-	if (input.destroy.downs == 1) {
+	if (input.quicksave.downs == 1) {
 		// Using this as the save button
 		save();
 
+	}
+
+	// Handle flip
+	if (input.flip.downs == 1) {
+		variety += 1;
 	}
 
 	// numkeys select/unselect hotbar items (1..9, 0 = tenth slot).
@@ -623,6 +636,19 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_machine(entities, world_pos, "furnace");
 	} else if (id == "splitter") {
 		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
+	} else if (id == "joiner") {
+		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
+	} else if (id == "crossover") {
+		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
 	} else if (id == "fermenter" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_machine(entities, world_pos, "fermenter");
 	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
@@ -843,7 +869,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
 			// for placeable machines, draw a ghost sprite over
 			if (auto def = MachineDef::get(inventory.get_slot_id(hotbar_selected))) {
-				batch.draw(*def->texture, def->texture_rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
+				Rect rect = def->texture_rect;
+				rect.y += def->texture_rect.h * (variety % 4);
+				batch.draw(*def->texture, rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
 			}
 		}
 	}
@@ -1401,7 +1429,7 @@ void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2
 	else if (machine_type == "distiller") inventory_size = 3;
 	else if (machine_type == "fermenter") inventory_size = 4;
 	
-	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
+	list.push_back(std::make_unique<Machine>(inventory_size, machine_type, variety % 4));
 	list.back()->position = position;
 	if (uid != 0) {
 		list.back()->uid = uid;

@@ -47,8 +47,10 @@ class Machine : public Entity, public IInteractable, public IInventoryHolder, pu
      */
 public:
     Machine();
-    Machine(size_t inventory_size, item_id_t machine_type);
+    Machine(size_t inventory_size, item_id_t machine_type, int rot = 0);
     ~Machine() = default;
+
+    void configure_inventory(item_id_t machine_type);
 
     // Entity
     void update(FrameInput const &input, float elapsed, World const &world) override;
@@ -83,12 +85,11 @@ public:
     void draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const;
     item_id_t get_machine_type() {return def->machine_type;};
 
+    // These may not change once placed.
+    Rotation rotation = Rotation::EAST;
 
 private:    
     MachineDef const *def = nullptr;
-
-    // These may not change once placed.
-    Rotation rotation = Rotation::EAST;
 
     // ===== Dynamic Machine states =====
     Inventory inventory;

@@ -138,6 +138,7 @@ struct PlayMode : Mode {
 		bool latched = false;  // a press event arrived since the last update
 	} left_click, right_click;
 	glm::ivec2 hovered_coord = glm::ivec2{0};
+	int variety = 0;    // used when placing entities, representing the variation used
 
 	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
 	std::string message;
