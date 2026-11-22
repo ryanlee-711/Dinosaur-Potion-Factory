@@ -24,7 +24,7 @@ struct OreVeinDef {
     static OreVeinDef const *get(std::string const &type);
 };
 
-class OreVein : public Entity, public IMineable {
+class OreVein : public Entity, public IMineable, public IHintable {
 public:
     explicit OreVein(std::string const &type = "copper_vein");
     ~OreVein() = default;
@@ -43,6 +43,11 @@ public:
     item_id_t required_tool() const override { return "pickaxe"; }
     bool mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) override;
     std::string empty_message() const override { return "Nothing left to mine. It grows back slowly"; }
+
+    // IHintable: pickaxe icon while there's ore
+    bool show_hint() const override { return ores > 0; }
+    item_id_t hint_tool() const override { return required_tool(); }
+    glm::vec2 hint_anchor() const override { return position + glm::vec2(16.0f, -17.0f); } //above the 32x32 sprite
 
 private:
     OreVeinDef const *def = nullptr;

@@ -28,7 +28,7 @@ struct ForageableDef {
     static ForageableDef const *get(std::string const &type);
 };
 
-class Forageable : public Entity, public IInteractable {
+class Forageable : public Entity, public IInteractable, public IHintable {
 public:
     explicit Forageable(std::string const &type = "lichen_rock");
     ~Forageable() = default;
@@ -45,6 +45,11 @@ public:
 
     // IInteractable
     void on_interact(Context &ctx) override;
+
+    // IHintable: E key while there's something to pick
+    bool show_hint() const override { return count > 0; }
+    item_id_t hint_tool() const override { return ""; }
+    glm::vec2 hint_anchor() const override;
 
 private:
     void set_def(std::string const &type);

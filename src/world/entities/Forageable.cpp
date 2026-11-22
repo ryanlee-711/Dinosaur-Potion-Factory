@@ -74,6 +74,12 @@ void Forageable::draw(Sprites &batch) const {
 	batch.draw(**def->texture, src, top_left);
 }
 
+glm::vec2 Forageable::hint_anchor() const {
+	//centered over the footprint, just above the top of the sprite
+	float footprint_h = float(def->tiles.y * GameConfig::TILE_SIZE);
+	return position + glm::vec2(float(def->tiles.x * GameConfig::TILE_SIZE) * 0.5f, footprint_h - def->sprite_size.y - 1.0f);
+}
+
 auto Forageable::hitbox() const -> Rect {
 	return Rect{position.x, position.y,
 		float(def->tiles.x * GameConfig::TILE_SIZE), float(def->tiles.y * GameConfig::TILE_SIZE)};

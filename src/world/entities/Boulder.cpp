@@ -1,9 +1,11 @@
 #include "Boulder.hpp"
 #include "../World.hpp"
 #include "../TileMap.hpp"
+#include "../Player.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <array>
 #include <sstream>
@@ -38,7 +40,7 @@ void Boulder::update(FrameInput const &input, float elapsed, World const &world)
     } else {
         sprite_offset = position;
     }
-    
+
     if (glm::length(sprite_offset - position) < 0.1f) {
         sprite_offset = position;
     }
@@ -53,7 +55,7 @@ void Boulder::draw(Sprites &batch) const {
     } else {
         Rect src{0.0f, 0.0f, 16.0f, 16.0f};
         glm::vec2 top_left = glm::round(sprite_offset) - glm::vec2(0.0f, 0.0f);
-        batch.draw(*small_boulder_texture, src, top_left);     
+        batch.draw(*small_boulder_texture, src, top_left);
     }
 }
 
@@ -69,6 +71,17 @@ void Boulder::get_occupied(std::vector<glm::ivec2> *ans) const {
         ans->emplace_back(tile + glm::ivec2{1, -1});
         ans->emplace_back(tile + glm::ivec2{0, -1});
     }
+}
+
+glm::vec2 Boulder::hint_anchor() const {
+    //just above the sprite
+    return big ? sprite_offset + glm::vec2(16.0f, -17.0f) : sprite_offset + glm::vec2(8.0f, -1.0f);
+}
+
+bool Boulder::hint_locked(Player const &player) const {
+    int strength = player.effect_level("strength");
+    if (!big) return strength <= 0; //pushing needs any strength
+    return IBreakable::MAX_HOLD_DAMAGE * std::max(1, strength) < BIG_HARDNESS;
 }
 
 void Boulder::on_interact(Context &ctx) {
@@ -104,7 +117,7 @@ void Boulder::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }

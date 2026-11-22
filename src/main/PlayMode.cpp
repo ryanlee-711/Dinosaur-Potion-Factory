@@ -102,6 +102,10 @@ static Load< Texture > wavey_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/misc/waves.png"));
 });
 
+static Load< Texture > hints_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/hints.png")); //20x24 frames: 0 = E key bubble, 1 = empty bubble for a tool icon
+});
+
 static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/items/missing_no.png"));
 });
@@ -415,6 +419,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	hint_time += elapsed;
+	if (hint_time > 100.0f * 3.14159265f) hint_time -= 100.0f * 3.14159265f; //whole bob cycles, so no visible jump
+
 	//read held movement keys (scancodes = physical key positions, so WASD works on any keyboard layout):
 	bool const *keys = SDL_GetKeyboardState(nullptr);
 	if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])  input.direction.x -= 1.0f;
@@ -669,14 +676,14 @@ void PlayMode::do_world_interaction(float elapsed) {
 		if (target != nullptr && target == currently_breaking) {
 			break_timer += elapsed;
 			int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
-			damages = damages > 5 ? 5 : damages;
+			damages = std::min(damages, IBreakable::MAX_HOLD_DAMAGE);
 			if (player.effect_level("strength") > 0) {
 				damages *= player.effect_level("strength");
 			}
-			if (damages >= 5 && target->get_hardness() == 99 && target->get_drop_id() != "") {
+			if (damages >= IBreakable::MAX_HOLD_DAMAGE && target->get_hardness() == 99 && target->get_drop_id() != "") {
 				// these are non-dropping source blocks
 				spawn_item(target->get_drop_id(), 1, entity->position);
-				break_timer -= 5.0f * SECOND_PER_DAMAGE;
+				break_timer -= float(IBreakable::MAX_HOLD_DAMAGE) * SECOND_PER_DAMAGE;
 			}
 			if (damages >= target->get_hardness()) {
 				Rect hb = entity->hitbox();
@@ -759,14 +766,17 @@ bool PlayMode::interact_with(Entity *entity) {
 	return true;
 }
 
-void PlayMode::interact_facing() {
-	//what's in front of the dwarf: the interactable overlapping the reach box the most,
-	//else whatever occupies the facing tile
+Entity *PlayMode::interact_target() const {
+	//what's in front of the dwarf: the interactable overlapping the reach box the most
 	Entity *target = find_interact_target(player.interact_box(), entities);
-	if (target == nullptr) {
-		Entity *in_front = entity_at(player.facing_tile());
-		if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) target = in_front;
-	}
+	if (target != nullptr) return target;
+	Entity *in_front = entity_at(player.facing_tile());
+	if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) return in_front;
+	return nullptr;
+}
+
+void PlayMode::interact_facing() {
+	Entity *target = interact_target();
 
 	//a panel is open then E closes it
 	if (inventory_open && (target == nullptr || target == opened_entity)) {
@@ -881,6 +891,69 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 	particles.draw(batch, false);
+
+	//--- hint (see IHintable), over the closest thing only: the tool icon over things within tool reach (ore veins,
+	//    trees, big boulders), or the E key over what the dwarf is facing (forageables, small boulders). Faded while
+	//    you're not holding the tool or can't do it yet (hint_locked, e.g. no strength). Nothing over depleted things.
+	if (!inventory_open && !book_open) {
+		float bob = std::round(std::sin(hint_time * 4.0f) * 1.5f);
+		auto draw_hint = [&](glm::vec2 anchor, Texture const *icon, uint8_t alpha) {
+			//anchor = where the bubble's tail points (tail tip is row 22 of the 24px frame)
+			glm::vec2 top_left = glm::round(anchor) - glm::vec2(10.0f, 23.0f) + glm::vec2(0.0f, bob);
+			glm::u8vec4 tint(0xff, 0xff, 0xff, alpha);
+			if (icon == nullptr) {
+				batch.draw(*hints_texture, Rect{0.0f, 0.0f, 20.0f, 24.0f}, top_left, tint); //E key
+			} else {
+				batch.draw(*hints_texture, Rect{20.0f, 0.0f, 20.0f, 24.0f}, top_left, tint); //empty bubble
+				batch.draw(*icon, Rect{0.0f, 0.0f, 16.0f, 16.0f}, top_left + glm::vec2(2.0f, 2.0f), tint);
+			}
+		};
+		constexpr uint8_t READY = 0xff, FADED = 0x90;
+
+		//only ONE hint at a time, on the closest candidate, so crowded spots stay readable.
+		Entity const *e_target = interact_target();
+		item_id_t held = inventory.get_slot_id(hotbar_selected);
+		std::vector< glm::ivec2 > tiles;
+		Entity const *best = nullptr;
+		float best_distance = 0.0f;
+		for (auto const &entity : entities) {
+			if (entity->removed) continue;
+			auto const *hintable = dynamic_cast< IHintable const * >(entity.get());
+			if (hintable == nullptr || !hintable->show_hint()) continue;
+
+			if (hintable->hint_tool().empty()) {
+				if (entity.get() != e_target) continue; //E key: only on what E would act on right now
+			} else {
+				//tool: same reach rule as clicking it (any tile it covers within TOOL_REACH)
+				tiles.clear();
+				entity->get_occupied(&tiles);
+				bool in_reach = std::any_of(tiles.begin(), tiles.end(), [&](glm::ivec2 t) { return tile_in_reach(t, TOOL_REACH); });
+				if (!in_reach) continue;
+			}
+
+			//distance from the dwarf's feet to the closest point of its hitbox
+			Rect r = entity->hitbox();
+			glm::vec2 closest = glm::clamp(player.position, r.min(), r.max());
+			float distance = glm::length(closest - player.position);
+			if (best == nullptr || distance < best_distance) {
+				best = entity.get();
+				best_distance = distance;
+			}
+		}
+
+		if (best != nullptr) {
+			auto const *hintable = dynamic_cast< IHintable const * >(best);
+			bool locked = hintable->hint_locked(player);
+			item_id_t tool = hintable->hint_tool();
+			if (tool.empty()) {
+				draw_hint(hintable->hint_anchor(), nullptr, locked ? FADED : READY);
+			} else {
+				Item const *tool_item = Item::get(tool);
+				draw_hint(hintable->hint_anchor(), tool_item ? tool_item->texture.get() : &*missing_texture,
+					(held == tool && !locked) ? READY : FADED);
+			}
+		}
+	}
 
 	if (show_debug) {
 		//solid tiles in red:
