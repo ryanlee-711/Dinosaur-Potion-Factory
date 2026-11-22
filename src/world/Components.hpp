@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <string>
+#include <vector>
 #include "../inventory/Item.hpp"
 
 struct Player;
@@ -86,10 +87,19 @@ struct IProgress {
 
 struct IMineable {
     /*
-     * Resource rocks you click with a tool (pickaxe) to knock something loose, e.g. copper veins.
-     * Unlike IBreakable, the rock itself stays; it just runs out for a while and regrows.
+     * Resources you click with a tool to get items from: ore veins (pickaxe), trees (axe).
+     * Unlike IBreakable, the thing itself stays; it runs out for a while and regrows.
      */
     virtual ~IMineable() = default;
-    // Called on a tool click. Returns the item knocked loose, or "" if there's nothing to mine right now.
-    virtual item_id_t mine() = 0;
+
+    // The tool item that works on this ("pickaxe", "axe"). Other tools just get a message.
+    virtual item_id_t required_tool() const = 0;
+
+    // One click with the right tool.
+    //   power: how hard the hit is (1, more with the strength effect)
+    //   from:  where the hit comes from (the player's position), e.g. so a tree falls away from you
+    //   drops: add whatever comes loose right now. PlayMode pops these out toward the player.
+    // Returns false if there's nothing to get right now (mined out, a stump): PlayMode shows empty_message().
+    virtual bool mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) = 0;
+    virtual std::string empty_message() const { return "Nothing left. It grows back slowly"; }
 };

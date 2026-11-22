@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water_bottle 15 pipe 10 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 44
+1 0 3 0 0 0 30 water_bottle 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 53
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -43,3 +43,12 @@
 1161128756 boulder 1552 1232 1
 98290691 lichen_rock 1408 1200 5
 1895095611 lichen_rock 1472 1216 5
+511616026 iron_vein 3072 1008 4
+1372175473 iron_vein 3120 960 4
+2158288731 fae_grass 3056 1232 3
+4085985277 fae_grass 3088 1248 3
+2198261820 fae_grass 3120 1232 3
+2779695000 fae_grass 3104 1280 3
+3693674385 tree 3200 1024 0 0 1 0
+4092891722 tree 3280 1088 0 0 1 0
+440821893 tree 3216 1200 0 0 1 0

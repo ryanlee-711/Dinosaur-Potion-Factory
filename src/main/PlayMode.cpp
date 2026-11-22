@@ -18,9 +18,10 @@
 #include "../world/entities/Pipe.hpp"
 #include "../world/entities/Machine.hpp"
 #include "../world/entities/AppleTree.hpp"
-#include "../world/entities/LichenRock.hpp"
+#include "../world/entities/Forageable.hpp"
 #include "../world/entities/Boulder.hpp"
-#include "../world/entities/CopperVein.hpp"
+#include "../world/entities/OreVein.hpp"
+#include "../world/entities/Tree.hpp"
 #include "../world/entities/Dragon.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -230,11 +231,11 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		spawn_item("apple", 3, glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE));
 
 		// Boulders scattered around
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
+		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
+		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)), mt());
@@ -246,7 +247,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
+		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)), mt());
 
@@ -279,12 +280,12 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)), mt());
 
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
+		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)), mt());
 		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
+		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
 
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
+		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
 	}
 
 	// initialize the inventory with two apple and one powder
@@ -632,28 +633,37 @@ void PlayMode::do_world_interaction(float elapsed) {
 		}
 	}
 
-	// Click with a tool on a resource rock (copper vein): knock one item loose onto the ground
+	// Click with a tool on a resource (ore vein: pickaxe, tree: axe): one hit, whatever comes loose pops out toward player
 	if (left_new && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
 		Entity *entity = entity_at(coord);
-		if (auto *rock = dynamic_cast< IMineable * >(entity); rock != nullptr) {
-			item_id_t mined = rock->mine();
-			if (mined != "") {
-				//pop out of the bottom of the rock, toward the dwarf, so it lands in front where you can see it
-				glm::vec2 from = entity->position + glm::vec2(float(GameConfig::TILE_SIZE));
-				spawn_item(mined, 1, from);
-				glm::vec2 toward = player.position - from;
-				if (glm::length(toward) > 0.001f) {
-					static_cast< ItemEntity * >(entities.back().get())->velocity = glm::normalize(toward) * 45.0f;
-				}
-			} else {
-				message = "Nothing left to mine. It grows back slowly";
+		if (auto *resource = dynamic_cast< IMineable * >(entity); resource != nullptr) {
+			item_id_t tool = resource->required_tool();
+			if (item_id != tool) {
+				Item const *needed = Item::get(tool);
+				message = (needed ? needed->name : tool) + " needed";
 				message_timer = MESSAGE_SECONDS;
+			} else {
+				int power = 1 + player.effect_level("strength"); //strength makes every hit count more
+				std::vector< ItemRecord > drops;
+				if (!resource->mine(power, player.position, drops)) {
+					message = resource->empty_message();
+					message_timer = MESSAGE_SECONDS;
+				}
+				glm::vec2 from = entity->position + glm::vec2(float(GameConfig::TILE_SIZE));
+				for (ItemRecord const &drop : drops) {
+					spawn_item(drop.first, drop.second, from);
+					glm::vec2 toward = player.position - from;
+					if (glm::length(toward) > 0.001f) {
+						static_cast< ItemEntity * >(entities.back().get())->velocity = glm::normalize(toward) * 45.0f;
+					}
+				}
 			}
 		}
 	}
 
-	// Hold left click with a tool: break the machine under the mouse (within TOOL_REACH)
-	if (left_held && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
+	// Hold left click with the pickaxe: break the machine / boulder under the mouse (within TOOL_REACH)
+	// (only the pickaxe: the axe is for trees, so it can't wreck your factory)
+	if (left_held && item_id == "pickaxe" && tile_in_reach(coord, TOOL_REACH)) {
 		auto entity = entity_at(coord);
 		auto *target = dynamic_cast< IBreakable * >(entity);
 		if (target != nullptr && target == currently_breaking) {
@@ -1560,7 +1570,7 @@ void PlayMode::save() {
 	fs << 1 << ' ' << active_quest << ' ' << quests[active_quest].required_items.size();
 
 	// [QUEST_REQS]
-	for (int idx = 0; idx < quests[active_quest].required_items.size(); ++idx) {
+	for (int idx = 0; idx < int(quests[active_quest].required_items.size()); ++idx) {
 		fs << ' ' << static_cast<int>(quest_goals_cleared[idx]);
 	}
 
@@ -1657,14 +1667,14 @@ void PlayMode::load() {
 			add_entity<AppleTree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "boulder") {
 			add_entity<Boulder>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "copper_vein") {
-			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "copper_vein" || entity_type == "iron_vein") {
+			add_entity<OreVein>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which ore
 		} else if (entity_type == "dragon") {
 			add_entity<Dragon>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "lichen_rock") {
-			add_entity<LichenRock>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "copper_vein") {
-			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "lichen_rock" || entity_type == "fae_grass") {
+			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
+		} else if (entity_type == "tree") {
+			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {

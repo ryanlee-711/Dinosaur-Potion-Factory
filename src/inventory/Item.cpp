@@ -70,10 +70,14 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		// resources
 		add("rock", "Rock", "", "assets/sprites/items/ingredients/rock.png", None);
 		add("copper_ore", "Copper ore", "", "assets/sprites/items/ingredients/copper_ore.png", None);
+		add("iron_ore", "Iron ore", "Heavy and cold", "assets/test/iron_ore.png", None);       //placeholder sprite
+		add("fae_grass", "Fae grass", "Faintly glowing", "assets/test/fae_grass_item.png", None); //placeholder sprite
+		add("lumber", "Lumber", "A sturdy log", "assets/test/lumber.png", None);              //placeholder sprite
 
 		// tools
 		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);
 		add("pickaxe", "Pickaxe", "A sturdy pick", "assets/sprites/items/pickaxe.png", Tool);
+		add("axe", "Axe", "For chopping trees", "assets/test/axe.png", Tool);                   //placeholder sprite
 
 		add("you_won", "You won!", "Thanks for playing the demo", "assets/sprites/items/missing_no.png", None);
 
