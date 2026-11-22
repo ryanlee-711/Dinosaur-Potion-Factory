@@ -22,6 +22,8 @@
 #include "../world/entities/Boulder.hpp"
 #include "../world/entities/CopperVein.hpp"
 #include "../world/entities/Dragon.hpp"
+#include "../world/entities/Splitter.hpp"
+#include "../world/entities/Golem.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -364,7 +366,7 @@ void PlayMode::update(float elapsed) {
 
 	//everything entities can collide with this frame:
 	std::vector<std::unique_ptr<Entity>> spawned;
-	World world{map, entities, player, coord_to_entities, mt, &spawned, &made_items, &particles};
+	World world{map, entities, player, coord_to_entities, uid_to_entities, mt, &spawned, &made_items, &particles};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -377,6 +379,7 @@ void PlayMode::update(float elapsed) {
 
 	// Rebuild entity mapping (before world interaction)
 	rebuild_coord_to_entities();
+	rebuild_uid_to_entities();
 
 	// Handle interact (only on the first frame E is down):
 	do_world_interaction(elapsed);
@@ -618,6 +621,16 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_entity<Pipe>(entities, world_pos);
 	} else if (id == "furnace" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_machine(entities, world_pos, "furnace");
+	} else if (id == "splitter") {
+		add_entity<Splitter>(entities, world_pos);
+	} else if (id == "fermenter" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+		add_machine(entities, world_pos, "fermenter");
+	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+		add_machine(entities, world_pos, "distiller");
+	} else if (id == "fuelbox" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
+		add_machine(entities, world_pos, "fuelbox");
+	} else if (id == "golem") {
+		add_entity<Golem>(entities, world_pos);
 	} else {
 		return false; //not a machine
 	}
@@ -695,7 +708,7 @@ bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const {
 }
 
 void PlayMode::remove_objects(float elapsed) {
-	World world{map, entities, player, coord_to_entities, mt};
+	World world{map, entities, player, coord_to_entities, uid_to_entities, mt};
 	// Remove entities that asked to be removed this frame.
 	if (opened_entity != nullptr && opened_entity->removed) {
 		//its panel is open: close it before the inventory it points at is deleted
@@ -1360,7 +1373,10 @@ template <typename EntityClass>
 void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, uint32_t uid) {
 	list.push_back(std::make_unique<EntityClass>());
 	list.back()->position = position;
-	list.back()->uid = uid;
+	if (uid != 0) {
+		list.back()->uid = uid;
+	}
+	
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1377,15 +1393,19 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 
 void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type, uint32_t uid) {
 
-	size_t inventory_size = 0;
+	size_t inventory_size = 10;
 	if (machine_type == "brewer") inventory_size = 3;	
 	else if (machine_type == "furnace") inventory_size = 2;
 	else if (machine_type == "crusher") inventory_size = 2;
 	else if (machine_type == "chest") inventory_size = 10;
+	else if (machine_type == "distiller") inventory_size = 3;
+	else if (machine_type == "fermenter") inventory_size = 4;
 	
 	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
 	list.back()->position = position;
-	list.back()->uid = uid;
+	if (uid != 0) {
+		list.back()->uid = uid;
+	}
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1432,6 +1452,13 @@ void PlayMode::rebuild_coord_to_entities() {
 	}
 }
 
+void PlayMode::rebuild_uid_to_entities() {
+	uid_to_entities.clear();
+	for (auto &entity : entities) {
+		uid_to_entities[entity->uid] = entity.get();
+	}
+}
+
  auto PlayMode::entity_at(glm::ivec2 tile) const -> Entity* {
 	if (coord_to_entities.find(tile) != coord_to_entities.end()) {
 		auto &here = coord_to_entities.at(tile);
@@ -1444,7 +1471,6 @@ void PlayMode::rebuild_coord_to_entities() {
 void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
 	entities.push_back(std::make_unique<ItemEntity>(id, count));
 	entities.back()->position = position;
-	entities.back()->uid = mt();
 }
 
 // ********************************************************************* //
@@ -1500,7 +1526,7 @@ void PlayMode::save() {
 // LOAD
 void PlayMode::load() {
 
-
+	uint32_t largest_uid = 0;
 
 	std::ifstream fs(data_path(savefile_path));
 	if (!fs.is_open()) {
@@ -1560,6 +1586,10 @@ void PlayMode::load() {
 			}
 		}
 
+		if (uid > largest_uid) {
+			largest_uid = uid;
+		}
+
 		// starts adding entities
 		if (entity_type == "machine") {
 			add_machine(entities, glm::vec2{0.0f, 0.0f}, machine_type, uid);
@@ -1579,6 +1609,10 @@ void PlayMode::load() {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {
 			add_entity<ItemEntity>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "golem") {
+			add_entity<Golem>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "fuelbox") {
+			add_entity<Machine>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "player") {
 			player.load(line);
 		} else {
@@ -1590,4 +1624,5 @@ void PlayMode::load() {
 			entities.back()->load(line);
 		}
 	}
+	Entity::reset_uid_counter(largest_uid);
 }

@@ -32,7 +32,7 @@ struct Entity {
 	uint32_t collision_mask = 0x1;
 
 	// A unique ID for this object, randomly generated in uninitialized; must be unique.
-	uint32_t uid = 0x0;
+	uint32_t uid = next_uid++;
 
 	// Set to true to delete this entity (picked up, harvested away, destroyed by a potion...).
 	// PlayMode erases removed entities once per frame, after everything has updated
@@ -51,4 +51,11 @@ struct Entity {
 	bool blocks(Entity const &other) const {
 		return (collision_mask & other.collision_mask) != 0;
 	}
+
+	// For resetting UID counter
+	static void reset_uid_counter(uint32_t new_uid) {
+		next_uid = std::max(new_uid + 1, next_uid); 
+	}
+private:
+    inline static uint32_t next_uid = 1;
 };

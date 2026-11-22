@@ -98,6 +98,8 @@ crusher	Stone Press	TODO	assets/sprites/items/placeables/crusher_icon.png							
 furnace	Furnace	TODO	assets/sprites/items/placeables/furnace_icon.png							1	
 distiller	Distiller	TODO	assets/sprites/items/missing_no.png							1	
 chest	Chest	TODO	assets/sprites/items/placeables/chest_icon.png							1	
+fuelbox	Fuelbox	Fuels the Golem	assets/sprites/items/placeables/chest_icon.png							1	
+golem	Golem	Automaton	assets/sprites/items/missing_no.png							1	
 fermenter	Fermenter	TODO	assets/sprites/items/missing_no.png							1	
 joiner	Joiner	TODO	assets/sprites/items/missing_no.png							1	
 splitter	Splitter	TODO	assets/sprites/items/missing_no.png							1	

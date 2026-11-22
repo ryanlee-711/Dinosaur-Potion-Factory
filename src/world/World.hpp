@@ -22,6 +22,7 @@ struct World {
 	std::vector< std::unique_ptr< Entity > > const &entities;
 	Player const &player;
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> const &coord_to_entities;
+	std::unordered_map<uint32_t, Entity *> const &uid_to_entities;
 	std::mt19937 &rng;
 	//spawned entities
 	std::vector<std::unique_ptr<Entity>> *spawned = nullptr;

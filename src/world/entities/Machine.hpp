@@ -81,6 +81,7 @@ public:
     }
 
     void draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const;
+    item_id_t get_machine_type() {return def->machine_type;};
 
 
 private:    

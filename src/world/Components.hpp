@@ -93,3 +93,16 @@ struct IMineable {
     // Called on a tool click. Returns the item knocked loose, or "" if there's nothing to mine right now.
     virtual item_id_t mine() = 0;
 };
+
+struct IWorkable {
+    /*
+     * Anything that can be worked by the golem automatically.
+     * Different workable entities work differently:
+     * - Plants (LichenRock, Apple tree, ...) regrows to full when worked with haste crystal (costs at 100% chance);
+     * - Mines (Copper ore) can only be worked when there is strength crystal (costs at 5% chance).
+     */
+    virtual ~IWorkable() = default;
+    // Called on a tool click. Returns the item knocked loose, or "" if there's nothing to mine right now.
+    virtual item_id_t get_producer_name() const = 0;
+    virtual int work(bool use_powerup) = 0;
+};

@@ -1,0 +1,51 @@
+1 0 3 0 0 0 30 pickaxe 1 pipe 9 fermenter 10 fuelbox 9 golem 19 chest 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 50
+15213 player 2139.44 1351.87 0
+2464277274 pipe 2224 1312 -1 0 1 0 null 0
+2261043811 pipe 2240 1312 -1 0 0 -1 null 0
+4018825600 machine crusher 2256 1312 0 null 0 crushed_drupe 4
+2756660684 machine brewer 2352 1312 0 null 0 water 15 null 0
+3159447863 machine chest 2400 1248 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
+874007393 machine chest 2336 1200 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
+2170048634 machine furnace 1472 1040 0 null 0 null 0
+4131879887 apple_tree 2208 1440
+1808951742 apple_tree 2272 1488
+1651749579 copper_vein 1952 1360 4
+1178228388 boulder 1984 1344 1
+2712845769 boulder 1936 1248 1
+2009620532 boulder 2304 1456 1
+1064745147 copper_vein 2688 1008 4
+1014536431 boulder 2816 1088 1
+2585669704 boulder 2880 1104 1
+1298871413 boulder 2848 1120 1
+78248946 boulder 2832 1152 1
+1503998070 boulder 2864 1168 1
+305541520 boulder 1664 1040 1
+4017680460 boulder 1680 1072 1
+2856587607 boulder 1616 1104 1
+1320771510 copper_vein 1648 1120 4
+1441286174 boulder 1680 1136 1
+1237421507 boulder 1664 1168 1
+1290716931 boulder 1680 1088 0
+2748178090 boulder 1696 1104 0
+2013689499 item_entity 1632 1072 pickaxe 1
+1457571752 item_entity 1536 1040 rock 40
+914467438 item_entity 1520 944 rock 35
+3513032993 dragon 2112 784
+1831338132 boulder 1536 896 1
+2315938658 boulder 1504 960 1
+1087603481 lichen_rock 1456 1072 5
+2852167124 boulder 1456 1120 1
+1161128756 boulder 1552 1232 1
+98290691 lichen_rock 1408 1200 5
+1895095611 lichen_rock 1472 1216 5
+333 item_entity 2299.73 1503.33 drupe 1
+4131879892 item_entity 2277.71 1477.13 drupe 1
+4131879893 machine fuelbox 2176 1376 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
+4131879894 machine chest 2176 1312 0 drupe 4 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
+4131879895 golem 2188.13 1360.51
+4131879897 item_entity 2291.92 1513.29 drupe 1
+4131879898 pipe 2240 1296 0 1 1 0 null 0
+4131879900 item_entity 2298.3 1488.61 drupe 1
+4131879902 item_entity 2270.97 1492.45 drupe 1
+4131879904 pipe 2208 1312 -1 0 1 0 null 0
+4131879905 item_entity 2240.4 1465.04 drupe 1

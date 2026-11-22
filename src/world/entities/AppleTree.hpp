@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class AppleTree : public Entity {
+class AppleTree : public Entity, public IWorkable {
     /* An apple tree: every few seconds it drops an apple on the ground somewhere around it,
        until enough apples are lying nearby. Apples are picked up like any other ground item. */
 public:
@@ -23,6 +23,12 @@ public:
     std::string save() const override;
     void load(std::string line) override;
 
+    // IWorkable
+    item_id_t get_producer_name() const override {
+        return "apple_tree";
+    }
+    int work(bool use_powerup) override;
+
 private:
     static constexpr float DROP_COOLDOWN = 15.0f;   // seconds between apples
     static constexpr int MAX_NEARBY_APPLES = 5;    // stop dropping once this many apples lie around the tree
@@ -31,6 +37,7 @@ private:
 
     float drop_timer = DROP_COOLDOWN;
     int nearby_apples = 0;  // counted every update; also picks the sprite (fruit while it can still drop)
+    int accalerated_counter = 0;
 
     glm::vec2 base_center() const; // middle of the tree's 2x1-tile base, in world pixels
 };

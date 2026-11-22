@@ -51,6 +51,7 @@ struct PlayMode : Mode {
 	glm::ivec2 find_tilemap_coord(glm::vec2 screen_pos, PixelCanvas &view_canvas, glm::vec2 camera_topleft);
 	Entity * entity_at(glm::ivec2 tile) const;
 	void rebuild_coord_to_entities();
+	void rebuild_uid_to_entities();
 
 	//----- world -----
 	Tilemap map;
@@ -60,6 +61,7 @@ struct PlayMode : Mode {
 
 	// ----- entity lookup caching ------
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;
+	std::unordered_map<uint32_t, Entity *> uid_to_entities;
 
 	//----- recipe book -----
 	bool book_open = false;

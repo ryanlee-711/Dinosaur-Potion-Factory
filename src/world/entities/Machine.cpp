@@ -36,6 +36,10 @@ static Load< Texture > fermenter_texture(LoadTagDefault, []() -> Texture const *
 	return new Texture(data_path("assets/sprites/machines/fermenter.png"));
 });
 
+static Load< Texture > fuelbox_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/golem_dropbox.png"));
+});
+
 
 // MACHINE DEFINITIONS
 using ivec2 = glm::ivec2;
@@ -127,8 +131,8 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* hitbox_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
             /* draw_offset= */ glm::vec2{0.0f, 0.0f},
-            /* output_slot_begin= */ 1,
-            /* output_slot_end= */ 2,
+            /* output_slot_begin= */ 0,
+            /* output_slot_end= */ 10,
             /* num_sprite_rows= */ 4,
             /* num_sprite_columns= */ 4,
             /* port_locs_in = */ MachineDef::PortLocs{
@@ -151,7 +155,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
-            /* draw_offset= */ glm::vec2{0.0f, -32.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 1,
             /* output_slot_end= */ 3,
             /* num_sprite_rows= */ 4,
@@ -172,11 +176,11 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
 
         machines->emplace("fermenter", MachineDef{
             /* machine_type= */ "fermenter",
-            /* texture= */ distiller_texture,
+            /* texture= */ fermenter_texture,
             /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
-            /* draw_offset= */ glm::vec2{0.0f, -32.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 2,
             /* output_slot_end= */ 4,
             /* num_sprite_rows= */ 4,
@@ -192,6 +196,31 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+            }
+        });
+
+        machines->emplace("fuelbox", MachineDef{
+            /* machine_type= */ "fuelbox",
+            /* texture= */ fuelbox_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* hitbox_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* draw_offset= */ glm::vec2{0.0f, 0.0f},
+            /* output_slot_begin= */ 1,
+            /* output_slot_end= */ 2,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
             }
         });
 
@@ -234,6 +263,8 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
         inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
         inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
         inventory.set_rule(3, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+    } else if (machine_type == "fuelbox") {
+        // pass
     } else {
         throw std::runtime_error{"Machine Not Implemented: " + machine_type};
     }
@@ -487,7 +518,7 @@ int Machine::push_item(ItemRecord item_record) {
     }
 
     // goes into whichever input slot accepts it
-    for (size_t slot = 0; slot < def->output_slot_begin; ++slot) {
+    for (size_t slot = 0; slot < (def->machine_type == "chest" ? 10 : def->output_slot_begin); ++slot) {
         if (!inventory.can_insert(slot, item_record.first)) continue;
         int moved = inventory.insert_into_slot(slot, item_record.first, 1);
         if (moved > 0) return moved;
