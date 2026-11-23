@@ -80,6 +80,8 @@ public:
 
     // IBreakable
     item_id_t get_drop_id() override {return def ? def->machine_type : "";}
+    void on_break_hit() override { shake_timer = SHAKE_SECONDS; }    // wobble on each pickaxe hit
+    ParticlePreset const *break_hit_particles() const override;    // rock chips on each pickaxe hit
 
     // Machine-specific
     enum Rotation {EAST, NORTH, WEST, SOUTH};
@@ -94,8 +96,11 @@ public:
     // These may not change once placed.
     Rotation rotation = Rotation::EAST;
 
-private:    
+private:
     MachineDef const *def = nullptr;
+
+    static constexpr float SHAKE_SECONDS = 0.15f; // how long one pickaxe hit wobbles it
+    float shake_timer = 0.0f;                     // > 0: wobbling from a pickaxe hit
 
     // ===== Dynamic Machine states =====
     Inventory inventory;

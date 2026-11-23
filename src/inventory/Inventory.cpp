@@ -93,6 +93,7 @@ bool Inventory::can_insert(size_t slot, item_id_t const &id) const {
 	SlotRule const &r = rules[slot];
 	if (!r.can_insert) return false;
 	if (r.required_tags != 0 && (Item::tags_of(id) & r.required_tags) == 0) return false;
+	if (!r.required_item.empty() && id != r.required_item) return false;
 	return true;
 }
 

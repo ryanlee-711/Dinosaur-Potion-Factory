@@ -20,9 +20,11 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 struct Recipe;
+class Npc;
 
 // The main gameplay mode: a tilemap you can walk around on.
 struct PlayMode : Mode {
@@ -81,13 +83,57 @@ struct PlayMode : Mode {
 		int next_quest_index = -1;
 	};
 	// list of quests now
-	bool talking_to_dragon = false;
-	int dragon_dialogue_index = 0;
+	int dragon_dialogue_index = 0;   // which of the dragon's hints for the current quest it says next
 	std::vector<Quest> quests;
 	std::vector<bool> quest_goals_cleared;
 	int active_quest = 0;
 	void draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size);
 	void clear_quest();
+	bool main_quest_ready() const;   // every goal of the current main quest is done: the dragon shows a "!"
+
+	// ----- side quests: given by npcs, listed under the main quest while active -----
+	struct SideQuest {
+		std::string id;                       // saved in the save file
+		std::string title;                    // shown in the quest list
+		std::string giver;                    // dialogue id of who gives it
+		std::vector<ItemRecord> required_items; // taken when you hand them over
+		std::vector<ItemRecord> rewards;      // given when you hand them over
+	};
+	enum class SideQuestState : int { NotStarted = 0, Active = 1, Done = 2 };
+	std::vector<SideQuest> side_quests;
+	std::unordered_map<std::string, SideQuestState> side_quest_states; // a quest not in here hasn't started
+	SideQuest const *find_side_quest(std::string const &id) const;
+	SideQuestState side_quest_state(std::string const &id) const;
+	bool side_quest_ready(SideQuest const &quest) const; // carrying everything it asks for
+	bool npc_has_news(Npc const &npc) const;             // show a "!" over it: not met yet, a quest to give or turn in
+
+	// ----- dialogue box (npcs and the dragon; lines from dist/data/dialogue.tsv) -----
+	struct DialogueOption {
+		enum class Action { Ask, QuestOffer, Accept, Decline, QuestWaiting, Give, Trade, DragonMore, Smith, Bye };
+		std::string label;
+		Action action;
+		std::string key = "";  // Ask: the dialogue key of the answer
+	};
+	struct DialogueBox {
+		bool open = false;
+		Entity *with = nullptr;             // the npc being talked to
+		std::string npc;                    // its dialogue id
+		std::string speaker;                // name on the box
+		std::vector<std::string> pages;     // one box at a time
+		size_t page = 0;
+		float shown_chars = 0.0f;           // typewriter: how much of the current page is visible
+		std::vector<DialogueOption> options;
+		std::vector<Rect> option_rects;     // where each option was drawn last frame (drawable pixels), for clicks
+		Rect panel_rect;
+	} dialogue;
+	void open_dialogue(Entity *entity);                 // start talking to an npc / the dragon
+	void say(std::vector<std::string> const &pages, std::vector<DialogueOption> options);
+	std::vector<DialogueOption> dialogue_menu() const;  // the usual options for whoever we're talking to
+	bool dialogue_options_visible() const;              // on the last page and done typing
+	void dialogue_advance();                            // click / E: finish typing, or go to the next page
+	void dialogue_choose(size_t index);
+	void close_dialogue();
+	void draw_dialogue(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot);
 
 	//----- inventory -----
 	static constexpr size_t HOTBAR_SLOTS = 10; // Number of slots in the hotbar

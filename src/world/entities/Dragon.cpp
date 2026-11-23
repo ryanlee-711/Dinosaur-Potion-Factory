@@ -7,6 +7,13 @@
 #include <cmath>
 #include <sstream>
 
+static Load< Texture > dragon_texture(LoadTagDefault, []() -> Texture const * {
+    return new Texture(data_path("assets/sprites/entities/dragon.png")); //96x112, was tiles in the old tileset
+});
+
+//the sprite's top-left, relative to the dragon's position (it used to sit on map tiles (133,42)-(138,48))
+static glm::vec2 const SPRITE_OFFSET = glm::vec2(16.0f, -112.0f);
+
 
 Dragon::Dragon() : inventory(3) {
     inventory.set_rule(0, Inventory::SlotRule{ .required_tags = 0u });
@@ -95,7 +102,15 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
 }
 
 void Dragon::draw(Sprites &batch) const {
+    batch.draw(*dragon_texture, Rect{0.0f, 0.0f, 96.0f, 112.0f}, glm::round(position) + SPRITE_OFFSET);
+}
 
+glm::vec2 Dragon::hint_anchor() const {
+    return position + SPRITE_OFFSET + glm::vec2(48.0f, 80.0f);
+}
+
+glm::vec2 Dragon::marker_anchor() const {
+    return hint_anchor(); //same spot as the E key (over its horns would be off screen up close)
 }
 
 auto Dragon::hitbox() const -> Rect {
@@ -106,7 +121,7 @@ void Dragon::get_occupied(std::vector<glm::ivec2> *ans) const {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
     for (int y = 0; y < 3; ++y) {
         for (int x = 0; x < 8; ++x) {
-            ans->emplace_back(tile + glm::ivec2{x, -y});   
+            ans->emplace_back(tile + glm::ivec2{x, -y});
         }
     }
 }
@@ -143,7 +158,7 @@ void Dragon::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }

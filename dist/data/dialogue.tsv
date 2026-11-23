@@ -1,0 +1,51 @@
+# Dialogue lines. Columns (tab-separated):  npc <TAB> key <TAB> text
+# Rows with the same npc + key are pages: one box each, click or press E for the next one.
+# Text wraps by itself. Write \n to force a line break. Lines starting with # are ignored.
+#
+# Keys for an NPC:
+#   name             name on the dialogue box
+#   greet            the first time you talk to them
+#   hello            the line above the options every other time (one row picked at random)
+#   ask:<question>   a question the player can click; its rows are the answer
+#   quest_offer      after clicking "Need a hand?": explains the side quest, then Accept / Not now
+#   quest_accept     after accepting
+#   quest_decline    after saying not now
+#   quest_waiting    asking about the quest without the items yet
+#   quest_done       handing the items over (the reward is given after these)
+# The dragon: quest0, quest1, ... are its hints for main quest 0, 1, ...; "Tell me more" goes to the next row.
+
+lumberjack	name	Cole the Lumberjack
+lumberjack	greet	Well I'll be... a dwarf, out of the caves! Haven't seen one of your kind in years.
+lumberjack	greet	Name's Cole. I keep these woods trimmed and the logs stacked.
+lumberjack	hello	Back again, little dwarf?
+lumberjack	hello	Fine day for chopping, eh?
+lumberjack	hello	Nothing beats swinging the axe to clear your mind.
+lumberjack	ask:What is this place?	The woods outside your cave. Pines all the way up to the cliffs.
+lumberjack	ask:What is this place?	Past the cliffs it's all snow and ice. Too cold for an old woodsman like me.
+lumberjack	ask:Can I chop these trees?	Not with your bare hands you can't! You'd want an axe.
+lumberjack	ask:Can I chop these trees?	I might have a spare one lying around... if you could do me a favor.
+lumberjack	ask:Have you heard the dragon?	The big one in the cave? Heard it coughing all week. Each cough shakes the whole mountain.
+lumberjack	ask:Have you heard the dragon?	If anyone can brew it back to health, I'd bet on a dwarf like you.
+lumberjack	ask:Have you heard the dragon?  I heard legends of a mystical herb up in the peaks. Don't know if that will be useful to you though.
+lumberjack	quest_offer	Matter of fact, I could. My old legs aren't what they used to be.
+lumberjack	quest_offer	Bring me a Haste Potion and I'll be quick as a fox again. They say the fae grass in these woods does the trick.
+lumberjack	quest_offer	Do that, and my spare axe is yours.
+lumberjack	quest_accept	Ha! Good dwarf. Faegrass powder brewed into a base potion, if I remember right.
+lumberjack	quest_decline	No rush. The trees aren't going anywhere.
+lumberjack	quest_waiting	No potion yet? Crush some fae grass and brew it with a base potion. That should do it.
+lumberjack	quest_done	Oh, that's the stuff! I feel ten years younger already.
+lumberjack	quest_done	Here's the axe, as promised. Give a tree a few good swings and down she comes.
+lumberjack	quest_done	And bring me your lumber whenever you like. I'll saw it into planks for you, two for one.
+
+dragon	name	Dragon
+dragon	quest0	Cough cough... I'm sick...\nplease bring me medicine my dwarf...\nI require the elixir of life...
+dragon	quest0	The cave collapsed and stones block you way... \ncough, because, ...\nmy coughs... *ACHOOOO*.
+dragon	quest0	Your pickaxe is missing... \nwhere is it...?
+dragon	quest0	If a rock is too heavy...\nDrink some Drupe Drink to bulk up...
+dragon	quest1	You've brewed Drupe Drink... \ndrink it and find your pickaxe...\nAnd bring back the furnace...
+dragon	quest1	You can press `interact`\nto push a rock...\nafter a bottle of Drupe Drink.
+dragon	quest2	Collect some copper ore by mining...\nAnd give it to me, to smith pipes.
+dragon	quest3	Furnace is very powerful...\nDry the lichens... and grind them.
+dragon	quest3	Lichen powder yields a red solution...\nAdd drupe to it...\nto brew stronger potions...
+dragon	quest3	I can smith new machines for you...\nBring materials.
+dragon	quest4	You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest

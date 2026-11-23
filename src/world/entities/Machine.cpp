@@ -4,6 +4,7 @@
 #include "../../main/Rect.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
+#include "../../rendering/Particles.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -331,7 +332,12 @@ void Machine::configure_inventory(item_id_t machine_type) {
     }
 }
 
+ParticlePreset const *Machine::break_hit_particles() const {
+    return &Presets::RockChips;
+}
+
 void Machine::update(FrameInput const &input, float elapsed, World const &world) {
+    shake_timer = std::max(0.0f, shake_timer - elapsed);
 
     // animation
     if (def->machine_type == "brewer" || processing_timer > 0.0f) {
@@ -482,6 +488,7 @@ void Machine::draw(Sprites &batch) const {
     }
 
     glm::vec2 top_left = glm::round(position) + def->draw_offset;
+    if (shake_timer > 0.0f) top_left.x += (std::fmod(shake_timer, 0.06f) < 0.03f) ? 1.0f : -1.0f; //wobble from a pickaxe hit
     batch.draw(*def->texture, Rect{def->texture_rect.w * frame, def->texture_rect.h * rot2idx(rotation), def->texture_rect.w, def->texture_rect.h}, top_left);
 
 }

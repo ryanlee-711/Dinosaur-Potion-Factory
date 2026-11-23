@@ -26,6 +26,9 @@
 #include "../world/entities/Dragon.hpp"
 #include "../world/entities/Splitter.hpp"
 #include "../world/entities/Golem.hpp"
+#include "../world/entities/Npc.hpp"
+#include "../world/entities/Prop.hpp"
+#include "../world/Dialogue.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -54,34 +57,8 @@ static constexpr float SECOND_PER_DAMAGE = 0.25f;
 static constexpr float PLACE_REACH = 6.0f;
 static constexpr float TOOL_REACH = 3.0f;
 
-// DRAGON DIALOGUES
-static std::vector<std::vector<std::string>> DRAGON_DIALOGUES {
-
-	std::vector<std::string> {
-		"Cough cough... I'm sick...\nplease bring me medicine...\nBrew potion...",
-		"The cave collapsed... \ncough, because, ...\nmy health issues... *ACHOOOO*.",
-		"Your pickaxe is missing... \nwhere is it...?",
-		"If a rock is too heavy...\nDrink some ale to bulk up...",
-	},
-	std::vector<std::string> {
-		"You've brewed Ale... \ndrink it and find your pickaxe...\nAnd bring back the furnace...",
-		"You can press `interact`\nto push a rock...\nafter a bottle of drink.",
-	},
-	std::vector<std::string> {
-		"Collect some copper ore by mining...\nAnd give it to me, to smith pipes.",
-	},
-	std::vector<std::string> {
-		"Furnace is very powerful...\nDry the lichens... and grind them.",
-		"Lichen powder yields a red solution...\nAdd apples to it...\nto brew stronger potions...",
-		"I can smith new machines for you...\nBring materials.",
-	},
-	std::vector<std::string> {
-		"You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest",
-	},
-};
-
-
-
+// Dialogue box
+static constexpr float DIALOGUE_CHARS_PER_SECOND = 60.0f; // typewriter speed
 
 //The interactable entity whose hitbox overlaps 'reach' the most, or nullptr if none does
 static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_ptr< Entity > > const &entities) {
@@ -107,6 +84,10 @@ static Load< Texture > wavey_texture(LoadTagDefault, []() -> Texture const * {
 
 static Load< Texture > hints_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/hints.png")); //20x24 frames: 0 = E key bubble, 1 = empty bubble for a tool icon
+});
+
+static Load< Texture > quest_marker_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/quest_marker.png")); //7x13 "!" over npcs with something new to say
 });
 
 static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
@@ -253,6 +234,13 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	for (size_t i = 0; i < 10; ++i) quest_goals_cleared.emplace_back(false);
 
+	// side quests (the npc that gives one names its id in the npc table, Npc.cpp)
+	side_quests.emplace_back(SideQuest{
+		"lumberjack_axe", "Bring Bram a Haste Potion", "lumberjack",
+		std::vector<ItemRecord>{ItemRecord{"haste_potion", 1}},
+		std::vector<ItemRecord>{ItemRecord{"axe", 1}},
+	});
+
 	load();
 
 }
@@ -266,9 +254,44 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		show_debug = !show_debug;
 		return true;
 	}
+	//----- dialogue box: it takes the mouse and keys while it's open -----
+	if (dialogue.open) {
+		if (evt.type == SDL_EVENT_KEY_DOWN) {
+			SDL_Keycode key = evt.key.key;
+			if (key == SDLK_ESCAPE) {
+				close_dialogue();
+				return true;
+			}
+			if (key >= SDLK_1 && key <= SDLK_9) {
+				//number keys pick an option
+				if (dialogue_options_visible()) dialogue_choose(size_t(key - SDLK_1));
+				return true;
+			}
+			if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+				dialogue_advance();
+				return true;
+			}
+			if (key == SDLK_TAB || key == SDLK_J) close_dialogue(); //then open the inventory / book as usual below
+		}
+		if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT) {
+			glm::vec2 p = glm::vec2(evt.button.x, evt.button.y) * window_scale;
+			if (dialogue_options_visible()) {
+				for (size_t i = 0; i < dialogue.option_rects.size(); ++i) {
+					if (dialogue.option_rects[i].contains(p)) {
+						dialogue_choose(i);
+						return true;
+					}
+				}
+			}
+			dialogue_advance(); //a click anywhere else goes on to the next page
+			return true;
+		}
+		if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_LEFT) return true;
+	}
+
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_F) {
 		//F: drink / eat the selected consumable
-		if (!inventory_open) consume_selected();
+		if (!inventory_open && !dialogue.open) consume_selected();
 		return true;
 	}
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_J) {
@@ -340,6 +363,7 @@ void PlayMode::update(float elapsed) {
 	if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) input.direction.x += 1.0f;
 	if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])    input.direction.y -= 1.0f; //y grows downward
 	if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])  input.direction.y += 1.0f;
+	if (dialogue.open) input.direction = glm::vec2(0.0f); //stand still while talking
 	//Shift + WASD sprints. Not while the inventory screen is open, where Shift is for shift-clicking.
 	input.sprint = (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) && !inventory_open;
 	if (keys[SDL_SCANCODE_E] || keys[SDL_SCANCODE_SPACE]) {
@@ -414,7 +438,7 @@ void PlayMode::update(float elapsed) {
 
 	// numkeys select/unselect hotbar items (1..9, 0 = tenth slot).
 	// Moving items between inventories is done with the mouse (see handle_event).
-	for (size_t raw_index = 0; raw_index < 10 && !inventory_open; raw_index++) {
+	for (size_t raw_index = 0; raw_index < 10 && !inventory_open && !dialogue.open; raw_index++) {
 		int index = int((raw_index + 9) % 10);
 		if (input.numkeys[raw_index].downs != 1) continue;
 		if (hotbar_selected == index) hotbar_selected = -1;
@@ -482,6 +506,15 @@ void PlayMode::update(float elapsed) {
 	}
 
 
+	// Dialogue box: type out the current page
+	if (dialogue.open) {
+		if (dialogue.with != nullptr && dialogue.with->removed) close_dialogue();
+		else if (dialogue.page < dialogue.pages.size()) {
+			float length = float(dialogue.pages[dialogue.page].size());
+			dialogue.shown_chars = std::min(length, dialogue.shown_chars + elapsed * DIALOGUE_CHARS_PER_SECOND);
+		}
+	}
+
 	// Count down the on-screen message
 	if (message_timer > 0.0f) {
 		message_timer -= elapsed;
@@ -511,23 +544,12 @@ void PlayMode::do_world_interaction(float elapsed) {
 		left_click.popped = true;
 	}
 
-	// bool right_clicked = (buttons & SDL_BUTTON_RMASK) != 0 || right_click.latched;
-	// right_click.latched = false;
-	// if (right_clicked) {
-	// 	right_click.downs += 1;
-	// 	right_click.pressed = true;
-	// } else {
-	// 	right_click.downs = 0;
-	// 	right_click.pressed = false;
-	// 	right_click.popped = true;
-	// }
-
 	// The inventory UI owns the mouse while it points at a slot or a press on a slot is still held.
 	// While an inventory panel is open, the hotbar can't be used in the world: left click doesn't
 	// place/use/break anything (the mouse is for moving items). Right click and E / Space can
 	// still interact.
 	bool over_ui = mouse_over_ui();
-	bool panel_open = inventory_open || book_open;
+	bool panel_open = inventory_open || book_open || dialogue.open;
 	if (over_ui || panel_open) break_timer = 0.0f;
 	bool left_new = !over_ui && !panel_open && left_click.downs == 1;
 	bool left_held = !over_ui && !panel_open && left_click.downs > 1;
@@ -708,6 +730,12 @@ bool PlayMode::interact_with(Entity *entity) {
 		close_container(); //interacting with something else: close the old panel
 	}
 
+	//people (and the dragon) talk instead: the dialogue box has the options (trade, smith, ...)
+	if (dynamic_cast< Npc * >(entity) != nullptr || dynamic_cast< Dragon * >(entity) != nullptr) {
+		open_dialogue(entity);
+		return true;
+	}
+
 	IInteractable::Context ctx{player, inventory};
 	target->on_interact(ctx);
 	if (ctx.open_container != nullptr) {
@@ -715,15 +743,6 @@ bool PlayMode::interact_with(Entity *entity) {
 		opened_entity = entity;
 		inventory_open = true;
 		book_open = false;
-	}
-
-	if (dynamic_cast< Dragon * >(entity)) {
-		// If it is a dragon
-		talking_to_dragon = true;
-		dragon_dialogue_index += 1;
-		clear_quest();
-	} else {
-		talking_to_dragon = false;
 	}
 
 	if (!ctx.message.empty()) {
@@ -743,6 +762,10 @@ Entity *PlayMode::interact_target() const {
 }
 
 void PlayMode::interact_facing() {
+	if (dialogue.open) {
+		dialogue_advance();
+		return;
+	}
 	Entity *target = interact_target();
 
 	//a panel is open then E closes it
@@ -862,7 +885,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//--- hint (see IHintable), over the closest thing only: the tool icon over things within tool reach (ore veins,
 	//    trees, big boulders), or the E key over what the dwarf is facing (forageables, small boulders). Faded while
 	//    you're not holding the tool or can't do it yet (hint_locked, e.g. no strength). Nothing over depleted things.
-	if (!inventory_open && !book_open) {
+	if (!inventory_open && !book_open && !dialogue.open) {
 		float bob = std::round(std::sin(hint_time * 4.0f) * 1.5f);
 		auto draw_hint = [&](glm::vec2 anchor, Texture const *icon, uint8_t alpha) {
 			//anchor = where the bubble's tail points (tail tip is row 22 of the 24px frame)
@@ -918,6 +941,28 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				draw_hint(hintable->hint_anchor(), tool_item ? tool_item->texture.get() : &*missing_texture,
 					(held == tool && !locked) ? READY : FADED);
 			}
+		}
+	}
+
+	//--- "!" over npcs with something new (not met yet, a quest to give or turn in) and over the dragon when
+	//    the main quest is ready to turn in. Not over the one showing the E key, nor while talking.
+	if (!dialogue.open) {
+		float bob = std::round(std::sin(hint_time * 3.0f) * 1.0f);
+		for (auto const &entity : entities) {
+			if (entity->removed || entity.get() == e_target) continue;
+			glm::vec2 anchor(0.0f);
+			if (auto const *npc = dynamic_cast< Npc const * >(entity.get())) {
+				if (!npc_has_news(*npc)) continue;
+				anchor = npc->marker_anchor();
+			} else if (dynamic_cast< Dragon const * >(entity.get()) != nullptr) {
+				if (!main_quest_ready()) continue;
+				Rect r = entity->hitbox();
+				anchor = glm::vec2(r.x + r.w * 0.5f, r.y - 2.0f);
+			} else {
+				continue;
+			}
+			glm::vec2 top_left = glm::round(anchor) - glm::vec2(3.0f, 13.0f) + glm::vec2(0.0f, bob);
+			batch.draw(*quest_marker_texture, Rect{0.0f, 0.0f, 7.0f, 13.0f}, top_left);
 		}
 	}
 
@@ -1121,11 +1166,21 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 
-	//---- quest system ----
-	if (active_quest != -1) {
+	//---- quest system (main quest, then active side quests) ----
+	{
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
 		DrawLines lines(screen_to_clip);
 		draw_quest_ui(ui_batch, lines, drawable_size);
+	}
+
+	//---- dialogue box ----
+	if (dialogue.open) {
+		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		float slot = 16.0f * float(canvas.scale);
+		DrawLines lines(screen_to_clip);
+		ui_batch.begin(screen_to_clip);
+		draw_dialogue(ui_batch, lines, drawable_size, slot);
+		ui_batch.end();
 	}
 
 
@@ -1297,95 +1352,54 @@ void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &
 
 
 void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size) {
-	// only draw if there is an active quest
-	if (active_quest < 0 || size_t(active_quest) > quests.size()) return;
-
-	// right-anchored rendering
 	float text_h = 8.0f * float(canvas.scale);
+	float x = std::floor(text_h * 0.5f);
 	float y = text_h * 1.5f; //top left (effects are drawn top right)
 
-	// draw description
-	std::stringstream ss("[Goals]  " + quests[active_quest].description);
-    std::string line;
-
-    while (getline(ss, line)) {
-        float x = std::floor(text_h * 0.5f);
+	//one line of text with a drop shadow, then move down a line
+	auto line = [&](std::string const &text, glm::u8vec4 color) {
 		glm::vec3 anchor(x, y, 0.0f);
-		lines.draw_text(line, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-		lines.draw_text(line, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xf0, 0xff));
-		y += text_h * 1.4f;
-    }
-
-	int req_idx = -1;
-	bool all_satisfied = true;
-	for (auto &record : quests[active_quest].required_items) {
-		req_idx++;
-		auto item = Item::get(record.first);
-		int count = inventory.count(record.first);
-
-		if (item == nullptr) continue;
-		line = quest_goals_cleared[req_idx] ? "[ X ] " : "[   ] ";
-		line += item->name + "  ";
-		if (quest_goals_cleared[req_idx]) {
-			line += std::to_string(record.second) + "/" + std::to_string(record.second);
-		} else {
-			line += std::to_string(count) + "/" + std::to_string(record.second);
-			all_satisfied = false;
-		}
-		float x = std::floor(text_h * 0.5f);
-		glm::vec3 anchor(x, y, 0.0f);
-		glm::u8vec4 color = quest_goals_cleared[req_idx] ? glm::u8vec4(0xbf, 0xff, 0x90, 0xff) : glm::u8vec4(0xf0, 0xab, 0x90, 0xff);
-		lines.draw_text(line, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-		lines.draw_text(line, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
-		y += text_h * 1.4f;
-	}
-
-	// If finished, draw the "Talk to dragon" hint
-	if (all_satisfied) {
-		float x = std::floor(text_h * 0.5f);
-		glm::vec3 anchor(x, y, 0.0f);
-		glm::u8vec4 color = quest_goals_cleared[req_idx] ? glm::u8vec4(0xbf, 0xff, 0x90, 0xff) : glm::u8vec4(0xf0, 0xab, 0x90, 0xff);
-		lines.draw_text("Talk to the dragon", anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-		lines.draw_text("Talk to the dragon", anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
-		y += text_h * 1.4f;
-	}
-
-	// draw dragon dialogue
-	if (talking_to_dragon) {
-		float x = std::floor(drawable_size.x * 0.11f);
-		y = drawable_size.y * 0.6f;
-		glm::vec3 anchor(x, y, 0.0f);
-		glm::u8vec4 color = glm::u8vec4(0xff, 0xa0, 0x90, 0xff);
-
-		std::string text = "Dragon";
 		lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 		lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
+		y += text_h * 1.4f;
+	};
+	glm::u8vec4 const DONE(0xbf, 0xff, 0x90, 0xff), TODO(0xf0, 0xab, 0x90, 0xff);
+	//"[ X ] Haste Potion  1/1"
+	auto goal = [&](ItemRecord const &record, bool done) {
+		Item const *item = Item::get(record.first);
+		std::string name = item ? item->name : record.first;
+		int have = done ? record.second : std::min(inventory.count(record.first), record.second);
+		line(std::string(done ? "[ X ] " : "[   ] ") + name + "  " + std::to_string(have) + "/" + std::to_string(record.second), done ? DONE : TODO);
+	};
 
-		x = std::floor(text_h * 0.5f);
-		y += text_h * 2.4f;
-		// dialogues
-		if (active_quest >= 0 && size_t(active_quest) < DRAGON_DIALOGUES.size()) {
-			 auto const &dialogues = DRAGON_DIALOGUES[active_quest];
-			if (!dialogues.empty()) {
-				std::stringstream ss2(dialogues[dragon_dialogue_index % dialogues.size()]);
-				std::string dialogue_line;
+	//--- main quest ---
+	if (active_quest >= 0 && size_t(active_quest) < quests.size()) {
+		std::stringstream ss("[Goals]  " + quests[active_quest].description);
+		std::string text;
+		while (std::getline(ss, text)) line(text, glm::u8vec4(0xff, 0xff, 0xf0, 0xff));
 
-				while (std::getline(ss2, dialogue_line)) {
-					glm::vec3 anchor2(x, y, 0.0f);
-					lines.draw_text(dialogue_line, anchor2 + glm::vec3(2, 2, 0), glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-					lines.draw_text(dialogue_line, anchor2, glm::vec3(text_h, 0, 0), glm::vec3(0, -text_h, 0), color);
-					y += text_h * 1.4f;
-				}
-			}
+		int req_idx = -1;
+		for (auto &record : quests[active_quest].required_items) {
+			req_idx++;
+			if (Item::get(record.first) == nullptr) continue;
+			goal(record, quest_goals_cleared[req_idx]);
 		}
-
+		if (main_quest_ready()) line("Talk to the dragon", DONE);
 	}
 
-
+	//--- side quests in progress ---
+	for (SideQuest const &quest : side_quests) {
+		if (side_quest_state(quest.id) != SideQuestState::Active) continue;
+		y += text_h * 0.4f;
+		line("[Side]  " + quest.title, glm::u8vec4(0xa8, 0xd8, 0xff, 0xff));
+		for (ItemRecord const &record : quest.required_items) goal(record, inventory.count(record.first) >= record.second);
+		if (side_quest_ready(quest)) line("Talk to " + Dialogue::name(quest.giver), DONE);
+	}
 }
 
 void PlayMode::clear_quest() {
 	// this function tries to clear the quest if it is clearable.
+	if (active_quest < 0 || size_t(active_quest) >= quests.size()) return; //all main quests done
 	int req_idx = -1;
 	for (auto &record : quests[active_quest].required_items) {
 		req_idx++;
@@ -1399,6 +1413,364 @@ void PlayMode::clear_quest() {
 		quest_goals_cleared[i] = false;
 
 	active_quest = quests[active_quest].next_quest_index;
+}
+
+bool PlayMode::main_quest_ready() const {
+	if (active_quest < 0 || size_t(active_quest) >= quests.size()) return false;
+	int req_idx = -1;
+	for (auto const &record : quests[active_quest].required_items) {
+		req_idx++;
+		if (Item::get(record.first) == nullptr) continue;
+		if (!quest_goals_cleared[req_idx]) return false;
+	}
+	return true;
+}
+
+// =================== Side quests ====================== //
+
+PlayMode::SideQuest const *PlayMode::find_side_quest(std::string const &id) const {
+	for (SideQuest const &quest : side_quests) {
+		if (quest.id == id) return &quest;
+	}
+	return nullptr;
+}
+
+PlayMode::SideQuestState PlayMode::side_quest_state(std::string const &id) const {
+	auto f = side_quest_states.find(id);
+	return f == side_quest_states.end() ? SideQuestState::NotStarted : f->second;
+}
+
+bool PlayMode::side_quest_ready(SideQuest const &quest) const {
+	for (ItemRecord const &record : quest.required_items) {
+		if (inventory.count(record.first) < record.second) return false;
+	}
+	return true;
+}
+
+bool PlayMode::npc_has_news(Npc const &npc) const {
+	if (!npc.met) return true;
+	SideQuest const *quest = find_side_quest(npc.definition().side_quest);
+	if (quest == nullptr) return false;
+	SideQuestState state = side_quest_state(quest->id);
+	if (state == SideQuestState::NotStarted) return true;
+	return state == SideQuestState::Active && side_quest_ready(*quest);
+}
+
+// =================== Dialogue box ====================== //
+
+void PlayMode::open_dialogue(Entity *entity) {
+	close_container();
+	book_open = false;
+	dialogue = DialogueBox{};
+	dialogue.open = true;
+	dialogue.with = entity;
+
+	if (auto *npc = dynamic_cast< Npc * >(entity)) {
+		IInteractable::Context ctx{player, inventory};
+		npc->on_interact(ctx); //turn toward the dwarf
+		dialogue.npc = npc->definition().dialogue;
+		dialogue.speaker = Dialogue::name(dialogue.npc);
+		std::vector<std::string> pages;
+		if (!npc->met) pages = Dialogue::lines(dialogue.npc, "greet");
+		if (pages.empty()) pages.push_back(Dialogue::random_line(dialogue.npc, "hello"));
+		npc->met = true;
+		say(pages, dialogue_menu());
+	} else {
+		//the dragon: turning in the main quest happens just by talking to it
+		dialogue.npc = "dragon";
+		dialogue.speaker = Dialogue::name("dragon");
+		dragon_dialogue_index = 0;
+		clear_quest();
+		auto const &hints = Dialogue::lines("dragon", "quest" + std::to_string(active_quest));
+		say(std::vector<std::string>{hints.empty() ? std::string("...") : hints[0]}, dialogue_menu());
+	}
+}
+
+void PlayMode::say(std::vector<std::string> const &pages, std::vector<DialogueOption> options) {
+	dialogue.pages.clear();
+	for (std::string const &page : pages) {
+		if (!page.empty()) dialogue.pages.push_back(page);
+	}
+	if (dialogue.pages.empty()) dialogue.pages.push_back("...");
+	dialogue.page = 0;
+	dialogue.shown_chars = 0.0f;
+	dialogue.options = std::move(options);
+	dialogue.option_rects.clear();
+}
+
+std::vector<PlayMode::DialogueOption> PlayMode::dialogue_menu() const {
+	using Action = DialogueOption::Action;
+	std::vector<DialogueOption> options;
+
+	if (dynamic_cast< Dragon * >(dialogue.with) != nullptr) {
+		options.push_back(DialogueOption{"Tell me more", Action::DragonMore});
+		options.push_back(DialogueOption{"Smith something", Action::Smith});
+		options.push_back(DialogueOption{"Bye", Action::Bye});
+		return options;
+	}
+
+	auto *npc = dynamic_cast< Npc * >(dialogue.with);
+	if (npc == nullptr) return options;
+	NpcDef const &def = npc->definition();
+
+	//questions, in the order they're in dialogue.tsv
+	for (auto const &[question, key] : Dialogue::questions(def.dialogue)) {
+		options.push_back(DialogueOption{question, Action::Ask, key});
+	}
+
+	//its side quest
+	SideQuestState state = SideQuestState::Done;
+	if (SideQuest const *quest = find_side_quest(def.side_quest)) {
+		state = side_quest_state(quest->id);
+		if (state == SideQuestState::NotStarted) {
+			options.push_back(DialogueOption{"Need a hand?", Action::QuestOffer});
+		} else if (state == SideQuestState::Active) {
+			//"Give Haste Potion" once you carry everything, otherwise ask about it
+			std::string items;
+			for (ItemRecord const &record : quest->required_items) {
+				Item const *item = Item::get(record.first);
+				if (!items.empty()) items += ", ";
+				items += (record.second > 1 ? std::to_string(record.second) + " " : "") + (item ? item->name : record.first);
+			}
+			if (side_quest_ready(*quest)) options.push_back(DialogueOption{"Give " + items, Action::Give});
+			else options.push_back(DialogueOption{"About the " + items + "...", Action::QuestWaiting});
+		}
+	}
+
+	//trade
+	if (def.trades() && (!def.trade_after_quest || state == SideQuestState::Done)) {
+		options.push_back(DialogueOption{"Trade", Action::Trade});
+	}
+
+	options.push_back(DialogueOption{"Bye", Action::Bye});
+	return options;
+}
+
+bool PlayMode::dialogue_options_visible() const {
+	if (!dialogue.open || dialogue.pages.empty()) return false;
+	if (dialogue.page + 1 < dialogue.pages.size()) return false;
+	return dialogue.shown_chars >= float(dialogue.pages[dialogue.page].size());
+}
+
+void PlayMode::dialogue_advance() {
+	if (!dialogue.open || dialogue.pages.empty()) return;
+	float length = float(dialogue.pages[dialogue.page].size());
+	if (dialogue.shown_chars < length) {
+		dialogue.shown_chars = length; //still typing: show the whole page
+	} else if (dialogue.page + 1 < dialogue.pages.size()) {
+		dialogue.page += 1;
+		dialogue.shown_chars = 0.0f;
+	}
+	//(last page: wait for an option)
+}
+
+void PlayMode::dialogue_choose(size_t index) {
+	if (index >= dialogue.options.size()) return;
+	DialogueOption option = dialogue.options[index]; //copy: say() replaces the options
+	using Action = DialogueOption::Action;
+
+	auto *npc = dynamic_cast< Npc * >(dialogue.with);
+	SideQuest const *quest = npc ? find_side_quest(npc->definition().side_quest) : nullptr;
+	std::string const &who = dialogue.npc;
+
+	switch (option.action) {
+	case Action::Ask:
+		say(Dialogue::lines(who, option.key), dialogue_menu());
+		break;
+	case Action::QuestOffer:
+		say(Dialogue::lines(who, "quest_offer"), std::vector<DialogueOption>{
+			DialogueOption{"Sure, I'll do it", Action::Accept},
+			DialogueOption{"Not right now", Action::Decline},
+		});
+		break;
+	case Action::Accept:
+		if (quest) side_quest_states[quest->id] = SideQuestState::Active;
+		say(Dialogue::lines(who, "quest_accept"), dialogue_menu());
+		break;
+	case Action::Decline:
+		say(Dialogue::lines(who, "quest_decline"), dialogue_menu());
+		break;
+	case Action::QuestWaiting:
+		say(Dialogue::lines(who, "quest_waiting"), dialogue_menu());
+		break;
+	case Action::Give:
+		if (quest && side_quest_ready(*quest)) {
+			for (ItemRecord const &record : quest->required_items) inventory.remove(record.first, record.second);
+			std::string got;
+			for (ItemRecord const &record : quest->rewards) {
+				int left = inventory.add(record.first, record.second);
+				if (left > 0) spawn_item(record.first, left, player.position); //bag full: at the dwarf's feet
+				Item const *item = Item::get(record.first);
+				got += (got.empty() ? "" : ", ") + (item ? item->name : record.first);
+			}
+			side_quest_states[quest->id] = SideQuestState::Done;
+			if (!got.empty()) {
+				message = "Got: " + got;
+				message_timer = MESSAGE_SECONDS;
+			}
+			say(Dialogue::lines(who, "quest_done"), dialogue_menu());
+		} else {
+			say(Dialogue::lines(who, "quest_waiting"), dialogue_menu());
+		}
+		break;
+	case Action::Trade:
+		if (npc) {
+			close_dialogue();
+			opened_inventory = &npc->trade_inventory();
+			opened_entity = npc;
+			inventory_open = true;
+			book_open = false;
+		}
+		break;
+	case Action::DragonMore: {
+		dragon_dialogue_index += 1;
+		auto const &hints = Dialogue::lines("dragon", "quest" + std::to_string(active_quest));
+		std::string text = hints.empty() ? std::string("...") : hints[size_t(dragon_dialogue_index) % hints.size()];
+		say(std::vector<std::string>{text}, dialogue_menu());
+		break;
+	}
+	case Action::Smith: {
+		Entity *dragon = dialogue.with;
+		close_dialogue();
+		if (auto *target = dynamic_cast< IInteractable * >(dragon)) {
+			IInteractable::Context ctx{player, inventory};
+			target->on_interact(ctx); //opens its smithing slots
+			if (ctx.open_container != nullptr) {
+				opened_inventory = ctx.open_container;
+				opened_entity = dragon;
+				inventory_open = true;
+			}
+		}
+		break;
+	}
+	case Action::Bye:
+		close_dialogue();
+		break;
+	}
+}
+
+void PlayMode::close_dialogue() {
+	dialogue = DialogueBox{};
+}
+
+//Splits 'text' into lines no wider than 'max_width' (in text heights, see text_width). "\n" always breaks.
+static std::vector<std::string> wrap_text(std::string const &text, float max_width) {
+	std::vector<std::string> out;
+	std::stringstream paragraphs(text);
+	std::string paragraph;
+	while (std::getline(paragraphs, paragraph)) {
+		std::stringstream words(paragraph);
+		std::string word, current;
+		while (words >> word) {
+			std::string longer = current.empty() ? word : current + " " + word;
+			if (!current.empty() && text_width(longer) > max_width) {
+				out.push_back(current);
+				current = word;
+			} else {
+				current = longer;
+			}
+		}
+		out.push_back(current); //(an empty paragraph is a blank line)
+	}
+	return out;
+}
+
+void PlayMode::draw_dialogue(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size, float slot) {
+	if (!dialogue.open || dialogue.pages.empty()) return;
+	glm::vec2 screen = glm::vec2(drawable_size);
+
+	float text_h = std::floor(slot * 0.38f);
+	float line_h = std::floor(text_h * 1.45f);
+	float name_h = std::floor(text_h * 1.1f);
+	float pad = std::floor(slot * 0.4f);
+	float border = std::max(2.0f, std::floor(slot * 0.12f));
+	float panel_w = std::floor(std::min(screen.x - 2.0f * slot, slot * 20.0f));
+	float inner_w = panel_w - 2.0f * pad;
+
+	std::vector<std::string> wrapped = wrap_text(dialogue.pages[dialogue.page], inner_w / text_h);
+	bool show_options = dialogue_options_visible();
+
+	//options are buttons laid out left to right, wrapping onto more rows (keeps the box short so it
+	//doesn't cover whoever is talking). Positions relative to the top-left of the options area:
+	float button_h = std::floor(text_h * 1.6f);
+	float button_pad = std::floor(text_h * 0.5f);
+	float gap = std::floor(pad * 0.4f);
+	std::vector<Rect> buttons;
+	std::vector<std::string> labels;
+	float options_h = 0.0f;
+	if (show_options) {
+		float bx = 0.0f, by = 0.0f;
+		for (size_t i = 0; i < dialogue.options.size(); ++i) {
+			std::string label = std::to_string(i + 1) + ". " + dialogue.options[i].label;
+			float w = std::min(inner_w, std::ceil(text_width(label) * text_h) + 2.0f * button_pad);
+			if (bx > 0.0f && bx + w > inner_w) { //next row
+				bx = 0.0f;
+				by += button_h + gap;
+			}
+			buttons.push_back(Rect{bx, by, w, button_h});
+			labels.push_back(label);
+			bx += w + gap;
+		}
+		options_h = by + button_h + std::floor(pad * 0.6f);
+	}
+
+	//panel: name, text, options; its bottom just above the hotbar
+	float panel_h = pad + name_h + std::floor(line_h * 0.4f) + float(wrapped.size()) * line_h + options_h + pad;
+	float bottom = std::floor(screen.y - slot * 1.9f);
+	Rect panel{std::floor((screen.x - panel_w) * 0.5f), bottom - panel_h, panel_w, panel_h};
+	dialogue.panel_rect = panel;
+
+	sprites.fill_rect(Rect{panel.x - border, panel.y - border, panel.w + 2.0f * border, panel.h + 2.0f * border}, BOOK_COVER);
+	sprites.fill_rect(panel, BOOK_PAPER);
+
+	auto text = [&](std::string const &str, float tx, float ty, float h, glm::u8vec4 color) {
+		lines.draw_text(str, glm::vec3(tx, ty, 0.0f), glm::vec3(h, 0.0f, 0.0f), glm::vec3(0.0f, -h, 0.0f), color);
+	};
+
+	//speaker, and the last message (e.g. "Got: Axe") on the right of the same line
+	float x = panel.x + pad;
+	float y = panel.y + pad + name_h;
+	text(dialogue.speaker, x, y, name_h, BOOK_RED);
+	if (!message.empty()) {
+		text(message, panel.x + panel.w - pad - text_width(message) * text_h, y, text_h, BOOK_FADED);
+	}
+	y += std::floor(line_h * 0.4f);
+
+	//the page, typed out so far
+	size_t budget = size_t(dialogue.shown_chars);
+	for (std::string const &row : wrapped) {
+		y += line_h;
+		if (budget == 0) continue;
+		std::string shown = row.substr(0, std::min(budget, row.size()));
+		budget -= std::min(budget, row.size() + 1); //+1 for the space or line break it was wrapped at
+		text(shown, x, y - (line_h - text_h) * 0.5f, text_h, BOOK_INK);
+	}
+
+	//options, or a blinking arrow when there's another page
+	dialogue.option_rects.clear();
+	if (show_options) {
+		float mx, my;
+		SDL_GetMouseState(&mx, &my);
+		glm::vec2 mouse = glm::vec2(mx, my) * window_scale;
+		y += std::floor(pad * 0.6f);
+		float edge = std::max(1.0f, std::floor(slot / 16.0f));
+		for (size_t i = 0; i < buttons.size(); ++i) {
+			Rect r{x + buttons[i].x, y + buttons[i].y, buttons[i].w, buttons[i].h};
+			dialogue.option_rects.push_back(r);
+			bool hovered = r.contains(mouse);
+			sprites.fill_rect(r, hovered ? BOOK_FADED : BOOK_SPINE);
+			sprites.fill_rect(Rect{r.x + edge, r.y + edge, r.w - 2.0f * edge, r.h - 2.0f * edge}, hovered ? BOOK_SPINE : BOOK_PAPER);
+			text(labels[i], r.x + button_pad, r.y + (r.h + text_h) * 0.5f - edge, text_h, BOOK_INK);
+		}
+	} else if (dialogue.shown_chars >= float(dialogue.pages[dialogue.page].size()) && std::fmod(hint_time, 1.0f) < 0.6f) {
+		//little down-pointing triangle in the bottom right corner
+		float a = std::floor(text_h * 0.7f);
+		float ax = panel.x + panel.w - pad - a, ay = panel.y + panel.h - pad - a * 0.6f;
+		float step = std::max(1.0f, std::floor(a / 8.0f));
+		for (float row = 0.0f; row * step * 2.0f < a; row += 1.0f) {
+			sprites.fill_rect(Rect{ax + row * step, ay + row * step, a - 2.0f * row * step, step}, BOOK_INK);
+		}
+	}
 }
 
 // =================== Inventory mouse UI ================= //
@@ -1506,7 +1878,6 @@ void PlayMode::close_container() {
 	//slot views may point into the closed container; they're rebuilt on the next draw
 	ui_slots.clear();
 	ui_mouse_down = false;
-	talking_to_dragon = false;
 }
 
 template <typename EntityClass>
@@ -1620,7 +1991,9 @@ void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
 void PlayMode::save() {
 	/**
 	 * FORMAT:
-	 * <version> <quest_idx> <quest_req_count> [QUEST_REQS] <inventory_size> [INVENTORIES]  <entity_count>
+	 * <version> <quest_idx> <quest_req_count> [QUEST_REQS] <inventory_size> [INVENTORIES]  <entity_count> [SIDE_QUESTS]
+	 * SIDE_QUESTS = <count> then <id> <state> per side quest that has started (state 1 = active, 2 = done).
+	 *               Optional: a file without it (like the level file) has no side quests started.
 	 * (each line = entity line)
 	 *
 	 */
@@ -1632,10 +2005,12 @@ void PlayMode::save() {
 		return;
 	}
 	// int version, quest_idx, quest_req_count;
-	fs << 1 << ' ' << active_quest << ' ' << quests[active_quest].required_items.size();
+	// (active_quest is -1 once every main quest is done: no requirements then)
+	size_t quest_req_count = (active_quest >= 0 && size_t(active_quest) < quests.size()) ? quests[active_quest].required_items.size() : 0;
+	fs << 1 << ' ' << active_quest << ' ' << quest_req_count;
 
 	// [QUEST_REQS]
-	for (int idx = 0; idx < int(quests[active_quest].required_items.size()); ++idx) {
+	for (size_t idx = 0; idx < quest_req_count; ++idx) {
 		fs << ' ' << static_cast<int>(quest_goals_cleared[idx]);
 	}
 
@@ -1648,7 +2023,14 @@ void PlayMode::save() {
 	}
 
 	// <entity_count>
-	fs << ' ' << entities.size() + 1 << '\n';   // +1 for player, which is saved separately
+	fs << ' ' << entities.size() + 1;   // +1 for player, which is saved separately
+
+	// [SIDE_QUESTS]
+	fs << ' ' << side_quest_states.size();
+	for (auto const &[id, state] : side_quest_states) {
+		fs << ' ' << id << ' ' << static_cast<int>(state);
+	}
+	fs << '\n';
 	{ // player
 		std::string line = player.save();
 		fs << line << '\n';
@@ -1703,6 +2085,19 @@ void PlayMode::load() {
 			inventory.set_slot(idx, item_id, count);
 		}
 		ss >> entity_count;
+
+		// [SIDE_QUESTS] (optional)
+		side_quest_states.clear();
+		size_t side_count = 0;
+		if (ss >> side_count) {
+			for (size_t idx = 0; idx < side_count; ++idx) {
+				std::string id;
+				int state = 0;
+				if (!(ss >> id >> state)) break;
+				if (state == 1) side_quest_states[id] = SideQuestState::Active;
+				else if (state == 2) side_quest_states[id] = SideQuestState::Done;
+			}
+		}
 		// done
 	}
 
@@ -1746,6 +2141,10 @@ void PlayMode::load() {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "vulmanid" || entity_type == "glaber" || entity_type == "ice_lizard") {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
+		} else if (entity_type == "lumberjack") {
+			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
+		} else if (entity_type == "woodpile" || entity_type == "chopping_stump") {
+			add_entity<Prop>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which prop
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {
