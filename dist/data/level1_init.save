@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 66
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 68
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -65,3 +65,5 @@
 4119784829 iron_vein 3728 1456 5
 2674135268 boulder 3840 1488 1
 2458446588 lichen_rock 3904 1424 5
+631111504 glaber 1416 812 80 47 100 62
+3405093254 glaber 1368 1292 80 72 100 84

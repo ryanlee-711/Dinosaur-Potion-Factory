@@ -161,4 +161,17 @@ namespace Presets {
 		.color_end = glm::u8vec4(0x5a, 0x52, 0x66, 0x00),
 		.fade = Fade::Linear,
 	};
+
+	ParticlePreset const Dirt{
+		.count_min = 6, .count_max = 9,
+		.spawn_box = glm::vec2(10.0f, 4.0f),
+		.life_min = 0.3f, .life_max = 0.6f,
+		.speed_min = 25.0f, .speed_max = 50.0f,
+		.angle = -90.0f, .spread = 150.0f,
+		.accel = glm::vec2(0.0f, 180.0f),
+		.drag = 2.0f,
+		.color_start = glm::u8vec4(0x8a, 0x64, 0x44, 0xff),
+		.color_end = glm::u8vec4(0x5c, 0x40, 0x2c, 0x00),
+		.fade = Fade::Exponential,
+	};
 }

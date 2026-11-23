@@ -22,7 +22,7 @@
 #include "../world/entities/Boulder.hpp"
 #include "../world/entities/OreVein.hpp"
 #include "../world/entities/Tree.hpp"
-#include "../world/entities/Vulmanid.hpp"
+#include "../world/entities/Creature.hpp"
 #include "../world/entities/Dragon.hpp"
 #include "../world/entities/Splitter.hpp"
 #include "../world/entities/Golem.hpp"
@@ -924,7 +924,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 		//creature roaming zones outlined in green:
 		for (auto const &entity : entities) {
-			auto const *creature = dynamic_cast< Vulmanid const * >(entity.get());
+			auto const *creature = dynamic_cast< Creature const * >(entity.get());
 			if (creature == nullptr) continue;
 			Rect z = creature->zone_rect();
 			glm::u8vec4 green(0x40, 0xff, 0x60, 0xc0);
@@ -1502,7 +1502,7 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 	if (uid != 0) {
 		list.back()->uid = uid;
 	}
-	
+
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1526,7 +1526,7 @@ void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2
 	else if (machine_type == "chest") inventory_size = 10;
 	else if (machine_type == "distiller") inventory_size = 3;
 	else if (machine_type == "fermenter") inventory_size = 4;
-	
+
 	list.push_back(std::make_unique<Machine>(inventory_size, machine_type, variety % 4));
 	list.back()->position = position;
 	if (uid != 0) {
@@ -1730,8 +1730,8 @@ void PlayMode::load() {
 			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
 		} else if (entity_type == "tree") {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "vulmanid") {
-			add_entity<Vulmanid>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "vulmanid" || entity_type == "glaber") {
+			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {
