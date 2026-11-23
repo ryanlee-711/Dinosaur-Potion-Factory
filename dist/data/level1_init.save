@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 68
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 74
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -67,3 +67,9 @@
 2458446588 lichen_rock 3904 1424 5
 631111504 glaber 1416 812 80 47 100 62
 3405093254 glaber 1368 1292 80 72 100 84
+159321258 flameflower 3056 1360 2
+1295934175 flameflower 3088 1392 2
+1086967628 flameflower 3120 1344 2
+292980382 flameflower 3072 1440 2
+2422400712 snowgem_vein 3184 1376 1
+1077562751 snowgem_vein 3232 1440 1

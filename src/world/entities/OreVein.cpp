@@ -13,12 +13,16 @@ static Load< Texture > copper_vein_texture(LoadTagDefault, []() -> Texture const
 static Load< Texture > iron_vein_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/iron_vein.png")); //placeholder sprite
 });
+static Load< Texture > snow_gem_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/snowgem_vein.png")); //placeholder sprite
+});
 
 // ---- ORE VEIN TYPES ----
 //   type            drop          max   regrow(s)   texture
 static OreVeinDef const ore_vein_defs[] = {
 	{"copper_vein", "copper_ore",  5,   6.0f,      &copper_vein_texture},
 	{"iron_vein",   "iron_ore",    5,   6.0f,      &iron_vein_texture},
+	{"snowgem_vein",    "snowgem",    1,  40.0f,      &snow_gem_texture},
 };
 
 OreVeinDef const *OreVeinDef::get(std::string const &type) {

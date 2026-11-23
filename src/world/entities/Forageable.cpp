@@ -14,12 +14,16 @@ static Load< Texture > lichen_rock_texture(LoadTagDefault, []() -> Texture const
 static Load< Texture > fae_grass_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/fae_grass.png")); //placeholder sprite
 });
+static Load< Texture > fire_flower_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/flameflower.png")); //placeholder sprite
+});
 
 // ---- FORAGEABLE TYPES ----
 //   type            drop     max   regrow(s)  tiles         sprite size texture      solid  empty message      texture
 static ForageableDef const forageable_defs[] = {
 	{"lichen_rock", "lichen",  5,   5.0f,  glm::ivec2{2, 1},  glm::vec2{32.0f, 32.0f}, true,  "No lichen yet", &lichen_rock_texture},
 	{"fae_grass", "faegrass", 3,   8.0f,  glm::ivec2{1, 1},  glm::vec2{16.0f, 32.0f}, false, "No fae grass yet", &fae_grass_texture},
+	{"flameflower", "flower", 2, 15.0f, glm::ivec2{1, 1}, glm::vec2{16.0f, 32.0f}, false, "Flame flower hasn't rekindled yet", &fire_flower_texture},
 };
 
 ForageableDef const *ForageableDef::get(std::string const &type) {

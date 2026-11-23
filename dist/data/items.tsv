@@ -54,7 +54,7 @@ flaming_water	Flaming Water	TODO	assets/sprites/items/missing_no.png						1
 float_crystal	Float Crystals	TODO	assets/sprites/items/missing_no.png			1					
 float_potion	Float Potion	TODO	assets/sprites/items/missing_no.png						1		
 floaty_water	Floaty Water	TODO	assets/sprites/items/missing_no.png						1		
-flower	Flower	TODO	assets/sprites/items/missing_no.png	1	1						
+flower	Flameflower	Warm to the touch, and it never stops flickering	assets/test/flameflower_item.png	1	1						
 flower_crystal	Flameflower Crystal	TODO	assets/sprites/items/missing_no.png		1	1					
 flower_essence	Essence of Blaze	TODO	assets/sprites/items/missing_no.png			1					
 flower_powder	Flameflower Powder	TODO	assets/sprites/items/missing_no.png		1	1					
@@ -77,7 +77,7 @@ mellow_fragrant_brew	Mellow Fragrant Brew	TODO	assets/sprites/items/missing_no.p
 muddy_potion	Muddy Potion	TODO	assets/sprites/items/missing_no.png						1		
 mystic_solution	Mystic Solution	TODO	assets/sprites/items/missing_no.png						1		
 pollen_water	Pollen Water	TODO	assets/sprites/items/missing_no.png						1		
-snowgem	Snowgem	TODO	assets/sprites/items/missing_no.png	1	1						
+snowgem	Snowgem	So cold it frosts your fingers	assets/test/snowgem.png	1	1						
 snowgem_dust	Snowgem Dust	TODO	assets/sprites/items/missing_no.png		1	1					
 spoiled_drupe	Spoiled Drupe	TODO	assets/sprites/items/missing_no.png	1	1						
 spoiled_feather	Spoiled Feather	TODO	assets/sprites/items/missing_no.png	1	1						
