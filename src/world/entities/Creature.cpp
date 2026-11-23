@@ -18,6 +18,9 @@ static Load< Texture > vulmanid_texture(LoadTagDefault, []() -> Texture const * 
 static Load< Texture > glaber_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/glaber.png")); //placeholder sprite
 });
+static Load< Texture > ice_lizard_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/ice_lizard.png")); //placeholder sprite
+});
 
 // ---- CREATURE TYPES ----
 //     type       drop   max drops  regrow        empty msg            wander speed   flee speed
@@ -28,6 +31,9 @@ static CreatureDef const creature_defs[] = {
 	},
 	{"glaber", "glaber_claw", 2, 20.0f, "Its claws haven't grown back yet", 22.0f, 0.8f * PLAYER_SPRINT_SPEED,
         48.0f,   96.0f,    glm::vec2(12.0f, 8.0f), &glaber_texture,   &Presets::Dirt,
+	},
+	{"ice_lizard", "ice_scale", 1, 30.0f, "Its scales haven't regrown yet", 30.0f, 1.3f * PLAYER_SPRINT_SPEED,
+        65.0f,   140.0f,   glm::vec2(20.0f, 10.0f), &ice_lizard_texture, &Presets::Frost, glm::vec2(32.0f, 24.0f),
 	},
 };
 
@@ -248,10 +254,11 @@ void Creature::on_interact(Context &ctx) {
 void Creature::draw(Sprites &batch) const {
 	int column = moving ? 1 + int(step_distance / 6.0f) % 2 : 0;
 	int row = facing_left ? 1 : 0;
-	glm::vec2 top_left = glm::round(position) - glm::vec2(8.0f, 16.0f);
-	batch.draw(**def->texture, Rect{16.0f * float(column), 16.0f * float(row), 16.0f, 16.0f}, top_left);
+	float w = def->frame_size.x, h = def->frame_size.y;
+	glm::vec2 top_left = glm::round(position) - glm::vec2(std::floor(w * 0.5f), h); //bottom-center on the feet
+	batch.draw(**def->texture, Rect{w * float(column), h * float(row), w, h}, top_left);
 	if (alarm_timer > 0.0f) {
-		batch.draw(**def->texture, Rect{48.0f, 0.0f, 16.0f, 16.0f}, top_left - glm::vec2(0.0f, 13.0f)); //"!"
+		batch.draw(**def->texture, Rect{3.0f * w, 0.0f, w, h}, top_left - glm::vec2(0.0f, h - 3.0f)); //"!" (column 3, row 0)
 	}
 }
 

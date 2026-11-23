@@ -174,4 +174,17 @@ namespace Presets {
 		.color_end = glm::u8vec4(0x5c, 0x40, 0x2c, 0x00),
 		.fade = Fade::Exponential,
 	};
+
+	ParticlePreset const Frost{
+		.count_min = 10, .count_max = 14,
+		.spawn_box = glm::vec2(16.0f, 8.0f),
+		.life_min = 0.5f, .life_max = 0.9f,
+		.speed_min = 15.0f, .speed_max = 40.0f,
+		.angle = -90.0f, .spread = 220.0f,
+		.accel = glm::vec2(0.0f, -15.0f),
+		.drag = 3.0f,
+		.color_start = glm::u8vec4(0xe8, 0xfa, 0xff, 0xff),
+		.color_end = glm::u8vec4(0x7c, 0xd8, 0xff, 0x00),
+		.fade = Fade::Linear,
+	};
 }

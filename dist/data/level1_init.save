@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 74
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 80
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -73,3 +73,9 @@
 292980382 flameflower 3072 1440 2
 2422400712 snowgem_vein 3184 1376 1
 1077562751 snowgem_vein 3232 1440 1
+1576900799 ice_lizard 3256 1740 190 98 216 118
+1433464662 snowgem_vein 3136 1648 1
+926247207 snowgem_vein 3344 1808 1
+4124765539 boulder 3200 1840 1
+1955707575 flameflower 3104 1792 2
+3609675819 flameflower 3376 1632 2

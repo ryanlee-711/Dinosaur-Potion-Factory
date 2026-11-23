@@ -1730,7 +1730,7 @@ void PlayMode::load() {
 			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
 		} else if (entity_type == "tree") {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "vulmanid" || entity_type == "glaber") {
+		} else if (entity_type == "vulmanid" || entity_type == "glaber" || entity_type == "ice_lizard") {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);

@@ -32,8 +32,9 @@ struct CreatureDef {
     float notice_radius;           // starts fleeing when the dwarf is this close (pixels)
     float calm_radius;             // stops fleeing when the dwarf is farther than this (pixels)
     glm::vec2 hitbox_size;         // around the feet (also what E has to reach)
-    Load< Texture > *texture;      // 16x16 frames, see the sheet layout in the Creature comment
+    Load< Texture > *texture;      // frame_size frames, see the sheet layout in the Creature comment
     ParticlePreset const *harvest_particles; // burst when you take something from it (nullptr = none)
+    glm::vec2 frame_size = glm::vec2(16.0f, 16.0f); // one sprite frame in pixels; its bottom-center sits on the feet
 
     static CreatureDef const *get(std::string const &type); // nullptr if unknown
 };
@@ -49,7 +50,7 @@ class Creature : public Entity, public IInteractable, public IHintable {
          It never leaves its zone or walks into solid tiles / solid things (trees, boulders, machines...).
        Catching: face it within reach and press E to take its drop. It carries max_drops and regrows them.
 
-       Sprite sheet (16x16 frames): row 0 faces right, row 1 faces left;
+       Sprite sheet (frames of the def's frame_size, 16x16 by default): row 0 faces right, row 1 faces left;
        columns 0 = standing, 1-2 = running steps, 3 (row 0) = the "!" shown when it gets startled. */
 public:
     explicit Creature(std::string const &type = "vulmanid");
@@ -73,7 +74,7 @@ public:
     // IHintable: E key while it has something to take
     bool show_hint() const override { return drops > 0; }
     item_id_t hint_tool() const override { return ""; }
-    glm::vec2 hint_anchor() const override { return glm::round(position) + glm::vec2(0.0f, -17.0f); }
+    glm::vec2 hint_anchor() const override { return glm::round(position) - glm::vec2(0.0f, def->frame_size.y + 1.0f); } //just above the sprite
 
     // The roaming zone in world pixels (PlayMode outlines it in the F3 debug view).
     Rect zone_rect() const;
