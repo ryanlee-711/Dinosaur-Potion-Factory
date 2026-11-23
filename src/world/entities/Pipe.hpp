@@ -41,6 +41,13 @@ public:
     }
     void draw_hint(Sprites &batch) const;
 
+    enum class Color {
+        DEFAULT = 0,
+        GREEN,
+        BLUE,
+        MAGENTA
+    } color = Color::DEFAULT;
+
 
 private:
     Inventory inventory;

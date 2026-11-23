@@ -18,10 +18,14 @@
 #include "../world/entities/Pipe.hpp"
 #include "../world/entities/Machine.hpp"
 #include "../world/entities/AppleTree.hpp"
-#include "../world/entities/LichenRock.hpp"
+#include "../world/entities/Forageable.hpp"
 #include "../world/entities/Boulder.hpp"
-#include "../world/entities/CopperVein.hpp"
+#include "../world/entities/OreVein.hpp"
+#include "../world/entities/Tree.hpp"
+#include "../world/entities/Vulmanid.hpp"
 #include "../world/entities/Dragon.hpp"
+#include "../world/entities/Splitter.hpp"
+#include "../world/entities/Golem.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -99,6 +103,10 @@ static Entity *find_interact_target(Rect const &reach, std::vector< std::unique_
 
 static Load< Texture > wavey_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/misc/waves.png"));
+});
+
+static Load< Texture > hints_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/hints.png")); //20x24 frames: 0 = E key bubble, 1 = empty bubble for a tool icon
 });
 
 static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
@@ -200,108 +208,17 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 	player.uid = 15213;
 
-	// ~~Demo~~
-	// initialize some existing machines for demonstration (entities).
-
-	/*
-	auto tile2pos = [](float x, float y) -> glm::vec2 {
-		return glm::vec2(x * TILE_SIZE, y * TILE_SIZE);
-	};
-	for (size_t i = 0; i < 3; ++i) {
-		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f), mt());
-	}
-	{
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer", mt());
-		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace", mt());
-
-		// Apple trees
-		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE), mt());
-		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE), mt());
-
-		// more chests
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest", mt());
-
-		// Add one item entity somewhere
-		spawn_item("apple", 3, glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE));
-
-		// Boulders scattered around
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)), mt());
-	}
-
-	{ // boulders, and pickaxe stuck near it
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)), mt());
-		add_entity<CopperVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)), mt());
-
-		// two small boulders, pushable...
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 40));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(96, 65));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 35));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(95, 59));
-		entities.back()->uid = mt();
-	}
-	{ // Dragon
-		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)), mt());
-	}
-
-	{ // boulders on the left, and lichen rock
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)), mt());
-
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)), mt());
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
-
-		add_entity<LichenRock>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
-	}
-
-	// initialize the inventory with two apple and one powder
-	inventory.add("water_bottle", 15);
-	inventory.add("pipe", 15);
-	*/
-
 	// recipe book: one page per recipe that makes a potion
 	for (Recipe const *recipe : Recipe::all()) {
 		if (recipe->items_out.empty()) continue;
-		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion) book_recipes.push_back(recipe);
+		if (Item::tags_of(recipe->items_out[0].first) & ItemTag::Potion)
+			book_recipes.push_back(recipe);
 	}
 
 	// initialize quest
 	quests.emplace_back(
-		Quest{"Collect apples, crush them, and brew ale.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
-			std::vector<ItemRecord>{ItemRecord{"apple", 6}, ItemRecord{"crushed_apple", 3}, ItemRecord{"ale", 1}},
+		Quest{"Collect drupes, crush them, and brew a drink.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
+			std::vector<ItemRecord>{ItemRecord{"drupe", 6}, ItemRecord{"crushed_drupe", 3}, ItemRecord{"drupe_drink", 1}},
 			1
 		}
 	);
@@ -321,7 +238,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	);
 
 	quests.emplace_back(
-		Quest{"Brew stronger potion from dried lichen and apple crush.",
+		Quest{"Brew stronger potion from dried lichen and drupe crush.",
 			std::vector<ItemRecord>{ItemRecord{"dried_lichen", 5}, ItemRecord{"red_potion", 1}, ItemRecord{"strength_potion", 1}},
 			4
 		}
@@ -414,6 +331,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	hint_time += elapsed;
+	if (hint_time > 100.0f * 3.14159265f) hint_time -= 100.0f * 3.14159265f; //whole bob cycles, so no visible jump
+
 	//read held movement keys (scancodes = physical key positions, so WASD works on any keyboard layout):
 	bool const *keys = SDL_GetKeyboardState(nullptr);
 	if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])  input.direction.x -= 1.0f;
@@ -431,11 +351,19 @@ void PlayMode::update(float elapsed) {
 	}
 	if (keys[SDL_SCANCODE_KP_ENTER] || keys[SDL_SCANCODE_X]) {
 		// nope
-		input.destroy.pressed = true;
-		input.destroy.downs += 1;
+		input.quicksave.pressed = true;
+		input.quicksave.downs += 1;
 	} else {
-		input.destroy.pressed = false;
-		input.destroy.downs = 0;
+		input.quicksave.pressed = false;
+		input.quicksave.downs = 0;
+	}
+	if (keys[SDL_SCANCODE_R]) {
+		// nope
+		input.flip.pressed = true;
+		input.flip.downs += 1;
+	} else {
+		input.flip.pressed = false;
+		input.flip.downs = 0;
 	}
 	{//K0...K9
 		const SDL_Scancode scancodes[10] = {
@@ -455,7 +383,7 @@ void PlayMode::update(float elapsed) {
 
 	//everything entities can collide with this frame:
 	std::vector<std::unique_ptr<Entity>> spawned;
-	World world{map, entities, player, coord_to_entities, &spawned, &made_items, &particles};
+	World world{map, entities, player, coord_to_entities, uid_to_entities, mt, &spawned, &made_items, &particles};
 
 	// Update player
 	player.update(input, elapsed, world);
@@ -468,14 +396,20 @@ void PlayMode::update(float elapsed) {
 
 	// Rebuild entity mapping (before world interaction)
 	rebuild_coord_to_entities();
+	rebuild_uid_to_entities();
 
 	// Handle interact (only on the first frame E is down):
 	do_world_interaction(elapsed);
 
-	if (input.destroy.downs == 1) {
+	if (input.quicksave.downs == 1) {
 		// Using this as the save button
 		save();
 
+	}
+
+	// Handle flip
+	if (input.flip.downs == 1) {
+		variety += 1;
 	}
 
 	// numkeys select/unselect hotbar items (1..9, 0 = tenth slot).
@@ -526,6 +460,10 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
+	}
+
+	{ // before draw function
+		e_target = interact_target();
 	}
 
 	// Remove "removed" objects from the scene; and add ItemEntity if a container is broken.
@@ -628,45 +566,54 @@ void PlayMode::do_world_interaction(float elapsed) {
 		auto tileid = map.tile_at(coord, 2);
 		if (7 <= tileid % 16 && tileid % 16 <= 10 && 9 <= tileid / 16 && tileid / 16 <= 11) {
 			inventory.remove("empty_bottle", 1);
-			spawn_item("water_bottle", 1, player.position);
+			spawn_item("water", 1, player.position);
 		}
 	}
 
-	// Click with a tool on a resource rock (copper vein): knock one item loose onto the ground
+	// Click with a tool on a resource (ore vein: pickaxe, tree: axe): one hit, whatever comes loose pops out toward player
 	if (left_new && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
 		Entity *entity = entity_at(coord);
-		if (auto *rock = dynamic_cast< IMineable * >(entity); rock != nullptr) {
-			item_id_t mined = rock->mine();
-			if (mined != "") {
-				//pop out of the bottom of the rock, toward the dwarf, so it lands in front where you can see it
-				glm::vec2 from = entity->position + glm::vec2(float(GameConfig::TILE_SIZE));
-				spawn_item(mined, 1, from);
-				glm::vec2 toward = player.position - from;
-				if (glm::length(toward) > 0.001f) {
-					static_cast< ItemEntity * >(entities.back().get())->velocity = glm::normalize(toward) * 45.0f;
-				}
-			} else {
-				message = "Nothing left to mine. It grows back slowly";
+		if (auto *resource = dynamic_cast< IMineable * >(entity); resource != nullptr) {
+			item_id_t tool = resource->required_tool();
+			if (item_id != tool) {
+				Item const *needed = Item::get(tool);
+				message = (needed ? needed->name : tool) + " needed";
 				message_timer = MESSAGE_SECONDS;
+			} else {
+				int power = 1 + player.effect_level("strength"); //strength makes every hit count more
+				std::vector< ItemRecord > drops;
+				if (!resource->mine(power, player.position, drops)) {
+					message = resource->empty_message();
+					message_timer = MESSAGE_SECONDS;
+				}
+				glm::vec2 from = entity->position + glm::vec2(float(GameConfig::TILE_SIZE));
+				for (ItemRecord const &drop : drops) {
+					spawn_item(drop.first, drop.second, from);
+					glm::vec2 toward = player.position - from;
+					if (glm::length(toward) > 0.001f) {
+						static_cast< ItemEntity * >(entities.back().get())->velocity = glm::normalize(toward) * 45.0f;
+					}
+				}
 			}
 		}
 	}
 
-	// Hold left click with a tool: break the machine under the mouse (within TOOL_REACH)
-	if (left_held && holding_tool && tile_in_reach(coord, TOOL_REACH)) {
+	// Hold left click with the pickaxe: break the machine / boulder under the mouse (within TOOL_REACH)
+	// (only the pickaxe: the axe is for trees, so it can't wreck your factory)
+	if (left_held && item_id == "pickaxe" && tile_in_reach(coord, TOOL_REACH)) {
 		auto entity = entity_at(coord);
 		auto *target = dynamic_cast< IBreakable * >(entity);
 		if (target != nullptr && target == currently_breaking) {
 			break_timer += elapsed;
 			int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
-			damages = damages > 5 ? 5 : damages;
+			damages = std::min(damages, IBreakable::MAX_HOLD_DAMAGE);
 			if (player.effect_level("strength") > 0) {
 				damages *= player.effect_level("strength");
 			}
-			if (damages >= 5 && target->get_hardness() == 99 && target->get_drop_id() != "") {
+			if (damages >= IBreakable::MAX_HOLD_DAMAGE && target->get_hardness() == 99 && target->get_drop_id() != "") {
 				// these are non-dropping source blocks
 				spawn_item(target->get_drop_id(), 1, entity->position);
-				break_timer -= 5.0f * SECOND_PER_DAMAGE;
+				break_timer -= float(IBreakable::MAX_HOLD_DAMAGE) * SECOND_PER_DAMAGE;
 			}
 			if (damages >= target->get_hardness()) {
 				Rect hb = entity->hitbox();
@@ -709,6 +656,29 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_entity<Pipe>(entities, world_pos);
 	} else if (id == "furnace" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_machine(entities, world_pos, "furnace");
+	} else if (id == "splitter") {
+		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
+	} else if (id == "joiner") {
+		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
+	} else if (id == "crossover") {
+		add_entity<Splitter>(entities, world_pos);
+		if (auto ptr = dynamic_cast<Splitter *>(entities.back().get()); ptr) {
+			ptr->rotation = static_cast<Splitter::Rotation>(variety % 4);
+		}
+	} else if (id == "fermenter" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+		add_machine(entities, world_pos, "fermenter");
+	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+		add_machine(entities, world_pos, "distiller");
+	} else if (id == "fuelbox" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
+		add_machine(entities, world_pos, "fuelbox");
+	} else if (id == "golem") {
+		add_entity<Golem>(entities, world_pos);
 	} else {
 		return false; //not a machine
 	}
@@ -749,14 +719,17 @@ bool PlayMode::interact_with(Entity *entity) {
 	return true;
 }
 
-void PlayMode::interact_facing() {
-	//what's in front of the dwarf: the interactable overlapping the reach box the most,
-	//else whatever occupies the facing tile
+Entity *PlayMode::interact_target() const {
+	//what's in front of the dwarf: the interactable overlapping the reach box the most
 	Entity *target = find_interact_target(player.interact_box(), entities);
-	if (target == nullptr) {
-		Entity *in_front = entity_at(player.facing_tile());
-		if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) target = in_front;
-	}
+	if (target != nullptr) return target;
+	Entity *in_front = entity_at(player.facing_tile());
+	if (in_front != nullptr && dynamic_cast< IInteractable * >(in_front) != nullptr) return in_front;
+	return nullptr;
+}
+
+void PlayMode::interact_facing() {
+	Entity *target = interact_target();
 
 	//a panel is open then E closes it
 	if (inventory_open && (target == nullptr || target == opened_entity)) {
@@ -786,7 +759,7 @@ bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const {
 }
 
 void PlayMode::remove_objects(float elapsed) {
-	World world{map, entities, player, coord_to_entities};
+	World world{map, entities, player, coord_to_entities, uid_to_entities, mt};
 	// Remove entities that asked to be removed this frame.
 	if (opened_entity != nullptr && opened_entity->removed) {
 		//its panel is open: close it before the inventory it points at is deleted
@@ -872,6 +845,68 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 	particles.draw(batch, false);
 
+	//--- hint (see IHintable), over the closest thing only: the tool icon over things within tool reach (ore veins,
+	//    trees, big boulders), or the E key over what the dwarf is facing (forageables, small boulders). Faded while
+	//    you're not holding the tool or can't do it yet (hint_locked, e.g. no strength). Nothing over depleted things.
+	if (!inventory_open && !book_open) {
+		float bob = std::round(std::sin(hint_time * 4.0f) * 1.5f);
+		auto draw_hint = [&](glm::vec2 anchor, Texture const *icon, uint8_t alpha) {
+			//anchor = where the bubble's tail points (tail tip is row 22 of the 24px frame)
+			glm::vec2 top_left = glm::round(anchor) - glm::vec2(10.0f, 23.0f) + glm::vec2(0.0f, bob);
+			glm::u8vec4 tint(0xff, 0xff, 0xff, alpha);
+			if (icon == nullptr) {
+				batch.draw(*hints_texture, Rect{0.0f, 0.0f, 20.0f, 24.0f}, top_left, tint); //E key
+			} else {
+				batch.draw(*hints_texture, Rect{20.0f, 0.0f, 20.0f, 24.0f}, top_left, tint); //empty bubble
+				batch.draw(*icon, Rect{0.0f, 0.0f, 16.0f, 16.0f}, top_left + glm::vec2(2.0f, 2.0f), tint);
+			}
+		};
+		constexpr uint8_t READY = 0xff, FADED = 0x90;
+
+		//only ONE hint at a time, on the closest candidate, so crowded spots stay readable.
+		item_id_t held = inventory.get_slot_id(hotbar_selected);
+		std::vector< glm::ivec2 > tiles;
+		Entity const *best = nullptr;
+		float best_distance = 0.0f;
+		for (auto const &entity : entities) {
+			if (entity->removed) continue;
+			auto const *hintable = dynamic_cast< IHintable const * >(entity.get());
+			if (hintable == nullptr || !hintable->show_hint()) continue;
+
+			if (hintable->hint_tool().empty()) {
+				if (entity.get() != e_target) continue; //E key: only on what E would act on right now
+			} else {
+				//tool: same reach rule as clicking it (any tile it covers within TOOL_REACH)
+				tiles.clear();
+				entity->get_occupied(&tiles);
+				bool in_reach = std::any_of(tiles.begin(), tiles.end(), [&](glm::ivec2 t) { return tile_in_reach(t, TOOL_REACH); });
+				if (!in_reach) continue;
+			}
+
+			//distance from the dwarf's feet to the closest point of its hitbox
+			Rect r = entity->hitbox();
+			glm::vec2 closest = glm::clamp(player.position, r.min(), r.max());
+			float distance = glm::length(closest - player.position);
+			if (best == nullptr || distance < best_distance) {
+				best = entity.get();
+				best_distance = distance;
+			}
+		}
+
+		if (best != nullptr) {
+			auto const *hintable = dynamic_cast< IHintable const * >(best);
+			bool locked = hintable->hint_locked(player);
+			item_id_t tool = hintable->hint_tool();
+			if (tool.empty()) {
+				draw_hint(hintable->hint_anchor(), nullptr, locked ? FADED : READY);
+			} else {
+				Item const *tool_item = Item::get(tool);
+				draw_hint(hintable->hint_anchor(), tool_item ? tool_item->texture.get() : &*missing_texture,
+					(held == tool && !locked) ? READY : FADED);
+			}
+		}
+	}
+
 	if (show_debug) {
 		//solid tiles in red:
 		glm::ivec2 first = glm::max(Tilemap::tile_at_point(view_min), glm::ivec2(0));
@@ -886,6 +921,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		//entity hitboxes in orange (solid ones block the player):
 		for (auto const &entity : entities) {
 			batch.fill_rect(entity->hitbox(), glm::u8vec4(0xff, 0x90, 0x20, 0x70));
+		}
+		//creature roaming zones outlined in green:
+		for (auto const &entity : entities) {
+			auto const *creature = dynamic_cast< Vulmanid const * >(entity.get());
+			if (creature == nullptr) continue;
+			Rect z = creature->zone_rect();
+			glm::u8vec4 green(0x40, 0xff, 0x60, 0xc0);
+			batch.fill_rect(Rect{z.x, z.y, z.w, 1.0f}, green);
+			batch.fill_rect(Rect{z.x, z.y + z.h - 1.0f, z.w, 1.0f}, green);
+			batch.fill_rect(Rect{z.x, z.y, 1.0f, z.h}, green);
+			batch.fill_rect(Rect{z.x + z.w - 1.0f, z.y, 1.0f, z.h}, green);
 		}
 		//the dwarf's reach (what E interacts with) in blue, collision box in yellow:
 		batch.fill_rect(player.interact_box(), glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
@@ -921,7 +967,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
 			// for placeable machines, draw a ghost sprite over
 			if (auto def = MachineDef::get(inventory.get_slot_id(hotbar_selected))) {
-				batch.draw(*def->texture, def->texture_rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
+				Rect rect = def->texture_rect;
+				rect.y += def->texture_rect.h * (variety % 4);
+				batch.draw(*def->texture, rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
 			}
 		}
 	}
@@ -1451,7 +1499,10 @@ template <typename EntityClass>
 void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, uint32_t uid) {
 	list.push_back(std::make_unique<EntityClass>());
 	list.back()->position = position;
-	list.back()->uid = uid;
+	if (uid != 0) {
+		list.back()->uid = uid;
+	}
+	
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1468,15 +1519,19 @@ void PlayMode::add_entity(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 
 
 void PlayMode::add_machine(std::vector<std::unique_ptr<Entity>> &list, glm::vec2 position, item_id_t machine_type, uint32_t uid) {
 
-	size_t inventory_size = 0;
+	size_t inventory_size = 10;
 	if (machine_type == "brewer") inventory_size = 3;
 	else if (machine_type == "furnace") inventory_size = 2;
 	else if (machine_type == "crusher") inventory_size = 2;
 	else if (machine_type == "chest") inventory_size = 10;
-
-	list.push_back(std::make_unique<Machine>(inventory_size, machine_type));
+	else if (machine_type == "distiller") inventory_size = 3;
+	else if (machine_type == "fermenter") inventory_size = 4;
+	
+	list.push_back(std::make_unique<Machine>(inventory_size, machine_type, variety % 4));
 	list.back()->position = position;
-	list.back()->uid = uid;
+	if (uid != 0) {
+		list.back()->uid = uid;
+	}
 
 	std::vector<glm::ivec2> occupied_tiles;
 	list.back()->get_occupied(&occupied_tiles);
@@ -1523,6 +1578,13 @@ void PlayMode::rebuild_coord_to_entities() {
 	}
 }
 
+void PlayMode::rebuild_uid_to_entities() {
+	uid_to_entities.clear();
+	for (auto &entity : entities) {
+		uid_to_entities[entity->uid] = entity.get();
+	}
+}
+
  auto PlayMode::entity_at(glm::ivec2 tile) const -> Entity* {
 	if (coord_to_entities.find(tile) != coord_to_entities.end()) {
 		auto &here = coord_to_entities.at(tile);
@@ -1535,7 +1597,6 @@ void PlayMode::rebuild_coord_to_entities() {
 void PlayMode::spawn_item(item_id_t const &id, int count, glm::vec2 position) {
 	entities.push_back(std::make_unique<ItemEntity>(id, count));
 	entities.back()->position = position;
-	entities.back()->uid = mt();
 }
 
 // ********************************************************************* //
@@ -1560,7 +1621,7 @@ void PlayMode::save() {
 	fs << 1 << ' ' << active_quest << ' ' << quests[active_quest].required_items.size();
 
 	// [QUEST_REQS]
-	for (int idx = 0; idx < quests[active_quest].required_items.size(); ++idx) {
+	for (int idx = 0; idx < int(quests[active_quest].required_items.size()); ++idx) {
 		fs << ' ' << static_cast<int>(quest_goals_cleared[idx]);
 	}
 
@@ -1591,7 +1652,7 @@ void PlayMode::save() {
 // LOAD
 void PlayMode::load() {
 
-
+	uint32_t largest_uid = 0;
 
 	std::ifstream fs(data_path(savefile_path));
 	if (!fs.is_open()) {
@@ -1650,6 +1711,10 @@ void PlayMode::load() {
 			}
 		}
 
+		if (uid > largest_uid) {
+			largest_uid = uid;
+		}
+
 		// starts adding entities
 		if (entity_type == "machine") {
 			add_machine(entities, glm::vec2{0.0f, 0.0f}, machine_type, uid);
@@ -1657,18 +1722,24 @@ void PlayMode::load() {
 			add_entity<AppleTree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "boulder") {
 			add_entity<Boulder>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "copper_vein") {
-			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "copper_vein" || entity_type == "iron_vein") {
+			add_entity<OreVein>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which ore
 		} else if (entity_type == "dragon") {
 			add_entity<Dragon>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "lichen_rock") {
-			add_entity<LichenRock>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "copper_vein") {
-			add_entity<CopperVein>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "lichen_rock" || entity_type == "fae_grass") {
+			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
+		} else if (entity_type == "tree") {
+			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "vulmanid") {
+			add_entity<Vulmanid>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {
 			add_entity<ItemEntity>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "golem") {
+			add_entity<Golem>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "fuelbox") {
+			add_entity<Machine>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "player") {
 			player.load(line);
 		} else {
@@ -1680,4 +1751,5 @@ void PlayMode::load() {
 			entities.back()->load(line);
 		}
 	}
+	Entity::reset_uid_counter(largest_uid);
 }

@@ -1,30 +1,116 @@
-# ================ INGREDIENTS ==============
-apple	Apple	assets/sprites/items/ingredients/apple.png	apple that grows in caves
-crushed_apple	Apple Powder	assets/sprites/items/ingredients/crushed_apple.png	powdered apple
-baked_apple	Baked Apple	assets/sprites/items/missing_no.png	TODO
-apple_paste	Apple Paste	assets/sprites/items/missing_no.png	TODO
-lichen	Lichen	assets/sprites/items/missing_no.png	TODO
-baked_lichen	Roasted Lichen	assets/sprites/items/missing_no.png	TODO
-lichen_powder	Lichen Flour	assets/sprites/items/missing_no.png	TODO
-red_powder	Red Powder	assets/sprites/items/missing_no.png	TODO
-
-# ------ crap items ------
-baked_crap	Organic Goo	assets/sprites/items/missing_no.png	TODO
-crap_powder	Weird powder	assets/sprites/items/missing_no.png	TODO
-crap_ash	Ash	assets/sprites/items/missing_no.png	TODO
-
-# ================ POTION-LIKE ==============
-water_bottle	Water Bottle	assets/sprites/items/potions/water_bottle.png	clean water
-ale	Ale	assets/sprites/items/potions/ale.png	technically this is cider...
-apple_juice	Apple Juice	assets/sprites/items/potions/apple_juice.png	???
-lichen_brew	Lichen Brew	assets/sprites/items/potions/apple_juice.png	???
-red_potion	Red Potion	assets/sprites/items/potions/apple_juice.png	???
-strength_potion	Strength Potion	assets/sprites/items/potions/apple_juice.png	???
-# ================== MACHINES ===============
-pipe	Pipe	assets/sprites/items/placeables/pipe_icon.png	connect containers (directional)
-brewer	Brewer	assets/sprites/items/placeables/brewer_icon.png	brews potions
-chest	Chest	assets/sprites/items/placeables/chest_icon.png	contain items
-crusher	Crusher	assets/sprites/items/placeables/crusher_icon.png	crushes raw materials
-baker	Baker	assets/sprites/items/missing_no.png	???
-# =================== OTHER =================
-pickaxe	Pickaxe	assets/sprites/items/pickaxe.png	Can break stuff
+apple	Apple	TODO	assets/sprites/items/ingredients/apple.png	1	1		1				
+apple_brew	Cider	TODO	assets/sprites/items/potions/apple_juice.png						1		
+apple_jam	Apple Jam	TODO	assets/sprites/items/missing_no.png								
+ash	Ash	TODO	assets/sprites/items/ingredients/ash.png						1		
+base_potion	Base Potion	TODO	assets/sprites/items/potions/red_potion.png						1		
+bittersweet_water	Bittersweet Water	Water with the essence of earth	assets/sprites/items/potions/apple_juice.png						1		
+blooming_brew	Blooming Brew	TODO	assets/sprites/items/potions/apple_juice.png						1		
+cocktail_1	Cocktail I	TODO	assets/sprites/items/potions/apple_juice.png						1		
+cocktail_2	Cocktail II	TODO	assets/sprites/items/potions/apple_juice.png						1		
+cocktail_3	Cocktail III	TODO	assets/sprites/items/potions/apple_juice.png						1		
+cooked_apple	Baked Apple	TODO	assets/sprites/items/ingredients/baked_apple.png	1							
+cooked_drupe	Cracking Drupe	TODO	assets/sprites/items/ingredients/baked_apple.png	1							
+cooked_lichen	Baked Lichen	TODO	assets/sprites/items/ingredients/baked_lichen.png	1							
+crushed_apple	Crushed Apple	TODO	assets/sprites/items/ingredients/crushed_apple.png		1	1					
+crushed_drupe	Crushed Drupe	TODO	assets/sprites/items/ingredients/crushed_apple.png		1	1					
+crushed_lichen	Crushed Lichen	TODO	assets/sprites/items/ingredients/crushed_lichen.png		1	1					
+dandery_water	Dandery Water	Water with feather danders	assets/sprites/items/potions/apple_juice.png						1		
+diluted_float_potion	Diluted Float Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+diluted_haste_potion	Diluted Haste Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+diluted_strength_potion	Diluted Strength Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+diluted_warmth_potion	Diluted Warmth Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+drupe	Drupe	TODO	assets/sprites/items/ingredients/apple.png	1	1		1				
+drupe_brew	Drupe Brew	TODO	assets/sprites/items/potions/apple_juice.png						1		
+drupe_drink	Drupe Drink	TODO	assets/sprites/items/potions/apple_juice.png						1		
+drupe_essence	Essence of Earth	TODO	assets/sprites/items/missing_no.png			1					
+drupe_powder	Drupe Powder	TODO	assets/sprites/items/missing_no.png		1	1					
+drupe_solution	Drupe Solution	TODO	assets/sprites/items/potions/apple_juice.png						1		
+drupe_water	Drupe Water	TODO	assets/sprites/items/potions/apple_juice.png						1		
+druped_glowing_flower	Glittering Flameflower	TODO	assets/sprites/items/missing_no.png						1		
+drupeflower_mix	Drupeflame Mix	TODO	assets/sprites/items/potions/apple_juice.png						1		
+drupegrass_cocktail	Faedrupe Cocktail	TODO	assets/sprites/items/potions/apple_juice.png						1		
+elixir	The Elixir	TODO	assets/sprites/items/potions/apple_juice.png						1		
+extended_base_potion	Extended Base Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+extended_float_potion	Extended Float Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+extended_haste_potion	Extended Haste Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+extended_strength_potion	Extended Strength Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+extended_warmth_potion	Extended Warmth Potion	TODO	assets/sprites/items/potions/apple_juice.png						1		
+fae_drupe	Aromatic Drupe	TODO	assets/sprites/items/potions/apple_juice.png	1	1						
+faefeather_cocktail	Faevulnic Cocktail	TODO	assets/sprites/items/potions/apple_juice.png						1		
+faefeather_mix	Faevulnic Mix	TODO	assets/sprites/items/potions/apple_juice.png						1		
+faegrass	Faegrass	TODO	assets/sprites/items/missing_no.png	1	1						
+faegrass_essence	Essence of Flow	TODO	assets/sprites/items/missing_no.png			1					
+faegrass_powder	Faegrass Powder	TODO	assets/sprites/items/missing_no.png		1	1					
+faegrass_solution	Faegrass Solution	TODO	assets/sprites/items/missing_no.png						1		
+feather	Vulmanid Feather	TODO	assets/test/vulmanid_feather.png	1	1		1				
+feather_brew	Vulmanid Brew	TODO	assets/sprites/items/missing_no.png						1		
+feather_dust	Vulmanid Dust	TODO	assets/sprites/items/missing_no.png		1	1					
+feather_essence	Essence of Breeze	TODO	assets/sprites/items/missing_no.png			1					
+featherflower_cocktail	Featherflower Cocktail	TODO	assets/sprites/items/missing_no.png						1		
+fermented_drupe	Fermented Drupe	TODO	assets/sprites/items/missing_no.png	1	1						
+fermented_feather	Fermented Feather	TODO	assets/sprites/items/missing_no.png	1	1						
+flame_potion	Flame Potion	TODO	assets/sprites/items/missing_no.png						1		
+flaming_water	Flaming Water	TODO	assets/sprites/items/missing_no.png						1		
+float_crystal	Float Crystals	TODO	assets/sprites/items/missing_no.png			1					
+float_potion	Float Potion	TODO	assets/sprites/items/missing_no.png						1		
+floaty_water	Floaty Water	TODO	assets/sprites/items/missing_no.png						1		
+flower	Flower	TODO	assets/sprites/items/missing_no.png	1	1						
+flower_crystal	Flameflower Crystal	TODO	assets/sprites/items/missing_no.png		1	1					
+flower_essence	Essence of Blaze	TODO	assets/sprites/items/missing_no.png			1					
+flower_powder	Flameflower Powder	TODO	assets/sprites/items/missing_no.png		1	1					
+flower_solution	Flameflower Solution	TODO	assets/sprites/items/missing_no.png						1		
+fly_brew	Light Brew	TODO	assets/sprites/items/missing_no.png						1		
+fly_potion	Flying Potion	TODO	assets/sprites/items/missing_no.png						1		
+fragrant_brew	Fragrant Brew	TODO	assets/sprites/items/missing_no.png						1		
+glowing_brew	Glowing Brew	TODO	assets/sprites/items/missing_no.png						1		
+glowing_flower	Glowing Flower	TODO	assets/sprites/items/missing_no.png	1	1						
+godspeed_potion	Godspeed Potion	TODO	assets/sprites/items/missing_no.png						1		
+grassy_water	Grassy Water	TODO	assets/sprites/items/missing_no.png						1		
+haste_crystal	Haste Crystals	TODO	assets/sprites/items/missing_no.png		1	1					
+haste_potion	Haste Potion	TODO	assets/sprites/items/missing_no.png						1		
+herculean_potion	Herculean Potion	TODO	assets/sprites/items/missing_no.png						1		
+hot_flower_crystal	Glowing Flameflower Crystals	TODO	assets/sprites/items/missing_no.png		1	1					
+lichen	Lichen	TODO	assets/sprites/items/ingredients/lichen.png	1	1						
+lichen_powder	Lichen Powder	TODO	assets/sprites/items/ingredients/crushed_lichen.png		1	1					
+mellow_drupe_brew	Mellow Drupe Brew	TODO	assets/sprites/items/missing_no.png						1		
+mellow_fragrant_brew	Mellow Fragrant Brew	TODO	assets/sprites/items/missing_no.png						1		
+muddy_potion	Muddy Potion	TODO	assets/sprites/items/missing_no.png						1		
+mystic_solution	Mystic Solution	TODO	assets/sprites/items/missing_no.png						1		
+pollen_water	Pollen Water	TODO	assets/sprites/items/missing_no.png						1		
+snowgem	Snowgem	TODO	assets/sprites/items/missing_no.png	1	1						
+snowgem_dust	Snowgem Dust	TODO	assets/sprites/items/missing_no.png		1	1					
+spoiled_drupe	Spoiled Drupe	TODO	assets/sprites/items/missing_no.png	1	1						
+spoiled_feather	Spoiled Feather	TODO	assets/sprites/items/missing_no.png	1	1						
+sticky_brew	Sticky Brew	TODO	assets/sprites/items/missing_no.png						1		
+strength_crystal	Strength Crystal	TODO	assets/sprites/items/missing_no.png		1	1					
+strength_potion	Strength Potion	TODO	assets/sprites/items/potions/strength_potion.png						1		
+supergrassy_water	Very grassy water	TODO	assets/sprites/items/missing_no.png						1		
+sweet_brew	Sweet Brew	TODO	assets/sprites/items/missing_no.png						1		
+thick_potion	Thick Potion	TODO	assets/sprites/items/missing_no.png						1		
+useless_potion	Useless Potion	TODO	assets/sprites/items/missing_no.png						1		
+warmth_crystal	Warmth Crystal	TODO	assets/sprites/items/missing_no.png		1	1					
+warmth_potion	Warmth Potion	TODO	assets/sprites/items/missing_no.png						1		
+water	Water Bottle	TODO	assets/sprites/items/potions/water_bottle.png						1		
+pickaxe	Pickaxe	TODO	assets/sprites/items/pickaxe.png								1
+axe	Axe	TODO	assets/test/axe.png								1
+pipe	Pipe	TODO	assets/sprites/items/placeables/pipe_icon.png							1	
+brewer	Brewing Cauldron	TODO	assets/sprites/items/placeables/brewer_icon.png							1	
+crusher	Stone Press	TODO	assets/sprites/items/placeables/crusher_icon.png							1	
+furnace	Furnace	TODO	assets/sprites/items/placeables/furnace_icon.png							1	
+distiller	Distiller	TODO	assets/sprites/items/missing_no.png							1	
+chest	Chest	TODO	assets/sprites/items/placeables/chest_icon.png							1	
+fuelbox	Fuelbox	Fuels the Golem	assets/sprites/items/placeables/chest_icon.png							1	
+golem	Golem	Automaton	assets/sprites/items/missing_no.png							1	
+fermenter	Fermenter	TODO	assets/sprites/items/missing_no.png							1	
+joiner	Joiner	TODO	assets/sprites/items/missing_no.png							1	
+splitter	Splitter	TODO	assets/sprites/items/missing_no.png							1	
+crossover	Crossover	TODO	assets/sprites/items/missing_no.png							1	
+sieve	Sieve	TODO	assets/sprites/items/missing_no.png							1	
+altar	Altar	TODO	assets/sprites/items/missing_no.png							1	
+copper_ore	Copper Ore	TODO	assets/sprites/items/ingredients/copper_ore.png								
+timber	Timber	TODO	assets/sprites/items/missing_no.png								
+iron_ore	Iron Ore	TODO	assets/test/iron_ore.png								
+lumber	Lumber	A steady wood	assets/test/lumber.png								
+rock	Rock	TODO	assets/sprites/items/ingredients/rock.png								
+quartz	Quartz	TODO	assets/sprites/items/missing_no.png								
+empty_bottle	Empty Bottle	TODO	assets/sprites/items/potions/empty_bottle.png								

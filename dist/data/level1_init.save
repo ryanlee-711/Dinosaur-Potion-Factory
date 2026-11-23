@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water_bottle 15 pipe 10 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 44
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 66
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -13,7 +13,7 @@
 1561990790 machine chest 2112 1424 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
 2978194525 machine chest 2112 1456 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
 521259836 machine chest 2112 1488 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0
-1101475168 item_entity 2240 1504 apple 3
+1101475168 item_entity 2240 1504 drupe 3
 1651749579 copper_vein 1952 1360 4
 1178228388 boulder 1984 1344 1
 2712845769 boulder 1936 1248 1
@@ -43,3 +43,25 @@
 1161128756 boulder 1552 1232 1
 98290691 lichen_rock 1408 1200 5
 1895095611 lichen_rock 1472 1216 5
+511616026 iron_vein 3072 1008 4
+1372175473 iron_vein 3120 960 4
+2158288731 fae_grass 3056 1232 3
+4085985277 fae_grass 3088 1248 3
+2198261820 fae_grass 3120 1232 3
+2779695000 fae_grass 3104 1280 3
+3693674385 tree 3200 1024 0 0 1 0
+4092891722 tree 3280 1088 0 0 1 0
+440821893 tree 3216 1200 0 0 1 0
+1993504538 vulmanid 3400 876 208 50 224 66
+3743340476 tree 3440 896
+2598633685 tree 3520 832
+165118982 tree 3408 1008
+4160306740 iron_vein 3360 960 5
+2750460675 boulder 3504 992 1
+1137528489 vulmanid 3800 1420 228 80 246 96
+1364543934 tree 3696 1328
+3698323081 tree 3872 1360
+2578065766 tree 3760 1520
+4119784829 iron_vein 3728 1456 5
+2674135268 boulder 3840 1488 1
+2458446588 lichen_rock 3904 1424 5

@@ -14,14 +14,15 @@
 // To add a new tag: add the next bit here, then tag items in Item.cpp
 namespace ItemTag {
 	enum : uint32_t {
-		None      = 0,
-		Crushable = 1u << 0, // can go into a crusher
-		Burnable  = 1u << 1, // can go into a baker/furnace
-		Brewable  = 1u << 2, // brewing ingredient (cauldron ingredient slot)
-		Liquid    = 1u << 3, // brewing base (cauldron water slot)
-		Potion    = 1u << 4, // a finished potion
-		Placeable = 1u << 5, // places a machine in the world
-		Tool      = 1u << 6, // pickaxe etc.
+		None         = 0,
+		Crushable    = 1u << 0, // can go into a crusher
+		Burnable     = 1u << 1, // can go into a baker/furnace
+		Brewable     = 1u << 2, // brewing ingredient (cauldron ingredient slot)
+		Fermentable  = 1u << 3, // can go into left slot of fermenter (feather)
+		Liquid       = 1u << 4, // brewing base (cauldron water slot)
+		Potion       = 1u << 5, // a finished potion
+		Placeable    = 1u << 6, // places a machine in the world
+		Tool         = 1u << 7, // pickaxe etc.
 	};
 }
 

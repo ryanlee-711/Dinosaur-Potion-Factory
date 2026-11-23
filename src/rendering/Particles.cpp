@@ -122,4 +122,43 @@ namespace Presets {
 		.frame_first = 1, .frame_count = 3,
 		.behind = true,
 	};
+
+	ParticlePreset const WoodChips{
+		.count_min = 4, .count_max = 6,
+		.spawn_box = glm::vec2(8.0f, 6.0f),
+		.life_min = 0.3f, .life_max = 0.5f,
+		.speed_min = 25.0f, .speed_max = 55.0f,
+		.angle = -90.0f, .spread = 140.0f,
+		.accel = glm::vec2(0.0f, 200.0f),
+		.drag = 2.0f,
+		.color_start = glm::u8vec4(0xc8, 0x96, 0x5a, 0xff),
+		.color_end = glm::u8vec4(0x8a, 0x5e, 0x34, 0x00),
+		.fade = Fade::Exponential,
+	};
+
+	ParticlePreset const Leaves{
+		.count_min = 14, .count_max = 20,
+		.spawn_box = glm::vec2(28.0f, 14.0f),
+		.life_min = 0.5f, .life_max = 0.9f,
+		.speed_min = 15.0f, .speed_max = 45.0f,
+		.angle = -90.0f, .spread = 200.0f,
+		.accel = glm::vec2(0.0f, 60.0f),
+		.drag = 3.0f,
+		.color_start = glm::u8vec4(0x5c, 0xa8, 0x48, 0xff),
+		.color_end = glm::u8vec4(0x3a, 0x78, 0x30, 0x00),
+		.fade = Fade::Linear,
+	};
+
+	ParticlePreset const Feathers{
+		.count_min = 6, .count_max = 9,
+		.spawn_box = glm::vec2(8.0f, 6.0f),
+		.life_min = 0.6f, .life_max = 1.0f,
+		.speed_min = 20.0f, .speed_max = 45.0f,
+		.angle = -90.0f, .spread = 160.0f,
+		.accel = glm::vec2(0.0f, 30.0f),
+		.drag = 4.0f,
+		.color_start = glm::u8vec4(0x3a, 0x34, 0x44, 0xff),
+		.color_end = glm::u8vec4(0x5a, 0x52, 0x66, 0x00),
+		.fade = Fade::Linear,
+	};
 }

@@ -16,6 +16,7 @@
     std::vector<ItemRecord> items_in { };
     std::vector<ItemRecord> items_out { };
     float time_cost = 5.0f;
+    float probability = 1.0f;
 
     // methods
     static std::vector<Recipe> const * get_recipes(item_id_t machine_id);

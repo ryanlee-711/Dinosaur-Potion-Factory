@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include <sstream>
+#include <random>
 
 
 
@@ -27,6 +28,19 @@ static Load< Texture > furnace_texture(LoadTagDefault, []() -> Texture const * {
 static Load< Texture > chest_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/chest.png"));
 });
+
+static Load< Texture > distiller_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/distiller.png"));
+});
+
+static Load< Texture > fermenter_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/fermenter.png"));
+});
+
+static Load< Texture > fuelbox_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/golem_dropbox.png"));
+});
+
 
 // MACHINE DEFINITIONS
 using ivec2 = glm::ivec2;
@@ -50,14 +64,14 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* port_locs_in = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{2, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{2, 1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
             }
         });
 
@@ -75,14 +89,14 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* port_locs_in = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
             }
         });
 
@@ -100,14 +114,14 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* port_locs_in = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
             }
         });
 
@@ -118,8 +132,8 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* hitbox_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
             /* draw_offset= */ glm::vec2{0.0f, 0.0f},
-            /* output_slot_begin= */ 1,
-            /* output_slot_end= */ 2,
+            /* output_slot_begin= */ 0,
+            /* output_slot_end= */ 10,
             /* num_sprite_rows= */ 4,
             /* num_sprite_columns= */ 4,
             /* port_locs_in = */ MachineDef::PortLocs{
@@ -137,6 +151,131 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* storage = */ true
         });
 
+        machines->emplace("distiller", MachineDef{
+            /* machine_type= */ "distiller",
+            /* texture= */ distiller_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
+            /* output_slot_begin= */ 1,
+            /* output_slot_end= */ 3,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+            }
+        });
+
+        machines->emplace("fermenter", MachineDef{
+            /* machine_type= */ "fermenter",
+            /* texture= */ fermenter_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
+            /* output_slot_begin= */ 2,
+            /* output_slot_end= */ 4,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
+            }
+        });
+
+        machines->emplace("sieve", MachineDef{
+            /* machine_type= */ "sieve",
+            /* texture= */ fermenter_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
+            /* output_slot_begin= */ 2,
+            /* output_slot_end= */ 4,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+            }
+        });
+
+        machines->emplace("altar", MachineDef{
+            /* machine_type= */ "altar",
+            /* texture= */ fermenter_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_offset= */ glm::vec2{0.0f, -48.0f},
+            /* output_slot_begin= */ 2,
+            /* output_slot_end= */ 4,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+            }
+        });
+
+        machines->emplace("fuelbox", MachineDef{
+            /* machine_type= */ "fuelbox",
+            /* texture= */ fuelbox_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* hitbox_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, 0.0f, 32.0f, 16.0f},
+            /* draw_offset= */ glm::vec2{0.0f, 0.0f},
+            /* output_slot_begin= */ 1,
+            /* output_slot_end= */ 2,
+            /* num_sprite_rows= */ 4,
+            /* num_sprite_columns= */ 4,
+            /* port_locs_in = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+            },
+            /* port_locs_out = */ MachineDef::PortLocs{
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
+                std::vector<MachineDef::PortPair>{},
+            }
+        });
+
 		return machines.release();
 	}
 );
@@ -151,13 +290,18 @@ const float PUSH_COOLDOWN = 1.0f;
 
 Machine::Machine() : inventory(3) { }
 
-Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inventory_size) {
+Machine::Machine(size_t inventory_size, item_id_t machine_type, int rot) : inventory(inventory_size) {
+    rotation = static_cast<Rotation>(rot % 4);
     if (def = MachineDef::get(machine_type); def == nullptr) {
         throw std::runtime_error("Machine Not implemented! " + machine_type);
     }
+    configure_inventory(machine_type);
+}
+
+void Machine::configure_inventory(item_id_t machine_type) {
     if (machine_type == "brewer") {
-        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
-        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Brewable });
+        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
         inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "crusher") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Crushable });
@@ -165,7 +309,22 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
     } else if (machine_type == "furnace") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Burnable });
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
+    } else if (machine_type == "altar") {
+        inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
+    } else if (machine_type == "sieve") {
+        inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "chest") {
+        // pass
+    } else if (machine_type == "distiller") {
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
+        inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
+        inventory.set_rule(2, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+    } else if (machine_type == "fermenter") {
+        inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Fermentable });
+        inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
+        inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
+        inventory.set_rule(3, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+    } else if (machine_type == "fuelbox") {
         // pass
     } else {
         throw std::runtime_error{"Machine Not Implemented: " + machine_type};
@@ -173,7 +332,7 @@ Machine::Machine(size_t inventory_size, item_id_t machine_type) : inventory(inve
 }
 
 void Machine::update(FrameInput const &input, float elapsed, World const &world) {
-
+    
     // animation
     if (def->machine_type == "brewer" || processing_timer > 0.0f) {
         anim_timer += elapsed;
@@ -191,9 +350,9 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
     // step 1a. verify current_recipe
 
     bool recipe_stale = false;
-    if (current_recipe == nullptr) {
+    if (current_recipe == nullptr && def->machine_type != "altar") {
         recipe_stale = true;
-    } else {
+    } else if (def->machine_type != "altar") {
         for (ItemRecord const &item : current_recipe->items_in) {
             if (inventory.count(item.first) < item.second) {
                 recipe_stale = true;
@@ -241,21 +400,36 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
     }
 
     // step 2. reduce processing_timer
-    if (current_recipe) {
+    if (current_recipe || def->machine_type == "altar") {
         processing_timer -= elapsed;
     }
+
+    // step 2.5. roll RNG
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    float dice = dist(world.rng);
 
     // step 3. if processing timer timeouts, produce
     if (current_recipe != nullptr && processing_timer <= 0.0f) {
         processing_timer = current_recipe->time_cost;
-        for (ItemRecord const &item : current_recipe->items_in) {
+        for (size_t idx = 0; idx < current_recipe->items_in.size(); ++idx) {
+            if (dice > current_recipe->probability && (def->machine_type == "fermenter" && idx == 0)) continue;
+            ItemRecord const &item = current_recipe->items_in[idx];
             inventory.remove(item.first, item.second);
         }
         // check that there is space for outputs
-        for (ItemRecord const &item : current_recipe->items_out) {
+        for (size_t idx = 0; idx < current_recipe->items_out.size(); ++idx) {
+            if (dice > current_recipe->probability && 
+                ((def->machine_type == "distiller" && idx == 0) || (def->machine_type == "fermenter" && idx == 0))) continue;
+            ItemRecord const &item = current_recipe->items_out[idx];
             inventory.add_to_slot_range(item.first, item.second, def->output_slot_begin, def->output_slot_end);
             if (world.made_items) world.made_items->insert(item.first);
         }
+        current_recipe = nullptr;
+    } else if (def->machine_type == "altar") {
+        if (Item::get(inventory[0].first)->has_tag(ItemTag::Potion)) {
+            inventory.add_to_slot_range("empty_bottle", inventory[0].second, 1, 2);
+        }
+        inventory.set_slot(0, "", 0);
     }
 
     // step 4. Item pushing: every push_timer cooldown, send one output item through
@@ -424,7 +598,7 @@ std::string Machine::save() const {
         if (item_id == "") item_id = "null";
         int count = inventory.get_slot_count(idx);
         ss << ' ' << item_id << ' ' << count;
-    }
+    }    
     return ss.str();
 }
 
@@ -437,7 +611,7 @@ void Machine::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type, machine_type;
-
+    
     if (!(ss >> read_uid >> entity_type >> machine_type)) {
         throw std::runtime_error{"UID read failure"};
     }

@@ -1,6 +1,8 @@
 #include "Item.hpp"
 
+#include <ranges>
 #include <sstream>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <memory>
@@ -9,6 +11,8 @@
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
 
+
+constexpr std::string ITEMS_PATH = "data/items.tsv";
 
 using ItemRegistry = Item::ItemRegistry;
 
@@ -27,55 +31,34 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 			items->emplace(id, std::move(item));
 		};
 
-		using namespace ItemTag;
+		std::ifstream file(data_path(ITEMS_PATH));
 
-		// ingredients
-		add("apple", "Apple", "", "assets/sprites/items/ingredients/apple.png", Crushable | Burnable);
-		add("crushed_apple", "Crushed Apple", "", "assets/sprites/items/ingredients/crushed_apple.png", Brewable | Burnable);
-		add("apple_powder", "Apple Powder", "", "assets/sprites/items/ingredients/apple_powder.png", Brewable | Burnable);
-		add("baked_apple", "Baked Apple", "", "assets/sprites/items/ingredients/baked_apple.png", Crushable | Burnable);
-		add("baked_crushed_apple", "Baked Crushed Apple", "Sweet and smoky", "assets/sprites/items/missing_no.png", Brewable);
+		if (!file.is_open()) {
+			throw std::runtime_error{"Couldn't open ITEMS_PATH"};
+		}
+		// for every line in the file, read and parse
+		std::string line;
+		while (std::getline(file, line)) {
+			if (line.empty()) continue;
+			std::vector<std::string> parts { };
+			for (auto part : line | std::views::split('\t')) {
+				parts.emplace_back(part.begin(), part.end());
+			}
+			// The length should be fixed (12)
+			if (parts.size() != 12) {
+				std::cout << "warning: invalid item line: " << line << '\n';
+			}
+			uint32_t tag = 0x0;
+			for (int idx = 0; idx < 8; ++idx) {
+				if (parts[idx + 4] == "1") {
+					tag |= 1 << idx;
+				}
+			}
+			add(parts[0], parts[1], parts[2], parts[3], tag);
 
-		add("lichen", "Lichen", "Something magical", "assets/sprites/items/ingredients/lichen.png", Crushable | Burnable);
-		add("crushed_lichen", "Crushed Lichen", "", "assets/sprites/items/ingredients/crushed_lichen.png", Brewable | Burnable);
-		add("lichen_powder", "Lichen Powder", "Glows a little", "assets/sprites/items/ingredients/lichen_powder.png", Brewable | Burnable);
-		add("dried_lichen", "Dried Lichen", "Crispy", "assets/sprites/items/ingredients/baked_lichen.png", Crushable | Burnable);
+		}
 
-		// ---- leftovers (burnt too long) ----
-		add("goo", "Goo", "Overcooked. Useless", "assets/sprites/items/ingredients/ash.png", None);
-		add("ash", "Ash", "Overburnt", "assets/sprites/items/ingredients/ash.png", None);
 
-		// ---- liquids and potions ----
-		// The brewer's base slot takes Liquid or Potion, so potions can be brewed into other potions
-		add("water_bottle", "Water Bottle", "Just water", "assets/sprites/items/potions/water_bottle.png", Liquid);
-		add("ale", "Ale", "Becomes faster and slightly stronger", "assets/sprites/items/potions/ale.png", Potion);
-		add("strong_ale", "Strong Ale", "(TBD)", "assets/sprites/items/potions/strong_ale.png", Potion);
-		add("apple_juice", "Apple Juice", "Healthy", "assets/sprites/items/potions/apple_juice.png", Potion);
-
-		add("red_potion", "Red Potion", "Intermediate product", "assets/sprites/items/potions/red_potion.png", Potion);
-		add("potent_red_potion", "Potent Red Potion", "Intermediate product", "assets/sprites/items/potions/potent_red_potion.png", Potion);
-		add("muddy_red_potion", "Muddy Red Potion", "Intermediate product???", "assets/sprites/items/potions/muddy_red_potion.png", Potion);
-
-		add("strength_potion", "Strength Potion", "Mines harder rocks", "assets/sprites/items/potions/strength_potion.png", Potion);
-		add("potent_strength_potion", "Potent Strength Potion", "Mines harder rocks and lasts longer", "assets/sprites/items/potions/potent_strength_potion.png", Potion);
-		add("sweetened_potion", "Sweetened Potion", "Red potion, sweetened", "assets/sprites/items/potions/apple_juice.png", Potion);
-
-		// placeables
-		add("pipe", "Pipe", "Transmit items", "assets/sprites/items/placeables/pipe_icon.png", Placeable);
-		add("chest", "Chest", "Contain items", "assets/sprites/items/placeables/chest_icon.png", Placeable);
-		add("crusher", "Crusher", "Crush ingredients", "assets/sprites/items/placeables/crusher_icon.png", Placeable);
-		add("brewer", "brewer", "Brew potions", "assets/sprites/items/placeables/brewer_icon.png", Placeable);
-		add("furnace", "furnace", "Bake ingredients", "assets/sprites/items/placeables/furnace_icon.png", Placeable);
-
-		// resources
-		add("rock", "Rock", "", "assets/sprites/items/ingredients/rock.png", None);
-		add("copper_ore", "Copper ore", "", "assets/sprites/items/ingredients/copper_ore.png", None);
-
-		// tools
-		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);
-		add("pickaxe", "Pickaxe", "A sturdy pick", "assets/sprites/items/pickaxe.png", Tool);
-
-		add("you_won", "You won!", "Thanks for playing the demo", "assets/sprites/items/missing_no.png", None);
 
 		return items.release();
 	}
