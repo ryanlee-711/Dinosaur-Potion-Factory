@@ -2135,7 +2135,7 @@ void PlayMode::load() {
 			add_entity<OreVein>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which ore
 		} else if (entity_type == "dragon") {
 			add_entity<Dragon>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "lichen_rock" || entity_type == "fae_grass" || entity_type == "flameflower") {
+		} else if (entity_type == "lichen_rock" || entity_type == "fae_grass" || entity_type == "flameflower" || entity_type == "lifedew_plant") {
 			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
 		} else if (entity_type == "tree") {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);

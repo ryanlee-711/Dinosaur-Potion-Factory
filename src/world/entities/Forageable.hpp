@@ -18,7 +18,7 @@ struct ForageableDef {
     std::string type;          // name in the save file
     item_id_t drop;            // what pressing E picks up
     int max_count;             // how many it holds at once (E picks them all)
-    float regrow_seconds;      // seconds to grow back one
+    float regrow_seconds;      // seconds to grow back one (0 = never: a one-time pickup)
     glm::ivec2 tiles;          // footprint in tiles (hitbox)
     glm::vec2 sprite_size;     // one frame, in pixels, the sprite's bottom sits on the footprint's bottom
     bool solid;                // false = you can walk over it
