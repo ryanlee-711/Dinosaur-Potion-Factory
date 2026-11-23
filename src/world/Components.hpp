@@ -67,6 +67,8 @@ struct IItemPort {
 
 };
 
+struct ParticlePreset;
+
 struct IBreakable {
     /*
      * Entities that can be broken.
@@ -82,6 +84,13 @@ struct IBreakable {
 
     virtual int get_hardness() {return 3;};
     virtual item_id_t get_drop_id() = 0;
+
+    // Feedback while the pickaxe is held on it: PlayMode calls on_break_hit() when you start holding and then
+    // once per damage tick, and sprays break_hit_particles() if not nullptr. Only when the dwarf is strong
+    // enough to break it (MAX_HOLD_DAMAGE x strength level >= hardness); otherwise nothing happens.
+    // Default: no reaction (machines).
+    virtual void on_break_hit() { }
+    virtual ParticlePreset const *break_hit_particles() const { return nullptr; }
 };
 
 struct IProgress {

@@ -603,8 +603,21 @@ void PlayMode::do_world_interaction(float elapsed) {
 	if (left_held && item_id == "pickaxe" && tile_in_reach(coord, TOOL_REACH)) {
 		auto entity = entity_at(coord);
 		auto *target = dynamic_cast< IBreakable * >(entity);
+		//per-hit feedback (wobble + particles, if the target has any): see IBreakable::on_break_hit.
+		//Only when the dwarf is strong enough to actually break it; otherwise it doesn't budge.
+		auto break_hit = [&]() {
+			int strength = std::max(1, player.effect_level("strength"));
+			if (IBreakable::MAX_HOLD_DAMAGE * strength < target->get_hardness()) return; //too hard: no reaction
+			target->on_break_hit();
+			if (ParticlePreset const *chips = target->break_hit_particles()) {
+				Rect hb = entity->hitbox();
+				particles.burst(*chips, glm::vec2(hb.x + hb.w * 0.5f, hb.y + hb.h)); //from the bottom front
+			}
+		};
 		if (target != nullptr && target == currently_breaking) {
+			int ticks_before = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
 			break_timer += elapsed;
+			if (static_cast<int>(break_timer / SECOND_PER_DAMAGE) > ticks_before) break_hit(); //another damage tick landed
 			int damages = static_cast<int>(break_timer / SECOND_PER_DAMAGE);
 			damages = std::min(damages, IBreakable::MAX_HOLD_DAMAGE);
 			if (player.effect_level("strength") > 0) {
@@ -624,6 +637,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 			// changed breaking target or target is just null
 			break_timer = 0.0f;
 			currently_breaking = target;
+			if (target != nullptr) break_hit(); //first swing lands right away
 		}
 	} else if (!left_held) {
 		break_timer = 0.0f;

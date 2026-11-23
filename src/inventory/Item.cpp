@@ -39,19 +39,22 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		// for every line in the file, read and parse
 		std::string line;
 		while (std::getline(file, line)) {
+			if (!line.empty() && line.back() == '\r') line.pop_back(); //file saved with Windows line endings
 			if (line.empty()) continue;
 			std::vector<std::string> parts { };
 			for (auto part : line | std::views::split('\t')) {
 				parts.emplace_back(part.begin(), part.end());
 			}
-			// The length should be fixed (12)
-			if (parts.size() != 12) {
-				std::cout << "warning: invalid item line: " << line << '\n';
+			// id, name, description, sprite, then up to 8 tag columns.
+			// Missing tag columns count as empty (editors often trim the trailing tabs of a row).
+			if (parts.size() < 4 || parts.size() > 12) {
+				std::cout << "warning: skipping invalid item line (needs 4 to 12 columns): " << line << '\n';
+				continue;
 			}
 			uint32_t tag = 0x0;
-			for (int idx = 0; idx < 8; ++idx) {
+			for (size_t idx = 0; idx < 8 && idx + 4 < parts.size(); ++idx) {
 				if (parts[idx + 4] == "1") {
-					tag |= 1 << idx;
+					tag |= 1u << idx;
 				}
 			}
 			add(parts[0], parts[1], parts[2], parts[3], tag);

@@ -64,4 +64,6 @@ namespace Presets {
 	extern ParticlePreset const Feathers;  //a feather plucked from a vulmanid
 	extern ParticlePreset const Dirt;      //claws taken from a glaber
 	extern ParticlePreset const Frost;     //a scale taken from an ice lizard
+	extern ParticlePreset const RockChips; //pickaxe hits an ore vein
+	extern ParticlePreset const IceChips;  //pickaxe hits an icy vein (snowgem)
 }

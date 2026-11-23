@@ -1,6 +1,7 @@
 #include "Boulder.hpp"
 #include "../World.hpp"
 #include "../TileMap.hpp"
+#include "../../rendering/Particles.hpp"
 #include "../Player.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
@@ -21,7 +22,12 @@ static Load< Texture > small_boulder_texture(LoadTagDefault, []() -> Texture con
 Boulder::Boulder(bool use_big): big(use_big) {
 }
 
+ParticlePreset const *Boulder::break_hit_particles() const {
+    return &Presets::RockChips;
+}
+
 void Boulder::update(FrameInput const &input, float elapsed, World const &world) {
+    shake_timer = std::max(0.0f, shake_timer - elapsed);
     if (rolling) {
         rolling = false;
 
@@ -51,10 +57,12 @@ void Boulder::draw(Sprites &batch) const {
         Rect src{0.0f, 0.0f, 32.0f, 32.0f};
         //round to whole pixels so the sprite never sits between pixels:
         glm::vec2 top_left = glm::round(sprite_offset) - glm::vec2(0.0f, 16.0f);
+        if (shake_timer > 0.0f) top_left.x += (std::fmod(shake_timer, 0.06f) < 0.03f) ? 1.0f : -1.0f; //wobble
         batch.draw(*big_boulder_texture, src, top_left);
     } else {
         Rect src{0.0f, 0.0f, 16.0f, 16.0f};
         glm::vec2 top_left = glm::round(sprite_offset) - glm::vec2(0.0f, 0.0f);
+        if (shake_timer > 0.0f) top_left.x += (std::fmod(shake_timer, 0.06f) < 0.03f) ? 1.0f : -1.0f; //wobble
         batch.draw(*small_boulder_texture, src, top_left);
     }
 }

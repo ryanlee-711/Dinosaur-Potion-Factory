@@ -28,6 +28,9 @@ public:
     // IBreakable
     static constexpr int BIG_HARDNESS = 8, SMALL_HARDNESS = 4;
     int get_hardness() override {return big ? BIG_HARDNESS : SMALL_HARDNESS;}
+    void on_break_hit() override { shake_timer = SHAKE_SECONDS; }    // wobble on each pickaxe hit
+    ParticlePreset const *break_hit_particles() const override;    // rock chips on each pickaxe hit
+    static constexpr float SHAKE_SECONDS = 0.15f;
     item_id_t get_drop_id() override {return "rock";}
 
     // IHintable: small = E key (push it, needs any strength), big = pickaxe icon. Faded until the dwarf has that strength.
@@ -42,5 +45,6 @@ private:
     bool rolling = false;
     glm::ivec2 target_tile = glm::ivec2{0};
     glm::vec2 sprite_offset = glm::vec2{0};
+    float shake_timer = 0.0f;      // > 0: wobbling from a pickaxe hit
 
 };

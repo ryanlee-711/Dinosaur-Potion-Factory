@@ -1,8 +1,10 @@
 #include "OreVein.hpp"
 #include "../World.hpp"
 #include "../TileMap.hpp"
+#include "../../rendering/Particles.hpp"
 #include "../../starter/data_path.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
@@ -18,11 +20,11 @@ static Load< Texture > snow_gem_texture(LoadTagDefault, []() -> Texture const * 
 });
 
 // ---- ORE VEIN TYPES ----
-//   type            drop          max   regrow(s)   texture
+//   type            drop          max   regrow(s)   texture                 chips on each hit
 static OreVeinDef const ore_vein_defs[] = {
-	{"copper_vein", "copper_ore",  5,   6.0f,      &copper_vein_texture},
-	{"iron_vein",   "iron_ore",    5,   6.0f,      &iron_vein_texture},
-	{"snowgem_vein",    "snowgem",    1,  40.0f,      &snow_gem_texture},
+	{"copper_vein", "copper_ore",  5,   6.0f,      &copper_vein_texture,   &Presets::RockChips},
+	{"iron_vein",   "iron_ore",    5,   6.0f,      &iron_vein_texture,     &Presets::RockChips},
+	{"snowgem_vein", "snowgem",    1,  40.0f,      &snow_gem_texture,      &Presets::IceChips},
 };
 
 OreVeinDef const *OreVeinDef::get(std::string const &type) {
@@ -40,6 +42,12 @@ OreVein::OreVein(std::string const &type) {
 }
 
 void OreVein::update(FrameInput const &input, float elapsed, World const &world) {
+	shake_timer = std::max(0.0f, shake_timer - elapsed);
+	if (chips_pending) {
+		chips_pending = false;
+		if (world.particles && def->hit_particles) world.particles->burst(*def->hit_particles, position + glm::vec2(16.0f, 8.0f));
+	}
+
 	// regrow one ore every regrow_seconds, but only while it's not full
 	if (ores >= def->max_ores) {
 		regrow_timer = def->regrow_seconds;
@@ -53,6 +61,9 @@ void OreVein::update(FrameInput const &input, float elapsed, World const &world)
 }
 
 bool OreVein::mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) {
+	//every hit wobbles the rock and sprays chips, so you can see the pickaxe connect (even on an empty vein)
+	shake_timer = SHAKE_SECONDS;
+	chips_pending = true;
 	if (ores <= 0) return false; //mined out: wait for it to regrow
 	ores -= 1;
 	drops.emplace_back(def->drop, 1);
@@ -63,6 +74,7 @@ void OreVein::draw(Sprites &batch) const {
 	// frame 1 = has ore, frame 0 = mined out
 	Rect src{ores > 0 ? 32.0f : 0.0f, 0.0f, 32.0f, 32.0f};
 	glm::vec2 top_left = glm::round(position) - glm::vec2(0.0f, 16.0f);
+	if (shake_timer > 0.0f) top_left.x += (std::fmod(shake_timer, 0.06f) < 0.03f) ? 1.0f : -1.0f; //wobble
 	batch.draw(**def->texture, src, top_left);
 }
 

@@ -187,4 +187,32 @@ namespace Presets {
 		.color_end = glm::u8vec4(0x7c, 0xd8, 0xff, 0x00),
 		.fade = Fade::Linear,
 	};
+
+	ParticlePreset const RockChips{
+		.count_min = 6, .count_max = 8,
+		.spawn_box = glm::vec2(8.0f, 6.0f),
+		.life_min = 0.25f, .life_max = 0.45f,
+		.speed_min = 30.0f, .speed_max = 60.0f,
+		.angle = -90.0f, .spread = 140.0f,
+		.accel = glm::vec2(0.0f, 220.0f),
+		.drag = 2.0f,
+		.color_start = glm::u8vec4(0xd0, 0xc8, 0xc0, 0xff), //light, so they show against dark rock
+		.color_end = glm::u8vec4(0x80, 0x78, 0x70, 0x00),
+		.fade = Fade::Exponential,
+		.frame_first = 1, .frame_count = 1, //2x2 chunks
+	};
+
+	ParticlePreset const IceChips{
+		.count_min = 6, .count_max = 8,
+		.spawn_box = glm::vec2(8.0f, 6.0f),
+		.life_min = 0.3f, .life_max = 0.5f,
+		.speed_min = 30.0f, .speed_max = 60.0f,
+		.angle = -90.0f, .spread = 140.0f,
+		.accel = glm::vec2(0.0f, 200.0f),
+		.drag = 2.0f,
+		.color_start = glm::u8vec4(0xe0, 0xf6, 0xff, 0xff),
+		.color_end = glm::u8vec4(0x78, 0xc8, 0xf0, 0x00),
+		.fade = Fade::Exponential,
+		.frame_first = 1, .frame_count = 1, //2x2 shards
+	};
 }

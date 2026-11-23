@@ -9,6 +9,8 @@
 
 #include <glm/glm.hpp>
 
+struct ParticlePreset;
+
 #include <string>
 #include <vector>
 
@@ -20,6 +22,7 @@ struct OreVeinDef {
     int max_ores;              // max ores it holds
     float regrow_seconds;      // seconds to grow back one ore
     Load< Texture > *texture;  // 64x32: frame 0 = mined out, frame 1 = has ore
+    ParticlePreset const *hit_particles; // chips sprayed on every pickaxe hit
 
     static OreVeinDef const *get(std::string const &type);
 };
@@ -42,6 +45,8 @@ public:
     // IMineable
     item_id_t required_tool() const override { return "pickaxe"; }
     bool mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) override;
+    static constexpr float SHAKE_SECONDS = 0.15f; // wobble after each hit, like trees
+
     std::string empty_message() const override { return "Nothing left to mine. It grows back slowly"; }
 
     // IHintable: pickaxe icon while there's ore
@@ -52,5 +57,8 @@ public:
 private:
     OreVeinDef const *def = nullptr;
     int ores = 0;               // ores left to mine right now
+    float shake_timer = 0.0f;   // > 0: wobbling from a pickaxe hit
+    bool chips_pending = false; // a hit landed: spray chips next update (needs the World for particles)
+
     float regrow_timer = 0.0f;
 };
