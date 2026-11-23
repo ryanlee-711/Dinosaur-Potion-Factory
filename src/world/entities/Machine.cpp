@@ -37,10 +37,6 @@ static Load< Texture > fermenter_texture(LoadTagDefault, []() -> Texture const *
 	return new Texture(data_path("assets/sprites/machines/fermenter.png"));
 });
 
-static Load< Texture > siphon_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/sprites/machines/siphon.png"));
-});
-
 static Load< Texture > fuelbox_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/machines/golem_dropbox.png"));
 });
@@ -158,9 +154,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
         machines->emplace("distiller", MachineDef{
             /* machine_type= */ "distiller",
             /* texture= */ distiller_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
-            /* hitbox_rect= */ Rect{0.0f, -48.0f, 64.0f, 64.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 64.0f, 64.0f},
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 1,
             /* output_slot_end= */ 3,
@@ -183,9 +179,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
         machines->emplace("fermenter", MachineDef{
             /* machine_type= */ "fermenter",
             /* texture= */ fermenter_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
-            /* hitbox_rect= */ Rect{0.0f, -48.0f, 64.0f, 48.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 64.0f, 64.0f},
+            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 2,
             /* output_slot_end= */ 4,
@@ -205,9 +201,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             }
         });
 
-        machines->emplace("siphon", MachineDef{
-            /* machine_type= */ "siphon",
-            /* texture= */ siphon_texture,
+        machines->emplace("sieve", MachineDef{
+            /* machine_type= */ "sieve",
+            /* texture= */ fermenter_texture,
             /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
@@ -315,7 +311,7 @@ void Machine::configure_inventory(item_id_t machine_type) {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "altar") {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
-    } else if (machine_type == "siphon") {
+    } else if (machine_type == "sieve") {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "chest") {
         // pass
@@ -430,10 +426,15 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
         }
         current_recipe = nullptr;
     } else if (def->machine_type == "altar") {
-        if (Item::get(inventory[0].first)->has_tag(ItemTag::Potion)) {
-            inventory.add_to_slot_range("empty_bottle", inventory[0].second, 1, 2);
+        //whatever is offered disappears; potions leave their empty bottles behind
+        item_id_t offered = inventory.get_slot_id(0);
+        if (offered != "") {
+            Item const *item = Item::get(offered);
+            if (item != nullptr && item->has_tag(ItemTag::Potion)) {
+                inventory.add_to_slot_range("empty_bottle", inventory[0].second, 1, 2);
+            }
+            inventory.set_slot(0, "", 0);
         }
-        inventory.set_slot(0, "", 0);
     }
 
     // step 4. Item pushing: every push_timer cooldown, send one output item through
