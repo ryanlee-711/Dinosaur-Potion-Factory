@@ -22,6 +22,7 @@
 #include "../world/entities/Boulder.hpp"
 #include "../world/entities/OreVein.hpp"
 #include "../world/entities/Tree.hpp"
+#include "../world/entities/Vulmanid.hpp"
 #include "../world/entities/Dragon.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -204,98 +205,6 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 	//stand in the middle of the spawn tile, feet near its bottom:
 	player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
 	player.uid = 15213;
-
-	// ~~Demo~~
-	// initialize some existing machines for demonstration (entities).
-
-	/*
-	auto tile2pos = [](float x, float y) -> glm::vec2 {
-		return glm::vec2(x * TILE_SIZE, y * TILE_SIZE);
-	};
-	for (size_t i = 0; i < 3; ++i) {
-		add_entity<Pipe>(entities, tile2pos(i + 138.0f, 82.0f), mt());
-	}
-	{
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(3 + 138, 82)), "crusher", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(9 + 138, 82)), "brewer", mt());
-		add_machine(entities,Tilemap::tile_topleft(glm::vec2(12 + 138, 78)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::vec2(146, 75)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(92, 65)), "furnace", mt());
-
-		// Apple trees
-		add_entity<AppleTree>(entities, glm::vec2((138.0f) * TILE_SIZE, 90.0f * TILE_SIZE), mt());
-		add_entity<AppleTree>(entities, glm::vec2((142.0f) * TILE_SIZE, 93.0f * TILE_SIZE), mt());
-
-		// more chests
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 89)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 91)), "chest", mt());
-		add_machine(entities, Tilemap::tile_topleft(glm::ivec2(132, 93)), "chest", mt());
-
-		// Add one item entity somewhere
-		spawn_item("apple", 3, glm::vec2((140.0f) * TILE_SIZE, 94.0f * TILE_SIZE));
-
-		// Boulders scattered around
-		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(122, 85)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(124, 84)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(121, 78)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(144, 91)), mt());
-		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(168, 63)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(176, 68)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(180, 69)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(178, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(177, 72)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(179, 73)), mt());
-	}
-
-	{ // boulders, and pickaxe stuck near it
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 65)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(101, 69)), mt());
-		add_entity<OreVein>(entities, Tilemap::tile_topleft(glm::ivec2(103, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(105, 71)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(104, 73)), mt());
-
-		// two small boulders, pushable...
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(105, 68));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<Boulder>(false));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(106, 69));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("pickaxe", 1));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(102, 67));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 40));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(96, 65));
-		entities.back()->uid = mt();
-
-		entities.push_back(std::make_unique<ItemEntity>("rock", 35));
-		entities.back()->position = Tilemap::tile_topleft(glm::ivec2(95, 59));
-		entities.back()->uid = mt();
-	}
-	{ // Dragon
-		add_entity<Dragon>(entities, Tilemap::tile_topleft(glm::ivec2(132, 49)), mt());
-	}
-
-	{ // boulders on the left, and lichen rock
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(96, 56)), mt());
-
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(94, 60)), mt());
-		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(91, 67)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(91, 70)), mt());
-		add_entity<Boulder>(entities, Tilemap::tile_topleft(glm::ivec2(97, 77)), mt());
-		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(88, 75)), mt());
-
-		add_entity<Forageable>(entities, Tilemap::tile_topleft(glm::ivec2(92, 76)), mt());
-	}
-
-	// initialize the inventory with two apple and one powder
-	inventory.add("water_bottle", 15);
-	inventory.add("pipe", 15);
-	*/
 
 	// recipe book: one page per recipe that makes a potion
 	for (Recipe const *recipe : Recipe::all()) {
@@ -969,6 +878,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		//entity hitboxes in orange (solid ones block the player):
 		for (auto const &entity : entities) {
 			batch.fill_rect(entity->hitbox(), glm::u8vec4(0xff, 0x90, 0x20, 0x70));
+		}
+		//creature roaming zones outlined in green:
+		for (auto const &entity : entities) {
+			auto const *creature = dynamic_cast< Vulmanid const * >(entity.get());
+			if (creature == nullptr) continue;
+			Rect z = creature->zone_rect();
+			glm::u8vec4 green(0x40, 0xff, 0x60, 0xc0);
+			batch.fill_rect(Rect{z.x, z.y, z.w, 1.0f}, green);
+			batch.fill_rect(Rect{z.x, z.y + z.h - 1.0f, z.w, 1.0f}, green);
+			batch.fill_rect(Rect{z.x, z.y, 1.0f, z.h}, green);
+			batch.fill_rect(Rect{z.x + z.w - 1.0f, z.y, 1.0f, z.h}, green);
 		}
 		//the dwarf's reach (what E interacts with) in blue, collision box in yellow:
 		batch.fill_rect(player.interact_box(), glm::u8vec4(0x40, 0x80, 0xff, 0xa0));
@@ -1748,6 +1668,8 @@ void PlayMode::load() {
 			add_entity<Forageable>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which kind
 		} else if (entity_type == "tree") {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
+		} else if (entity_type == "vulmanid") {
+			add_entity<Vulmanid>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "pipe") {
 			add_entity<Pipe>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "item_entity") {

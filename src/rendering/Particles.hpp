@@ -61,4 +61,5 @@ namespace Presets {
 	extern ParticlePreset const StepDust;
 	extern ParticlePreset const WoodChips; //axe hits a tree
 	extern ParticlePreset const Leaves;    //a tree lands on the ground
+	extern ParticlePreset const Feathers;  //a feather plucked from a vulmanid
 }

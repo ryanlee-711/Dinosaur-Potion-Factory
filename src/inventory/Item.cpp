@@ -72,7 +72,8 @@ static Load<ItemRegistry> item_registry(LoadTagDefault,
 		add("copper_ore", "Copper ore", "", "assets/sprites/items/ingredients/copper_ore.png", None);
 		add("iron_ore", "Iron ore", "Heavy and cold", "assets/test/iron_ore.png", None);       //placeholder sprite
 		add("fae_grass", "Fae grass", "Faintly glowing", "assets/test/fae_grass_item.png", None); //placeholder sprite
-		add("lumber", "Lumber", "A sturdy log", "assets/test/lumber.png", None);              //placeholder sprite
+		add("lumber", "Lumber", "A sturdy log", "assets/test/lumber.png", None); //placeholder sprite
+		add("vulmanid_feather", "Vulmanid feather", "Black and glossy", "assets/test/vulmanid_feather.png", None); //placeholder sprite              //placeholder sprite
 
 		// tools
 		add("empty_bottle", "Bottle", "", "assets/sprites/items/potions/empty_bottle.png", Liquid);

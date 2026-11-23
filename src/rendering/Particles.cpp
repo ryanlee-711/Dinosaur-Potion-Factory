@@ -148,4 +148,17 @@ namespace Presets {
 		.color_end = glm::u8vec4(0x3a, 0x78, 0x30, 0x00),
 		.fade = Fade::Linear,
 	};
+
+	ParticlePreset const Feathers{
+		.count_min = 6, .count_max = 9,
+		.spawn_box = glm::vec2(8.0f, 6.0f),
+		.life_min = 0.6f, .life_max = 1.0f,
+		.speed_min = 20.0f, .speed_max = 45.0f,
+		.angle = -90.0f, .spread = 160.0f,
+		.accel = glm::vec2(0.0f, 30.0f),
+		.drag = 4.0f,
+		.color_start = glm::u8vec4(0x3a, 0x34, 0x44, 0xff),
+		.color_end = glm::u8vec4(0x5a, 0x52, 0x66, 0x00),
+		.fade = Fade::Linear,
+	};
 }
