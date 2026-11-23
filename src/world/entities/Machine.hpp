@@ -8,6 +8,11 @@
 #include "../../starter/Load.hpp"
 #include "../../inventory/Recipe.hpp"
 
+#include <array>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 #include <glm/glm.hpp>
 
 struct MachineDef {
@@ -24,7 +29,7 @@ struct MachineDef {
     // Machine-specific definitions. Each type of machine shares the same values, populated in factorizing stage
     size_t output_slot_begin = 0;
     size_t output_slot_end = 0;
-    // Machine animations. 
+    // Machine animations.
     // Each spritesheet has four rows (EAST, NORTH, WEST, SOUTH)
     // Each row has as many frames as needed. All share the same animator
     size_t num_sprite_rows = 4;
@@ -35,6 +40,7 @@ struct MachineDef {
     using PortLocs = std::array<std::vector<PortPair>, 4>;
     PortLocs port_locs_in;
     PortLocs port_locs_out;
+    bool storage = false;
 
     // getter
     static const MachineDef* get(item_id_t machine_id);
@@ -73,7 +79,7 @@ public:
     float get_progress() const override;
 
     // IBreakable
-    item_id_t get_drop_id() override {return def->machine_type;}
+    item_id_t get_drop_id() override {return def ? def->machine_type : "";}
 
     // Machine-specific
     enum Rotation {EAST, NORTH, WEST, SOUTH};

@@ -4,6 +4,7 @@
 #include "../../main/Rect.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
+#include <algorithm>
 #include <cmath>
 
 #include <sstream>
@@ -146,7 +147,8 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
-            }
+            },
+            /* storage = */ true
         });
 
         machines->emplace("distiller", MachineDef{
@@ -430,48 +432,35 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
         inventory.set_slot(0, "", 0);
     }
 
-    // step 4. Item pushing
-
+    // step 4. Item pushing: every push_timer cooldown, send one output item through
+    // whichever output port (from this machine's MachineDef) has something that accepts it.
     push_timer -= elapsed;
-    if (push_timer <= 0.0f) {
-        push_timer = 0.0f;
-    } else {
-        return;
-    }
+    if (push_timer > 0.0f) return;
+    push_timer = 0.0f;
 
-    // push item to the right
     auto origin = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
+    size_t out_begin = def->storage ? 0 : def->output_slot_begin;
+    size_t out_end = def->storage ? inventory.size() : std::min(def->output_slot_end, inventory.size());
 
-    int output_idx = def->output_slot_begin - 1;
     for (auto const &[src, dst] : def->port_locs_out[rot2idx(rotation)]) {
-        ++output_idx;
-        auto source_tile = origin + src;
-        auto target_tile = origin + dst;
-        Entity *target = world.entity_at(target_tile);
+        Entity *target = world.entity_at(origin + dst);
         if (!target || target == this) continue;
 
-        // get IItemPort!
         auto *port = dynamic_cast<IItemPort*>(target);
         if (!port) continue;
 
-        auto type = port->get_port(source_tile);
+        auto type = port->get_port(origin + src);
         if (type != PortType::In && type != PortType::Both) continue;
 
-        if (inventory.slots[output_idx].second <= 0) continue;
-        int item_sent = port->push_item({inventory.slots[output_idx].first, 1});
-
-        if (item_sent != 0) {
-            inventory.slots[output_idx].second -= item_sent;
-            if (inventory.slots[output_idx].second <= 0) {
-                inventory.slots[output_idx].first = "";
-                inventory.slots[output_idx].second = 0;
-            }
-
+        for (size_t slot = out_begin; slot < out_end; ++slot) {
+            if (inventory.slot_empty(slot)) continue;
+            int sent = port->push_item({inventory.get_slot_id(int(slot)), 1});
+            if (sent <= 0) continue;
+            inventory.extract_from_slot(slot, sent);
             push_timer = PUSH_COOLDOWN;
+            return;
         }
     }
-
-    return;
 }
 
 void Machine::draw(Sprites &batch) const {
@@ -581,8 +570,9 @@ int Machine::push_item(ItemRecord item_record) {
         return 0;
     }
 
-    // goes into whichever input slot accepts it
-    for (size_t slot = 0; slot < (def->machine_type == "chest" ? 10 : def->output_slot_begin); ++slot) {
+    // goes into whichever input slot accepts it (a chest: any slot)
+    size_t in_end = def->storage ? inventory.size() : def->output_slot_begin;
+    for (size_t slot = 0; slot < in_end; ++slot) {
         if (!inventory.can_insert(slot, item_record.first)) continue;
         int moved = inventory.insert_into_slot(slot, item_record.first, 1);
         if (moved > 0) return moved;
@@ -603,7 +593,7 @@ std::string Machine::save() const {
     ss << ' ' << "machine";
     ss << ' ' << def->machine_type;
     ss << ' ' << position.x << ' ' << position.y << ' ' << rot2idx(rotation);
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id = inventory.get_slot_id(idx);
         if (item_id == "") item_id = "null";
         int count = inventory.get_slot_count(idx);
@@ -638,7 +628,7 @@ void Machine::load(std::string line) {
     }
     rotation = static_cast<Rotation>(rot_idx);
 
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id;
         int count;
         if (!(ss >> item_id >> count)) {

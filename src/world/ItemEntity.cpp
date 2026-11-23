@@ -78,7 +78,7 @@ void ItemEntity::draw(Sprites &batch) const {
         } else {
             batch.draw(*missing_no_texture, src, top_left);
         }
-        
+
     }
 }
 
@@ -104,12 +104,12 @@ std::string ItemEntity::save() const {
     ss << uid;
     ss << ' ' << "item_entity";
     ss << ' ' << position.x << ' ' << position.y;
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id = inventory.get_slot_id(idx);
         int count = inventory.get_slot_count(idx);
         if (item_id == "") item_id = "null";
         ss << ' ' << item_id << ' ' << count;
-    }    
+    }
     return ss.str();
 }
 
@@ -122,7 +122,7 @@ void ItemEntity::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }
