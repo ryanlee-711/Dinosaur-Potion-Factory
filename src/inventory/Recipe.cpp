@@ -63,7 +63,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
                     ItemVector{ItemRecord{in_1, in_1_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}},
                     time_cost, probability);
-            } else if (machine_id == "sieve") {
+            } else if (machine_id == "siphon") {
                 if (!(ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count)) continue; //incomplete line: skip it
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
@@ -95,7 +95,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("dragon",
-            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"apple", 1} },
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"drupe", 1} },
             ItemVector{ ItemRecord{"brewer", 1} },
             1.5f, 1.0f
         );

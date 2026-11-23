@@ -201,8 +201,8 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             }
         });
 
-        machines->emplace("sieve", MachineDef{
-            /* machine_type= */ "sieve",
+        machines->emplace("siphon", MachineDef{
+            /* machine_type= */ "siphon",
             /* texture= */ fermenter_texture,
             /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
@@ -311,7 +311,7 @@ void Machine::configure_inventory(item_id_t machine_type) {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "altar") {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
-    } else if (machine_type == "sieve") {
+    } else if (machine_type == "siphon") {
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
     } else if (machine_type == "chest") {
         // pass
