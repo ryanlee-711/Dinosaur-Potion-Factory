@@ -20,10 +20,10 @@ using GameConfig::TILE_SIZE;
 //Golem art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
 // (Placeholder until the sprite/animation system replaces it.)
 static Load< Texture > golem_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/dwarf.png"));
+	return new Texture(data_path("assets/sprites/entities/golem.png"));
 });
-static constexpr int PLAYER_FRAME_W = 32;
-static constexpr int PLAYER_FRAME_H = 32;
+static constexpr int PLAYER_FRAME_W = 16;
+static constexpr int PLAYER_FRAME_H = 16;
 
 Golem::Golem(): inventory(1) { }
 
@@ -81,10 +81,17 @@ void Golem::update(FrameInput const &input, float elapsed, World const &world) {
 	glm::vec2 direction = world.uid_to_entities.at(target_entity)->position - position;
 	if (glm::length(direction) > 1.0f) {
 		// move
+		animation_timer += elapsed;
+
+		// update facing
+		facing = direction;
+
 		glm::vec2 step = glm::normalize(direction) * WALK_SPEED * elapsed;
 		position += step;  // no collision. I am NOT writing A-star here!
 		return;
 	}
+
+	animation_timer = 0.0f;
 
 	// If within a distance from the target, starts working.
 	state_change_timeout -= elapsed;
@@ -236,28 +243,21 @@ void Golem::move_axis(int axis, float amount, World const &world) {
 }
 
 void Golem::draw(Sprites &batch) const {
-    int frame = 0; //down
+    int frame = 3; //down
 	if (facing.y < 0) frame = 1;      //up
 	else if (facing.x < 0) frame = 2; //left
-	else if (facing.x > 0) frame = 3; //right
-	Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
+	else if (facing.x > 0) frame = 0; //right
+
+	int anim_frame = static_cast<int>(animation_timer * 8.0f) % 4;
+
+	Rect src{float(anim_frame * PLAYER_FRAME_W), float(frame * PLAYER_FRAME_H), float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
 	//round to whole pixels so the sprite never sits between pixels:
 	glm::vec2 top_left = glm::round(position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
 	
 	if (facing.y >= 0) {
 		batch.draw(*golem_texture, src, top_left);
 	}
-	// draw held item
-	if (held_item.first != "" && held_item.second > 0) {
-		if (auto item = Item::get(held_item.first); item != nullptr) {
-			glm::vec2 offset = glm::vec2{-2.0f, 15.0f};
-			if (facing.y < 0) offset = glm::vec2{19.0f, 13.0f};
-			if (facing.x < 0) offset = glm::vec2{6.0f, 16.0f};
-			if (facing.x > 0) offset = glm::vec2{10.0f, 16.0f};
-			
-			batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, top_left + offset);
-		}
-	}
+
 	if (facing.y < 0) {
 		batch.draw(*golem_texture, src, top_left);
 	}

@@ -76,5 +76,7 @@ private:
 	float work_cooldown = 0.0f;
 	float absorb_item_cooldown = 0.0f;
 
+	float animation_timer = 0.0f;
+
 	bool initialized = false;
 };

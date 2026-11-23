@@ -67,4 +67,5 @@ public:
 private:
 	void move_axis(int axis, float amount, World const &world);
 	std::map< effect_id_t, ActiveEffect > effects; // active effects by id
+	float animation_timer = 0.0f;
 };

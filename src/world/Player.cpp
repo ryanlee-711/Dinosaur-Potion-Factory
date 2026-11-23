@@ -18,7 +18,7 @@ using GameConfig::TILE_SIZE;
 //Player art: one row of frames, each FRAME_W x FRAME_H, in the order down, up, left, right.
 // (Placeholder until the sprite/animation system replaces it.)
 static Load< Texture > player_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/dwarf.png"));
+	return new Texture(data_path("assets/sprites/dwarf.png"));
 });
 static constexpr int PLAYER_FRAME_W = 32;
 static constexpr int PLAYER_FRAME_H = 32;
@@ -37,6 +37,10 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 
 	moving = (direction != glm::vec2(0.0f));
 	if (!moving) return;
+
+	// Only update animation timer when moving
+	animation_timer += elapsed * (input.sprint ? 1.5f : 1.0f);
+	if (animation_timer > 60.0f) animation_timer -= 60.0f;
 
 	//face whichever way we're mostly going:
 	if (std::abs(direction.x) > std::abs(direction.y)) {
@@ -93,11 +97,14 @@ void Player::move_axis(int axis, float amount, World const &world) {
 }
 
 void Player::draw(Sprites &batch) const {
-    int frame = 0; //down
+    int frame = 3; //down
 	if (facing.y < 0) frame = 1;      //up
 	else if (facing.x < 0) frame = 2; //left
-	else if (facing.x > 0) frame = 3; //right
-	Rect src{float(frame * PLAYER_FRAME_W), 0.0f, float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
+	else if (facing.x > 0) frame = 0; //right
+
+	int anim_frame = static_cast<int>(animation_timer * 8.0f) % 8;
+
+	Rect src{float(anim_frame * PLAYER_FRAME_W), float(frame * PLAYER_FRAME_H), float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
 	//round to whole pixels so the sprite never sits between pixels:
 	glm::vec2 top_left = glm::round(position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
 	
