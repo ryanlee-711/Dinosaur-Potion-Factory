@@ -12,7 +12,7 @@
 #include "../starter/data_path.hpp"
 
 
-constexpr std::string ITEMS_PATH = "data/items.tsv";
+constexpr char const *ITEMS_PATH = "data/items.tsv";
 
 using ItemRegistry = Item::ItemRegistry;
 

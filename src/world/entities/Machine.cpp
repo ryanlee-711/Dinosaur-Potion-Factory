@@ -322,12 +322,12 @@ void Machine::configure_inventory(item_id_t machine_type) {
     } else if (machine_type == "distiller") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
         inventory.set_rule(1, Inventory::SlotRule{ .can_insert = false });
-        inventory.set_rule(2, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+        inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false, .required_tags = ItemTag::Liquid | ItemTag::Potion });
     } else if (machine_type == "fermenter") {
         inventory.set_rule(0, Inventory::SlotRule{ .required_tags = ItemTag::Fermentable });
         inventory.set_rule(1, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion });
         inventory.set_rule(2, Inventory::SlotRule{ .can_insert = false });
-        inventory.set_rule(3, Inventory::SlotRule{ .required_tags = ItemTag::Liquid | ItemTag::Potion, .can_insert = false });
+        inventory.set_rule(3, Inventory::SlotRule{ .can_insert = false, .required_tags = ItemTag::Liquid | ItemTag::Potion });
     } else if (machine_type == "fuelbox") {
         // pass
     } else {
@@ -336,7 +336,7 @@ void Machine::configure_inventory(item_id_t machine_type) {
 }
 
 void Machine::update(FrameInput const &input, float elapsed, World const &world) {
-    
+
     // animation
     if (def->machine_type == "brewer" || processing_timer > 0.0f) {
         anim_timer += elapsed;
@@ -422,7 +422,7 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
         }
         // check that there is space for outputs
         for (size_t idx = 0; idx < current_recipe->items_out.size(); ++idx) {
-            if (dice > current_recipe->probability && 
+            if (dice > current_recipe->probability &&
                 ((def->machine_type == "distiller" && idx == 0) || (def->machine_type == "fermenter" && idx == 0))) continue;
             ItemRecord const &item = current_recipe->items_out[idx];
             inventory.add_to_slot_range(item.first, item.second, def->output_slot_begin, def->output_slot_end);
@@ -602,7 +602,7 @@ std::string Machine::save() const {
         if (item_id == "") item_id = "null";
         int count = inventory.get_slot_count(idx);
         ss << ' ' << item_id << ' ' << count;
-    }    
+    }
     return ss.str();
 }
 
@@ -615,7 +615,7 @@ void Machine::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type, machine_type;
-    
+
     if (!(ss >> read_uid >> entity_type >> machine_type)) {
         throw std::runtime_error{"UID read failure"};
     }

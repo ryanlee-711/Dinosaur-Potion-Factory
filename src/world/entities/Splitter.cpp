@@ -12,7 +12,7 @@
 #include <sstream>
 
 static Load< Texture > box_texture(LoadTagDefault, []() -> Texture const * {
-	return new Texture(data_path("assets/sprites/machines/Splitter.png"));
+	return new Texture(data_path("assets/sprites/machines/splitter.png"));
 });
 
 Splitter::Splitter() : inventory(2), frame(0), base_frame(0) {
@@ -147,19 +147,19 @@ IItemPort::PortType Splitter::get_port(glm::ivec2 grid_coord) {
     for (size_t idx = 0; idx < 4; ++idx) {
         if (grid_coord != tile + dirs[idx]) continue;
         if (work_mode == WorkMode::JOIN) {
-            if (idx == static_cast<int>(rotation)) {
+            if (idx == static_cast<size_t>(rotation)) {
                 return PortType::Out;
             } else {
                 return PortType::In;
             }
         } else if (work_mode == WorkMode::SPLIT) {
-            if ((idx + 2) % 4 == static_cast<int>(rotation)) {
+            if ((idx + 2) % 4 == static_cast<size_t>(rotation)) {
                 return PortType::In;
             } else {
                 return PortType::Out;
             }
         } else {
-            if (static_cast<int>(rotation) == idx || static_cast<int>(rotation) == (idx + 1) % 4) {
+            if (static_cast<size_t>(rotation) == idx || static_cast<size_t>(rotation) == (idx + 1) % 4) {
                 return PortType::In;
             } else {
                 return PortType::Out;
@@ -200,7 +200,7 @@ std::string Splitter::save() const {
     ss << uid;
     ss << ' ' << "splitter";
     ss << ' ' << static_cast<int>(rotation);
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id = inventory.get_slot_id(idx);
         int count = inventory.get_slot_count(idx);
         if (item_id == "") item_id = "null";
@@ -218,7 +218,7 @@ void Splitter::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }
@@ -232,7 +232,7 @@ void Splitter::load(std::string line) {
     }
     rotation = static_cast<Rotation>(rot);
 
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id;
         int count;
         if (!(ss >> item_id >> count)) {

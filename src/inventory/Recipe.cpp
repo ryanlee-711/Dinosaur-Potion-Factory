@@ -13,7 +13,7 @@
 
 using RecipeRegistry = Recipe::RecipeRegistry;
 
-constexpr std::string RECIPE_PATH = "data/recipes.tsv";
+constexpr char const *RECIPE_PATH = "data/recipes.tsv";
 
 static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 	[]() -> RecipeRegistry const* {
@@ -56,31 +56,31 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}},
-                    time_cost, probability);         
+                    time_cost, probability);
             } else if (machine_id == "furnace") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}},
-                    time_cost, probability);         
-            } else if (machine_id == "siphon") {
+                    time_cost, probability);
+            } else if (machine_id == "sieve") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}},
-                    time_cost, probability);         
+                    time_cost, probability);
             } else if (machine_id == "distiller") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}, ItemRecord{out_2, out_2_count}},
-                    time_cost, probability);         
+                    time_cost, probability);
             } else if (machine_id == "fermenter") {
                 ss >> probability >> time_cost >> in_1 >> in_1_count >> in_2 >> in_2_count >> out_1 >> out_1_count >> out_2 >> out_2_count;
                 add(machine_id,
                     ItemVector{ItemRecord{in_1, in_1_count}, ItemRecord{in_2, in_2_count}},
                     ItemVector{ItemRecord{out_1, out_1_count}, ItemRecord{out_2, out_2_count}},
-                    time_cost, probability);         
+                    time_cost, probability);
             }
         }
 

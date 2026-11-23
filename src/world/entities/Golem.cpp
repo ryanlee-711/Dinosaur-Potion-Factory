@@ -135,7 +135,7 @@ void Golem::reload_targets(World const &world) {
 				if (machine->get_machine_type() != "fuelbox") continue;
 				float distance;
 				if (distance = glm::distance(machine->position, position); distance > 8.0f * TILE_SIZE) continue;
-				
+
 				// add it as fuelbox
 				fuel_box = machine->uid;
 				break;
@@ -167,7 +167,7 @@ void Golem::reload_targets(World const &world) {
 				nearest_chest = machine;
 			}
 
-			if (auto thing = dynamic_cast<IWorkable *>(ptr)) {
+			if (dynamic_cast<IWorkable *>(ptr) != nullptr) {
 				float distance;
 				if (distance = glm::distance(ptr->position, fuel_box_ptr->position); distance > 8.0f * TILE_SIZE) continue;
 				if (distance > nearest_producer_distance) continue;
@@ -253,15 +253,25 @@ void Golem::draw(Sprites &batch) const {
 	Rect src{float(anim_frame * PLAYER_FRAME_W), float(frame * PLAYER_FRAME_H), float(PLAYER_FRAME_W), float(PLAYER_FRAME_H)};
 	//round to whole pixels so the sprite never sits between pixels:
 	glm::vec2 top_left = glm::round(position) - glm::vec2(PLAYER_FRAME_W * 0.5f, float(PLAYER_FRAME_H));
-	
+
 	if (facing.y >= 0) {
 		batch.draw(*golem_texture, src, top_left);
 	}
+	// draw held item
+	if (held_item.first != "" && held_item.second > 0) {
+		if (auto item = Item::get(held_item.first); item != nullptr) {
+			glm::vec2 offset = glm::vec2{-2.0f, 15.0f};
+			if (facing.y < 0) offset = glm::vec2{19.0f, 13.0f};
+			if (facing.x < 0) offset = glm::vec2{6.0f, 16.0f};
+			if (facing.x > 0) offset = glm::vec2{10.0f, 16.0f};
 
+			batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, top_left + offset);
+		}
+	}
 	if (facing.y < 0) {
 		batch.draw(*golem_texture, src, top_left);
 	}
-	
+
 }
 
 Rect Golem::hitbox() const {
@@ -294,7 +304,7 @@ void Golem::load(std::string line) {
      */
     uint32_t read_uid;
 	std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }
