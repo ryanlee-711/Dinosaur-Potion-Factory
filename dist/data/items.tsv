@@ -42,7 +42,7 @@ faegrass	Faegrass	TODO	assets/sprites/items/missing_no.png	1	1
 faegrass_essence	Essence of Flow	TODO	assets/sprites/items/missing_no.png			1					
 faegrass_powder	Faegrass Powder	TODO	assets/sprites/items/missing_no.png		1	1					
 faegrass_solution	Faegrass Solution	TODO	assets/sprites/items/missing_no.png						1		
-feather	Vulmanid Feather	TODO	assets/sprites/items/missing_no.png	1	1		1				
+feather	Vulmanid Feather	TODO	assets/test/vulmanid_feather.png	1	1		1				
 feather_brew	Vulmanid Brew	TODO	assets/sprites/items/missing_no.png						1		
 feather_dust	Vulmanid Dust	TODO	assets/sprites/items/missing_no.png		1	1					
 feather_essence	Essence of Breeze	TODO	assets/sprites/items/missing_no.png			1					
@@ -83,7 +83,7 @@ spoiled_drupe	Spoiled Drupe	TODO	assets/sprites/items/missing_no.png	1	1
 spoiled_feather	Spoiled Feather	TODO	assets/sprites/items/missing_no.png	1	1						
 sticky_brew	Sticky Brew	TODO	assets/sprites/items/missing_no.png						1		
 strength_crystal	Strength Crystal	TODO	assets/sprites/items/missing_no.png		1	1					
-strength_potion	Strength Potion	TODO	assets/sprites/items/missing_no.png						1		
+strength_potion	Strength Potion	TODO	assets/sprites/items/potions/strength_potion.png						1		
 supergrassy_water	Very grassy water	TODO	assets/sprites/items/missing_no.png						1		
 sweet_brew	Sweet Brew	TODO	assets/sprites/items/missing_no.png						1		
 thick_potion	Thick Potion	TODO	assets/sprites/items/missing_no.png						1		
@@ -92,6 +92,7 @@ warmth_crystal	Warmth Crystal	TODO	assets/sprites/items/missing_no.png		1	1
 warmth_potion	Warmth Potion	TODO	assets/sprites/items/missing_no.png						1		
 water	Water Bottle	TODO	assets/sprites/items/potions/water_bottle.png						1		
 pickaxe	Pickaxe	TODO	assets/sprites/items/pickaxe.png								1
+axe	Axe	TODO	assets/test/axe.png								1
 pipe	Pipe	TODO	assets/sprites/items/placeables/pipe_icon.png							1	
 brewer	Brewing Cauldron	TODO	assets/sprites/items/placeables/brewer_icon.png							1	
 crusher	Stone Press	TODO	assets/sprites/items/placeables/crusher_icon.png							1	
@@ -108,6 +109,8 @@ sieve	Sieve	TODO	assets/sprites/items/missing_no.png							1
 altar	Altar	TODO	assets/sprites/items/missing_no.png							1	
 copper_ore	Copper Ore	TODO	assets/sprites/items/ingredients/copper_ore.png								
 timber	Timber	TODO	assets/sprites/items/missing_no.png								
+iron_ore	Iron Ore	TODO	assets/test/iron_ore.png								
+lumber	Lumber	A steady wood	assets/test/lumber.png								
 rock	Rock	TODO	assets/sprites/items/ingredients/rock.png								
 quartz	Quartz	TODO	assets/sprites/items/missing_no.png								
 empty_bottle	Empty Bottle	TODO	assets/sprites/items/potions/empty_bottle.png								

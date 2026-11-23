@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-class Boulder : public Entity, public IInteractable, public IBreakable {
+class Boulder : public Entity, public IInteractable, public IBreakable, public IHintable {
     /* Boulder implementation for demo. */
 public:
     Boulder(bool use_big = true);
@@ -26,8 +26,15 @@ public:
     void on_interact(Context &ctx) override;
 
     // IBreakable
-    int get_hardness() override {return big ? 8 : 4;}
+    static constexpr int BIG_HARDNESS = 8, SMALL_HARDNESS = 4;
+    int get_hardness() override {return big ? BIG_HARDNESS : SMALL_HARDNESS;}
     item_id_t get_drop_id() override {return "rock";}
+
+    // IHintable: small = E key (push it, needs any strength), big = pickaxe icon. Faded until the dwarf has that strength.
+    bool show_hint() const override { return true; }
+    item_id_t hint_tool() const override { return big ? "pickaxe" : ""; }
+    glm::vec2 hint_anchor() const override;
+    bool hint_locked(Player const &player) const override;
 
     bool big = true;
 

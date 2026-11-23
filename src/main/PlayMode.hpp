@@ -39,6 +39,7 @@ struct PlayMode : Mode {
 	bool place_machine(item_id_t const &id, glm::vec2 world_pos); // spawn the machine an item places; false if it isn't one
 	bool interact_with(Entity *entity);  // run an entity's on_interact, false if it isn't interactable
 	void interact_facing();              // E / Space: interact with what the dwarf faces, or close the open panel
+	Entity *interact_target() const;     // what E would act on right now. the E hint uses it too
 	void consume_selected(); // F to drink/eat selected hotbar item
 	void remove_objects(float elapsed);
 	bool tile_in_reach(glm::ivec2 tile, float reach) const;
@@ -139,10 +140,12 @@ struct PlayMode : Mode {
 	} left_click, right_click;
 	glm::ivec2 hovered_coord = glm::ivec2{0};
 	int variety = 0;    // used when placing entities, representing the variation used
+	Entity const * e_target = nullptr;   // used for drawing interaction target
 
 	//short message from the last interaction ("Your bag is full"), shown for a few seconds:
 	std::string message;
 	float message_timer = 0.0f;
+	float hint_time = 0.0f;              // drives the bob of the floating gather hints
 
 	//----- rendering -----
 	Camera2D camera;

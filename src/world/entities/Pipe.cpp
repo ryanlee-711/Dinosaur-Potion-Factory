@@ -191,7 +191,7 @@ std::string Pipe::save() const {
     ss << uid;
     ss << ' ' << "pipe";
     ss << ' ' << position.x << ' ' << position.y << ' ' << in_dir.x << ' ' << in_dir.y << ' ' << out_dir.x << ' ' << out_dir.y;
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id = inventory.get_slot_id(idx);
         int count = inventory.get_slot_count(idx);
         if (item_id == "") item_id = "null";
@@ -209,7 +209,7 @@ void Pipe::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }
@@ -221,7 +221,7 @@ void Pipe::load(std::string line) {
         throw std::runtime_error{"Didn't read position / in_dir / out_dir"};
     }
 
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id;
         int count;
         if (!(ss >> item_id >> count)) {

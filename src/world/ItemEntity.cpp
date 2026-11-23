@@ -134,7 +134,7 @@ void ItemEntity::load(std::string line) {
         throw std::runtime_error{"Didn't read position"};
     }
 
-    for (int idx = 0; idx < inventory.size(); ++idx) {
+    for (int idx = 0; idx < int(inventory.size()); ++idx) {
         item_id_t item_id;
         int count;
         if (!(ss >> item_id >> count)) {
