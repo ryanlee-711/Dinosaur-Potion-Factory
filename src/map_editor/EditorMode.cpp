@@ -20,7 +20,7 @@
 using GameConfig::TILE_SIZE;
 
 static constexpr int TILESET_W = 256;
-static constexpr int TILESET_H = 256;
+static constexpr int TILESET_H = 512;
 static constexpr int ERASE_INDEX = 255;
 
 static Load< Texture > arrow_texture(LoadTagDefault, []() -> Texture const * {
@@ -101,6 +101,9 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 		} else if (evt.key.key == SDLK_S) {
 			map.save();
 			hint = "Map saved!";
+		} else if (evt.key.key == SDLK_P) {
+			collision_index = (collision_index + 1) % 3;
+			std::cout << "changed coll to " << collision_index << "\n";
 		}
 
 		// numkeys
@@ -204,8 +207,8 @@ void EditorMode::update(float elapsed) {
 							if (!map.in_bounds(draw_to)) continue;
 							glm::ivec2 draw_with = tileset_select_topleft + glm::ivec2{dx, dy};
 
-							int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000001u))
-									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_H / GameConfig::TILE_SIZE) + draw_with.x));
+							int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000000u + (1u << collision_index)))
+									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_W / GameConfig::TILE_SIZE) + draw_with.x));
 
 							map.tile_layers[selected_layer][
 								map.size.x * draw_to.y + draw_to.x
@@ -237,8 +240,8 @@ void EditorMode::update(float elapsed) {
 						(y - drawrect_topleft.y) % tileset_select_size.y
 					};
 
-					int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000001u))
-									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_H / GameConfig::TILE_SIZE) + draw_with.x));
+					int32_t wvalue = (selected_layer == 0 ? (erasing ? 0 : static_cast<int32_t>(0x80000000u + (1u << collision_index)))
+									 :(erasing ? ERASE_INDEX : draw_with.y * (TILESET_W / GameConfig::TILE_SIZE) + draw_with.x));
 
 					map.tile_layers[selected_layer][
 						map.size.x * draw_to.y + draw_to.x
@@ -286,13 +289,21 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 	map.draw(batch, *tileset, view_min, view_max);
 
 	if (layers_activated[0]) {
-		//solid tiles in red:
+		//solid tiles in:
+		// red = WALL
+		// green = WATER
+		// yellow = CLIFF
 		glm::ivec2 first = glm::max(Tilemap::tile_at_point(view_min), glm::ivec2(0));
 		glm::ivec2 last = glm::min(Tilemap::tile_at_point(view_max), glm::ivec2(map.size) - 1);
 		for (int ty = first.y; ty <= last.y; ++ty) {
 			for (int tx = first.x; tx <= last.x; ++tx) {
-				if (map.is_solid(glm::ivec2(tx, ty))) {
+				uint32_t coll = map.collision_layer_at(glm::ivec2(tx, ty));
+				if (coll & 0b1) {
 					batch.fill_rect(Tilemap::tile_rect(glm::ivec2(tx, ty)), glm::u8vec4(0xff, 0x30, 0x30, 0x50));
+				} else if (coll & 0b10) {
+					batch.fill_rect(Tilemap::tile_rect(glm::ivec2(tx, ty)), glm::u8vec4(0x30, 0xff, 0x30, 0x50));
+				} else if (coll & 0b100) {
+					batch.fill_rect(Tilemap::tile_rect(glm::ivec2(tx, ty)), glm::u8vec4(0xff, 0xff, 0x30, 0x50));
 				}
 			}
 		}
@@ -388,7 +399,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		ui_batch.draw(
 			*tileset.get(),
 			Rect{0.0f, 0.0f, float(TILESET_W), float(TILESET_H)},
-			Rect{0.0f, 0.0f, float(panel_size.x), float(panel_size.x)},  // x * x
+			Rect{0.0f, 0.0f, float(panel_size.x), float(panel_size.x * 2)},  // x * x
 			glm::u8vec4{0xff}
 		);
 
@@ -398,14 +409,14 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		ui_batch.draw(
 			*editor_tool_texture,
 			Rect{64.0f, dragging || tool_mode == ToolMode::DRAG ? 32.0f : 0.0f, 32.0f, 32.0f},
-			Rect{0.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{0.0f, float(panel_size.x) * 1.7f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 		// pen
 		ui_batch.draw(
 			*editor_tool_texture,
 			Rect{0.0f, tool_mode == ToolMode::PEN ? 32.0f : 0.0f, 32.0f, 32.0f},
-			Rect{32.0f * icon_scale, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{32.0f * icon_scale, float(panel_size.x) * 1.7f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 
@@ -413,7 +424,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		ui_batch.draw(
 			*editor_tool_texture,
 			Rect{32.0f, tool_mode == ToolMode::RECT ? 32.0f : 0.0f, 32.0f, 32.0f},
-			Rect{32.0f * icon_scale * 2.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{32.0f * icon_scale * 2.0f, float(panel_size.x) * 1.7f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 
@@ -421,7 +432,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		ui_batch.draw(
 			*editor_tool_texture,
 			Rect{96.0f, erasing ? 32.0f : 0.0f, 32.0f, 32.0f},
-			Rect{32.0f * icon_scale * 3.0f, float(panel_size.x) * 1.1f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{32.0f * icon_scale * 3.0f, float(panel_size.x) * 1.7f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 
@@ -438,7 +449,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		);
 		// draw selection
 		ui_batch.fill_rect(
-			Rect{32.0f * float(selected_layer) * icon_scale, float(panel_size.x) * 1.3f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{32.0f * float(selected_layer) * icon_scale, float(panel_size.x) * 1.85f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff, 0xff, 0x44, 0xff}
 		);
 
@@ -447,7 +458,7 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 			ui_batch.draw(
 			*editor_digit_texture,
 			Rect{32.0f * float(idx), layers_activated[idx] ? 32.0f : 0.0f, 32.0f, 32.0f},
-			Rect{32.0f * float(idx) * icon_scale, float(panel_size.x) * 1.3f, 32.0f * icon_scale, 32.0f * icon_scale},
+			Rect{32.0f * float(idx) * icon_scale, float(panel_size.x) * 1.85f, 32.0f * icon_scale, 32.0f * icon_scale},
 			glm::u8vec4{0xff}
 		);
 		}

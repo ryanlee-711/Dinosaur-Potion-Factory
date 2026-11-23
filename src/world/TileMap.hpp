@@ -40,6 +40,7 @@ struct Tilemap {
 	int32_t tile_at(glm::ivec2 tile, size_t layer) const; // tile must be in bounds
 	bool is_solid(glm::ivec2 tile) const;            // outside the map counts as solid
 	bool overlaps_solid(Rect const &box) const;      // does a world-space box touch any solid tile?
+	uint32_t collision_layer_at(glm::ivec2 tile) const;   // outside the map counts as solid
 
 	static glm::ivec2 tile_at_point(glm::vec2 world_px);
 	static glm::vec2 tile_center(glm::ivec2 tile);

@@ -73,6 +73,7 @@ struct EditorMode : Mode {
 	std::vector<bool> layers_activated;
 	size_t selected_layer = 1;
 	std::string hint = "";
+	uint32_t collision_index = 0;
 
 	// HISTORY, Memory eater!
 	std::deque<std::vector<std::vector< int32_t >>> history;

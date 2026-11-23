@@ -73,6 +73,14 @@ bool Tilemap::is_solid(glm::ivec2 tile) const {
 	return tile_layers[0][size_t(tile.y) * size.x + tile.x] & SOLID_MASK;
 }
 
+uint32_t Tilemap::collision_layer_at(glm::ivec2 tile) const {
+	if (!in_bounds(tile)) return 0b11111111;
+	if (tile_layers.empty()) {
+		return 0b0;
+	}
+	return tile_layers[0][size_t(tile.y) * size.x + tile.x];
+}
+
 bool Tilemap::overlaps_solid(Rect const &box) const {
 	//shrink max by a hair so a box that exactly touches a tile edge doesn't count as overlapping
 	constexpr float EPS = 0.001f;

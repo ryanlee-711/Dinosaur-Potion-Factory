@@ -10,7 +10,7 @@ void World::solids_overlapping(Rect const &box, Entity const &mover, std::vector
 	for (int ty = first.y; ty <= last.y; ++ty) {
 		for (int tx = first.x; tx <= last.x; ++tx) {
 			glm::ivec2 tile(tx, ty);
-			if (!map.is_solid(tile)) continue;
+			if ((map.collision_layer_at(tile) & mover.collision_mask) == 0) continue;
 			Rect r = Tilemap::tile_rect(tile);
 			if (r.overlaps(box)) out.emplace_back(r);
 		}

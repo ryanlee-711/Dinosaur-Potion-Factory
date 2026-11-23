@@ -29,7 +29,12 @@ struct Entity {
 
 	// Two entities block each other when (a.collision_mask & b.collision_mask) != 0.
 	// Default 0x1 = solid. Set to 0 for things you can walk through
-	uint32_t collision_mask = 0x1;
+	// 0b0001 = WALL, never walk through
+	// 0b0010 = WATER, can have siphon and be flown over
+	// 0b0100 = CLIFF, can be flown over
+	// 0b1000 = ENTITY, can be flown over
+	uint32_t collision_layer = 0b1000;
+	uint32_t collision_mask = 0b1111;
 
 	// A unique ID for this object, randomly generated in uninitialized; must be unique.
 	uint32_t uid = next_uid++;

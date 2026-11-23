@@ -26,7 +26,7 @@ static Load< Texture > missing_no_texture(LoadTagDefault, []() -> Texture const 
 });
 
 ItemEntity::ItemEntity(): inventory(1) {
-    collision_mask = 0x0;
+    collision_layer = 0x0;
 }
 
 ItemEntity::ItemEntity(item_id_t item_id, int item_count): inventory(1) {
