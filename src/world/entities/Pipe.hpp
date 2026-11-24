@@ -48,6 +48,7 @@ public:
         MAGENTA
     } color = Color::DEFAULT;
 
+    static void draw_placement_hint(Sprites &batch, glm::vec2 position, Color color);
 
 private:
     Inventory inventory;

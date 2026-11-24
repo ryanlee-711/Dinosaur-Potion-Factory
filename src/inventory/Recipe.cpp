@@ -89,26 +89,26 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
 
 
         add("dragon",
-            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"lichen", 1} },
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"lumber", 1} },
             ItemVector{ ItemRecord{"furnace", 1} },
             1.5f, 1.0f
         );
 
         add("dragon",
-            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"drupe", 1} },
+            ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"iron_ore", 1} },
             ItemVector{ ItemRecord{"brewer", 1} },
             1.5f, 1.0f
         );
 
         add("dragon",
             ItemVector{ ItemRecord{"copper_ore", 3}, ItemRecord{"rock", 1} },
-            ItemVector{ ItemRecord{"crusher", 2} },
+            ItemVector{ ItemRecord{"crusher", 1} },
             1.5f, 1.0f
         );
 
         add("dragon",
-            ItemVector{ ItemRecord{"copper_ore", 1} },
-            ItemVector{ ItemRecord{"pipe", 1} },
+            ItemVector{ ItemRecord{"copper_ore", 2} },
+            ItemVector{ ItemRecord{"pipe", 2} },
             0.5f, 1.0f
         );
 
@@ -116,6 +116,30 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             ItemVector{ ItemRecord{"rock", 3} },
             ItemVector{ ItemRecord{"chest", 1} },
             1.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 2}, ItemRecord{"quartz", 2} },
+            ItemVector{ ItemRecord{"siphon", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"planks", 2}, ItemRecord{"quartz", 2} },
+            ItemVector{ ItemRecord{"fermenter", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"iron_ore", 2}, ItemRecord{"quartz", 2} },
+            ItemVector{ ItemRecord{"distiller", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{  ItemRecord{"quartz", 3} },
+            ItemVector{ ItemRecord{"empty_bottle", 6} },
+            0.5f, 1.0f
         );
 
 		return recipes.release();

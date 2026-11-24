@@ -688,6 +688,7 @@ void PlayMode::do_world_interaction(float elapsed) {
 }
 
 bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
+	size_t first_new_entity = entities.size();
 	auto check_tile_empty = [this, world_pos](glm::ivec2 lo, glm::ivec2 hi) -> bool {
 		glm::ivec2 base = Tilemap::tile_at_point(world_pos);
 		for (int y = lo.y; y <= hi.y; ++y) {
@@ -708,6 +709,7 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_machine(entities, world_pos, "brewer");
 	} else if (id == "pipe") {
 		add_entity<Pipe>(entities, world_pos);
+		static_cast<Pipe *>(entities.back().get())->color = static_cast<Pipe::Color>(variety % 4);
 	} else if (id == "furnace" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_machine(entities, world_pos, "furnace");
 	} else if (id == "splitter") {
@@ -727,14 +729,47 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		}
 	} else if (id == "fermenter" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
 		add_machine(entities, world_pos, "fermenter");
-	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{3, 0})) {
+	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{2, 0})) {
 		add_machine(entities, world_pos, "distiller");
-	} else if (id == "fuelbox" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
+	} else if (id == "golem" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
 		add_machine(entities, world_pos, "fuelbox");
-	} else if (id == "golem") {
 		add_entity<Golem>(entities, world_pos);
+	} else if (id == "siphon") {
+		auto const *def = MachineDef::get(id);
+    	if (!def) return false;
+		Rect coverage = (variety % 2 ? def->hitbox_rot_rect : def->hitbox_rect).offset_by(world_pos);
+
+		glm::ivec2 first = Tilemap::tile_at_point(coverage.min());
+		glm::ivec2 last = Tilemap::tile_at_point(coverage.max() - glm::vec2(0.001f));
+
+		constexpr uint32_t WATER = 0b0010;
+		for (int y = first.y; y <= last.y; ++y) {
+			for (int x = first.x; x <= last.x; ++x) {
+				glm::ivec2 tile{x, y};
+				if (!map.in_bounds(tile) || (map.collision_layer_at(tile) & WATER) == 0 || entity_at(tile) != nullptr) {
+					return false;
+				}
+			}
+		}
+		add_machine(entities, world_pos, id);
 	} else {
 		return false; //not a machine
+	}
+	// refresh pipes nearby if any!
+	for (size_t i = first_new_entity; i < entities.size(); ++i) {
+		if (dynamic_cast<IItemPort *>(entities[i].get()) == nullptr) continue;
+		std::vector<glm::ivec2> occupied;
+		entities[i]->get_occupied(&occupied);
+		for (glm::ivec2 tile : occupied) {
+			for (glm::ivec2 dir : {glm::ivec2{-1, 0}, glm::ivec2{0, -1}, glm::ivec2{1, 0}, glm::ivec2{0, 1}}) {
+				auto neighbors = coord_to_entities.find(tile + dir);
+				if (neighbors == coord_to_entities.end()) continue;
+				for (Entity *entity : neighbors->second) {
+					if (entity->removed) continue;
+					if (auto *pipe = dynamic_cast<Pipe *>(entity)) pipe->configure(0);
+				}
+			}
+		}
 	}
 	return true;
 }
@@ -1045,8 +1080,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			// for placeable machines, draw a ghost sprite over
 			if (auto def = MachineDef::get(inventory.get_slot_id(hotbar_selected))) {
 				Rect rect = def->texture_rect;
-				rect.y += def->texture_rect.h * (variety % 4);
+				rect.y += def->texture_rect.h * ((variety % 4) % def->num_sprite_rows);
 				batch.draw(*def->texture, rect, Tilemap::tile_topleft(hovered_coord) + def->draw_offset, glm::u8vec4{0xff, 0xff, 0xff, 0x40});
+			} else if (inventory.get_slot_id(hotbar_selected) == "pipe") {
+				Pipe::draw_placement_hint(batch, Tilemap::tile_topleft(hovered_coord), static_cast<Pipe::Color>(variety % 4));
 			}
 		}
 	}
