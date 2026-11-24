@@ -20,6 +20,8 @@ namespace Dialogue {
 	// The speaker name for the dialogue box: the "name" row, or the npc id if there is none.
 	std::string name(std::string const &npc);
 
-	// The "ask:<question>" topics of an npc in file order: (question, key).
+	// The "ask:", "before:" and "after:" questions of an npc in file order: (question, key).
+	// "before:" ones are only offered until the npc's side quest is done, "after:" ones only once
+	// it's done (PlayMode checks the key).
 	std::vector< std::pair< std::string, std::string > > const &questions(std::string const &npc);
 }

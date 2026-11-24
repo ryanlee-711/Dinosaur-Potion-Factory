@@ -7,6 +7,8 @@
 #   greet            the first time you talk to them
 #   hello            the line above the options every other time (one row picked at random)
 #   ask:<question>   a question the player can click; its rows are the answer
+#   before:<question> like ask:, but only offered until their side quest is done
+#   after:<question> like ask:, but only offered once their side quest is done (what they tell you in return)
 #   quest_offer      after clicking "Need a hand?": explains the side quest, then Accept / Not now
 #   quest_accept     after accepting
 #   quest_decline    after saying not now
@@ -36,6 +38,33 @@ lumberjack	quest_waiting	No potion yet? Crush some fae grass and brew it with a 
 lumberjack	quest_done	Oh, that's the stuff! I feel ten years younger already.
 lumberjack	quest_done	Here's the axe, as promised. Give a tree a few good swings and down she comes.
 lumberjack	quest_done	And bring me your lumber whenever you like. I'll saw it into planks for you, two for one.
+
+ice_elf	name	Nivra the Ice Elf
+ice_elf	greet	A dwarf? This high up? You must be lost... or very brave.
+ice_elf	greet	I am Nivra. I keep watch over these frozen peaks.
+ice_elf	hello	The wind sings today.
+ice_elf	hello	Mind the ice, little one.
+ice_elf	hello	Still not frozen? Good.
+ice_elf	ask:Who are you?	The last of the frost elves who keep these peaks. We remember what the lowlands have long forgotten.
+ice_elf	ask:Why is the dragon so sick?	Dragons burn bright and long, but even their fire gutters out in the end.
+ice_elf	ask:Why is the dragon so sick?	Potions can soothe it for a while. Only something with life itself in it could rekindle a flame like that.
+ice_elf	before:Have you heard of the Life Dew?	Perhaps I have. Perhaps I haven't.
+ice_elf	before:Have you heard of the Life Dew?	Up here, knowledge is paid for in warmth. Ask if I need a hand.
+ice_elf	quest_offer	My fingers have been numb for a hundred winters.
+ice_elf	quest_offer	Brew me a Warmth Potion from the flameflowers that grow between the rocks, and I will tell you everything I know about the Life Dew.
+ice_elf	quest_accept	Crush the flameflowers and brew the powder with water. Distill that into crystals, heat the crystals in a furnace, then brew four of them with a base potion.
+ice_elf	quest_decline	The cold is patient. So am I.
+ice_elf	quest_waiting	No warmth yet? Flameflower powder and water, then the distiller, then the furnace, then four crystals and a base potion in the brewer.
+ice_elf	quest_done	Ahh... warmth. I had forgotten what it felt like.
+ice_elf	quest_done	A promise is a promise. Ask me anything about the Life Dew.
+ice_elf	after:What is the Life Dew?	It is life itself, gathered into a single drop of light.
+ice_elf	after:What is the Life Dew?	Brewed into the right elixir, it could rekindle even a dragon's dying fire.
+ice_elf	after:Where can I find it?	Higher in these peaks, past the frozen lake, there is a hollow where the snow never stops falling.
+ice_elf	after:Where can I find it?	In its heart grows a single plant with a bulb full of light. Press it gently and it gives up its dew.
+ice_elf	after:Where can I find it?	Only one drop ever grows. Waste it, and it is gone for good.
+ice_elf	after:How do I get through the snowstorm?	That storm is no ordinary snow. Its cold would freeze you solid long before you reached the center.
+ice_elf	after:How do I get through the snowstorm?	You need a potion that holds both fire and frost: flameflower to keep your blood warm, and snowgem so the storm takes you for one of its own.
+ice_elf	after:How do I get through the snowstorm?	Snowgems grow in the icy rocks up here. Mine them, and brew them together with flameflower.
 
 dragon	name	Dragon
 dragon	quest0	Cough cough... I'm sick...\nplease bring me medicine my dwarf...\nI require the elixir of life...

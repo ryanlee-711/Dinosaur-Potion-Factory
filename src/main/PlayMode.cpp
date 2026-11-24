@@ -236,9 +236,14 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 
 	// side quests (the npc that gives one names its id in the npc table, Npc.cpp)
 	side_quests.emplace_back(SideQuest{
-		"lumberjack_axe", "Bring Bram a Haste Potion", "lumberjack",
+		"lumberjack_axe", "Bring Cole a Haste Potion", "lumberjack",
 		std::vector<ItemRecord>{ItemRecord{"haste_potion", 1}},
 		std::vector<ItemRecord>{ItemRecord{"axe", 1}},
+	});
+	side_quests.emplace_back(SideQuest{
+		"ice_elf_lore", "Bring Nivra a Warmth Potion", "ice_elf",
+		std::vector<ItemRecord>{ItemRecord{"warmth_potion", 1}},
+		std::vector<ItemRecord>{}, //the reward is what she tells you ("after:" questions in dialogue.tsv)
 	});
 
 	load();
@@ -1513,15 +1518,20 @@ std::vector<PlayMode::DialogueOption> PlayMode::dialogue_menu() const {
 	if (npc == nullptr) return options;
 	NpcDef const &def = npc->definition();
 
-	//questions, in the order they're in dialogue.tsv
+	//its side quest (no quest counts as done)
+	SideQuest const *quest = find_side_quest(def.side_quest);
+	SideQuestState state = quest ? side_quest_state(quest->id) : SideQuestState::Done;
+
+	//questions, in the order they're in dialogue.tsv ("before:" ones until the side quest is done,
+	//"after:" ones once it's done)
 	for (auto const &[question, key] : Dialogue::questions(def.dialogue)) {
+		bool quest_done = (state == SideQuestState::Done);
+		if (key.rfind("before:", 0) == 0 && quest_done) continue;
+		if (key.rfind("after:", 0) == 0 && !quest_done) continue;
 		options.push_back(DialogueOption{question, Action::Ask, key});
 	}
 
-	//its side quest
-	SideQuestState state = SideQuestState::Done;
-	if (SideQuest const *quest = find_side_quest(def.side_quest)) {
-		state = side_quest_state(quest->id);
+	if (quest) {
 		if (state == SideQuestState::NotStarted) {
 			options.push_back(DialogueOption{"Need a hand?", Action::QuestOffer});
 		} else if (state == SideQuestState::Active) {
@@ -2141,7 +2151,7 @@ void PlayMode::load() {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "vulmanid" || entity_type == "glaber" || entity_type == "ice_lizard") {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
-		} else if (entity_type == "lumberjack") {
+		} else if (entity_type == "lumberjack" || entity_type == "ice_elf") {
 			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
 		} else if (entity_type == "woodpile" || entity_type == "chopping_stump") {
 			add_entity<Prop>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which prop

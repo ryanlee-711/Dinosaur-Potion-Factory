@@ -52,8 +52,13 @@ namespace {
 				if (npc.empty() || key.empty()) continue;
 
 				auto &list = b.pages[{npc, key}];
-				if (list.empty() && key.rfind("ask:", 0) == 0) {
-					b.questions[npc].emplace_back(key.substr(4), key);
+				//first row of a new question: "ask:<question>" (always), "before:<question>" (until its side
+				//quest is done) or "after:<question>" (once it's done)
+				if (list.empty()) {
+					for (char const *prefix : {"ask:", "before:", "after:"}) {
+						std::string p = prefix;
+						if (key.rfind(p, 0) == 0) b.questions[npc].emplace_back(key.substr(p.size()), key);
+					}
 				}
 				list.emplace_back(text);
 			}
