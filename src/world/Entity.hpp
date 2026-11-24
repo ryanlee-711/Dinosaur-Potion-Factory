@@ -48,6 +48,7 @@ struct Entity {
 	virtual void update(FrameInput const &input, float elapsed, World const &world) = 0;
 	virtual Rect hitbox() const = 0;
 	virtual void draw(Sprites &batch) const = 0;
+	virtual bool casts_shadow() const { return false; }
 	virtual void get_occupied(std::vector<glm::ivec2> *ans) const = 0;
 
 	virtual std::string save() const = 0;
