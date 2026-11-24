@@ -62,6 +62,7 @@ public:
     void update(FrameInput const &input, float elapsed, World const &world) override;
 	auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
+    bool casts_shadow() const override { return true; }
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
     std::string save() const override;

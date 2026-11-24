@@ -74,6 +74,12 @@ void Sprites::fill_rect(Rect dst, glm::u8vec4 color) {
 void Sprites::draw_raw(GLuint tex, glm::uvec2 tex_size, Rect src, Rect dst, glm::u8vec4 tint) {
 	if (!in_batch) throw std::runtime_error("Sprites::draw() called outside begin()/end().");
 
+	if (shadow) {
+		dst.x += 2.0f;
+		dst.y += 2.0f;
+		tint = glm::u8vec4(0, 0, 0, 80);
+	}
+
 	//switching textures means the quads so far must be drawn first:
 	if (tex != current_tex) {
 		flush();

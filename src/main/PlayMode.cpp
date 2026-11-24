@@ -876,6 +876,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		std::stable_sort(sorted.begin(), sorted.end(), [](Entity const *a, Entity const *b) {
 			return a->position.y < b->position.y;
 		});
+		batch.shadow = true;
+		for (Entity const *entity : sorted) {
+			if (entity->casts_shadow()) entity->draw(batch);
+		}
+		batch.shadow = false;
 		for (Entity const *entity : sorted) {
 			entity->draw(batch);
 		}

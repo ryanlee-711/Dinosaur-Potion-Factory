@@ -44,6 +44,8 @@ struct Sprites {
 	// Send everything left to the GPU. Call once per begin().
 	void end();
 
+	bool shadow = false;
+
 private:
 	struct Vertex {
 		glm::vec2 position;
