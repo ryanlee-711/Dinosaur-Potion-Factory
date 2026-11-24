@@ -44,6 +44,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
             }
             if (count < item.second) return false;
         }
+        if (inventory.get_slot_id(2) != "" && inventory.get_slot_id(2) != recipe.items_out.at(0).first && inventory.get_slot_count(2) > 0) return false;
         return true;
     };
 

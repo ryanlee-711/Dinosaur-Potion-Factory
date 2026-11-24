@@ -486,15 +486,14 @@ void PlayMode::update(float elapsed)
 		// nope
 		input.flip.pressed = true;
 		input.flip.downs += 1;
+	} else {
+		input.flip.pressed = false;
+		input.flip.downs = 0;
 	}
+
 	if (keys[SDL_SCANCODE_BACKSLASH])
 	{
 		player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
-	}
-	else
-	{
-		input.flip.pressed = false;
-		input.flip.downs = 0;
 	}
 	{ // K0...K9
 		const SDL_Scancode scancodes[10] = {
