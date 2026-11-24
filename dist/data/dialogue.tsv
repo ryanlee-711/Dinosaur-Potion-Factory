@@ -28,7 +28,7 @@ lumberjack	ask:Can I chop these trees?	Not with your bare hands you can't! You'd
 lumberjack	ask:Can I chop these trees?	I might have a spare one lying around... if you could do me a favor.
 lumberjack	ask:Have you heard the dragon?	The big one in the cave? Heard it coughing all week. Each cough shakes the whole mountain.
 lumberjack	ask:Have you heard the dragon?	If anyone can brew it back to health, I'd bet on a dwarf like you.
-lumberjack	ask:Have you heard the dragon?  I heard legends of a mystical herb up in the peaks. Don't know if that will be useful to you though.
+lumberjack	ask:Have you heard the dragon?	I heard legends of a mystical herb up in the peaks. Don't know if that will be useful to you though.
 lumberjack	quest_offer	Matter of fact, I could. My old legs aren't what they used to be.
 lumberjack	quest_offer	Bring me a Haste Potion and I'll be quick as a fox again. They say the fae grass in these woods does the trick.
 lumberjack	quest_offer	Do that, and my spare axe is yours.
@@ -65,6 +65,39 @@ ice_elf	after:Where can I find it?	Only one drop ever grows. Waste it, and it is
 ice_elf	after:How do I get through the snowstorm?	That storm is no ordinary snow. Its cold would freeze you solid long before you reached the center.
 ice_elf	after:How do I get through the snowstorm?	You need a potion that holds both fire and frost: flameflower to keep your blood warm, and snowgem so the storm takes you for one of its own.
 ice_elf	after:How do I get through the snowstorm?	Snowgems grow in the icy rocks up here. Mine them, and brew them together with flameflower.
+
+minerguy	name	Steph the Miner
+minerguy	greet	hmmm... haven't seen you around here.
+minerguy	greet	I'm Steph. I mine for a living, but shiny stone is what I truly yearn for.
+minerguy	greet	If you see any bright, glowing rock, I'm more than happy to look.
+minerguy	hello	hmmm... Anything to your interest?
+minerguy	ask:What is this place?	The lakeside forest. Path to the mine is blocked, so I'm resting here.
+minerguy	ask:What is this place?	Meanwhile, I've spent my time appreciating those peculiar flowers.
+minerguy	ask:Anything interesting?	Did you see those red flowers around? Set them on fire, and they barely scorch!
+minerguy	ask:Anything interesting?	But I've heard those flowers could be turned into something really interesting...
+minerguy	ask:Have you heard the dragon?	O Certainly. It was its coughing that blocked the mine's entrance, after all.
+minerguy	quest_offer	hmmm... aye. There is something I could use your help for.
+minerguy	quest_offer	See those red flowers around? They're Flameflowers. Highly fire resistant.
+minerguy	quest_offer	But I've heard they could be processed into beautiful crystals by distilling.
+minerguy	quest_offer	I will give you something useful, if you could give me some of those crystals.
+minerguy	quest_accept	Great! (placeholder dialogue)
+minerguy	quest_decline	No rush. 
+minerguy	quest_waiting	Try distill solution of the Flameflower's pollen. That should produce something.
+minerguy	quest_done	Oh, that's the stuff! Beautiful gems!
+minerguy	quest_done	Here's something something (placeholder).
+
+bridge	name	Wooden Bridge
+bridge	greet	A broken wooden bridge... Can it be repaired?
+bridge	hello	A bridge...?
+bridge	quest_offer	The bridge requires some planks to be repaired.
+bridge	quest_accept	Let's repair the bridge! Perhaps the Lumberjack could help.
+bridge	quest_decline	Perhaps not now...
+bridge	quest_waiting	The bridge still needs more planks. The lumberjack could help.
+bridge	quest_done	The bridge is fully repaired!
+
+waystone	name	Waystone
+waystone	greet	Looks like a softlock prevention mechanism. Return home?
+waystone	hello	Return home?
 
 dragon	name	Dragon
 dragon	quest0	Cough cough... I'm sick...\nplease bring me medicine my dwarf...\nI require the elixir of life...

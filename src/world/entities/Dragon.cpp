@@ -4,6 +4,7 @@
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <sstream>
 
@@ -24,6 +25,28 @@ Dragon::Dragon() : inventory(3) {
 
 void Dragon::update(FrameInput const &input, float elapsed, World const &world) {
 
+    // need absolute match for dragon smithing :-/
+    auto inputs_match = [this](Recipe const &recipe) {
+        for (int slot = 0; slot < 2; ++slot) {
+            if (inventory.get_slot_count(slot) <= 0) continue;
+            auto const &id = inventory.get_slot_id(slot);
+            if (std::none_of(recipe.items_in.begin(), recipe.items_in.end(),
+                    [&id](ItemRecord const &item) { return item.first == id; })) {
+                return false;
+            }
+        }
+        for (ItemRecord const &item : recipe.items_in) {
+            int count = 0;
+            for (int slot = 0; slot < 2; ++slot) {
+                if (inventory.get_slot_id(slot) == item.first) {
+                    count += inventory.get_slot_count(slot);
+                }
+            }
+            if (count < item.second) return false;
+        }
+        return true;
+    };
+
     // Dragon Update:
     // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items,
     //    find the new recipe from the registry (and reset timer).
@@ -36,12 +59,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
     if (current_recipe == nullptr) {
         recipe_stale = true;
     } else {
-        for (ItemRecord const &item : current_recipe->items_in) {
-            if (inventory.count(item.first) < item.second) {
-                recipe_stale = true;
-                break;
-            }
-        }
+        if (!inputs_match(*current_recipe)) recipe_stale = true;
         for (ItemRecord const &item : current_recipe->items_out) {
             if (inventory.space_for(item.first) < item.second) {
                 recipe_stale = true;
@@ -57,14 +75,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
         // try to find a new recipe
         auto recipes = Recipe::get_recipes("dragon");
         if (recipes != nullptr) for (Recipe const &recipe : *recipes) {
-            bool ok = true;
-            // check that inputs are sufficient
-            for (ItemRecord const &item : recipe.items_in) {
-                if (inventory.count(item.first) < item.second) {
-                    ok = false;
-                    break;
-                }
-            }
+            bool ok = inputs_match(recipe);
             // check that there is space for outputs
             for (ItemRecord const &item : recipe.items_out) {
                 if (inventory.space_for(item.first) < item.second) {
@@ -98,6 +109,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
             inventory.add_to_slot_range(item.first, item.second, 2, 3);
             if (world.made_items) world.made_items->insert(item.first);
         }
+        recipe_stale = true;
     }
 }
 

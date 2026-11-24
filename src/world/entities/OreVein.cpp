@@ -18,6 +18,12 @@ static Load< Texture > iron_vein_texture(LoadTagDefault, []() -> Texture const *
 static Load< Texture > snow_gem_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/snowgem_vein.png")); //placeholder sprite
 });
+static Load< Texture > megarock_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/entities/megarock.png")); //placeholder sprite
+});
+static Load< Texture > sandrock_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/entities/sandrock.png")); //placeholder sprite
+});
 
 // ---- ORE VEIN TYPES ----
 //   type            drop          max   regrow(s)   texture                 chips on each hit
@@ -25,6 +31,8 @@ static OreVeinDef const ore_vein_defs[] = {
 	{"copper_vein", "copper_ore",  5,   6.0f,      &copper_vein_texture,   &Presets::RockChips},
 	{"iron_vein",   "iron_ore",    5,   6.0f,      &iron_vein_texture,     &Presets::RockChips},
 	{"snowgem_vein", "snowgem",    1,  40.0f,      &snow_gem_texture,      &Presets::IceChips},
+	{"rock_vein", "rock",          10,  3.0f,      &megarock_texture,      &Presets::RockChips},
+	{"quartz_vein", "quartz",      10,  3.0f,      &sandrock_texture,      &Presets::RockChips},
 };
 
 OreVeinDef const *OreVeinDef::get(std::string const &type) {
