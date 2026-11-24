@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 const size_t HISTORY_LIMIT = 20;
 
@@ -57,6 +58,7 @@ struct EditorMode : Mode {
 		bool pressed = false;
 		bool popped = false;
 		glm::vec2 pos;
+		glm::vec2 release_pos;
 	} left_click, right_click;
 
 
@@ -65,28 +67,34 @@ struct EditorMode : Mode {
 	int scale_slider = 6; // Tilemap display scaling
 	glm::uvec2 drawable_size_;
 	glm::ivec2 just_drawn_on;
-	glm::ivec2 tileset_select_topleft, tileset_select_size;  // Rect with uint
+	glm::ivec2 tileset_select_topleft{0}, tileset_select_size{1};
 	glm::vec2 drag_anchor;
 	glm::vec2 view_topleft;
-	glm::ivec2 drawrect_topleft;
-	glm::ivec2 drawrect_bottomright;
+	glm::ivec2 drawrect_topleft{0};
+	glm::ivec2 drawrect_bottomright{0};
 	std::vector<bool> layers_activated;
 	size_t selected_layer = 1;
 	std::string hint = "";
 	uint32_t collision_index = 0;
+	size_t selected_area = Tilemap::Cave;
+	Rect area_drag_rect() const;
 
-	// HISTORY, Memory eater!
-	std::deque<std::vector<std::vector< int32_t >>> history;
+	struct EditSnapshot {
+		std::vector<std::vector<int32_t>> tile_layers;
+		Tilemap::AreaRects area_rects;
+	};
+	std::deque<EditSnapshot> history;
 
 	enum class ToolMode {
 		PEN,
 		RECT,
+		AREA,
 		DRAG
-	} tool_mode;
+	} tool_mode = ToolMode::PEN;
 	enum class InteractWith {
 		PANEL,
 		MAP
-	} interact_with;
+	} interact_with = InteractWith::PANEL;
 	bool dragging = false, erasing = false;
 
 	// helpers
@@ -109,7 +117,7 @@ struct EditorMode : Mode {
 	}
 	void add_history() {
 		// brrrrrrrrr
-		history.push_back(map.tile_layers);
+		history.push_back({map.tile_layers, map.area_rects});
 		if (history.size() > HISTORY_LIMIT) {
 			history.pop_front();
 		}
@@ -119,7 +127,8 @@ struct EditorMode : Mode {
 		if (history.empty()) {
 			return false;
 		}
-		map.tile_layers = history.back();
+		map.tile_layers = std::move(history.back().tile_layers);
+		map.area_rects = std::move(history.back().area_rects);
 		history.pop_back();
 		return true;
 	}

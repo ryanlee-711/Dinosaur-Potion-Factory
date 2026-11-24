@@ -11,6 +11,7 @@
 #include "../world/Player.hpp"
 #include "../world/TileMap.hpp"
 #include "../world/Entity.hpp"
+#include "../world/Music.hpp"
 #include "../inventory/Item.hpp"
 #include "../inventory/ItemCursor.hpp"
 #include "../world/Components.hpp"
@@ -61,6 +62,7 @@ struct PlayMode : Mode {
 	std::unique_ptr< Texture > tileset; // loaded from the path named in the map file
 	Player player;
 	std::vector<std::unique_ptr<Entity>> entities;
+	Music music;
 
 	// ----- entity lookup caching ------
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> coord_to_entities;

@@ -10,6 +10,7 @@
 
 //For asset loading:
 #include "../starter/Load.hpp"
+#include "../starter/Sound.hpp"
 
 //GL.hpp will include a non-namespace-polluting set of opengl prototypes:
 #include "../starter/GL.hpp"
@@ -117,6 +118,7 @@ int main(int argc, char **argv) {
 	Consumable::validate();
 
 	//------------ create game mode + make current --------------
+	Sound::init();
 	Mode::set_current(std::make_shared< PlayMode >());
 
 	//------------ main loop ------------
@@ -203,6 +205,7 @@ int main(int argc, char **argv) {
 
 	//------------  teardown ------------
 
+	Sound::shutdown();
 	SDL_GL_DestroyContext(context);
 	context = 0;
 
@@ -212,9 +215,11 @@ int main(int argc, char **argv) {
 	return 0;
 
 	} catch (std::exception const &e) {
+		Sound::shutdown();
 		std::cerr << "Unhandled exception:\n" << e.what() << std::endl;
 		return 1;
 	} catch (...) {
+		Sound::shutdown();
 		std::cerr << "Unhandled exception (unknown type)." << std::endl;
 		throw;
 	}

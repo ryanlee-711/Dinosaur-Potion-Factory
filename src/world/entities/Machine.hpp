@@ -15,7 +15,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-struct MachineDef {
+struct MachineDef
+{
 
     using MachineRegistry = std::unordered_map<item_id_t, MachineDef>;
 
@@ -42,13 +43,15 @@ struct MachineDef {
     PortLocs port_locs_out;
     bool storage = false;
 
-    // getter
-    static const MachineDef* get(item_id_t machine_id);
+    // What sound does this machine play
+    std::string sound_name = "";
+
+    static const MachineRegistry &all();
+    static const MachineDef *get(item_id_t machine_id);
 };
 
-
-
-class Machine : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress {
+class Machine : public Entity, public IInteractable, public IInventoryHolder, public IItemPort, public IBreakable, public IProgress
+{
     /* General purpose machine implementation, shared by all machines.
      */
 public:
@@ -60,7 +63,7 @@ public:
 
     // Entity
     void update(FrameInput const &input, float elapsed, World const &world) override;
-	auto hitbox() const -> Rect override;
+    auto hitbox() const -> Rect override;
     void draw(Sprites &batch) const override;
     void get_occupied(std::vector<glm::ivec2> *ans) const override;
 
@@ -71,7 +74,7 @@ public:
     void on_interact(Context &ctx) override;
 
     // IInventoryHolder
-    auto get_inventory() -> Inventory* override;
+    auto get_inventory() -> Inventory * override;
 
     // IItemPort
     PortType get_port(glm::ivec2 grid_coord) override;
@@ -84,14 +87,24 @@ public:
     ParticlePreset const *break_hit_particles() const override;    // rock chips on each pickaxe hit
 
     // Machine-specific
-    enum Rotation {EAST, NORTH, WEST, SOUTH};
-    Rotation const get_rotation() {return rotation;}
-    static inline size_t rot2idx(Rotation const &rot) {
+    enum Rotation
+    {
+        EAST,
+        NORTH,
+        WEST,
+        SOUTH
+    };
+    Rotation const get_rotation() { return rotation; }
+    static inline size_t rot2idx(Rotation const &rot)
+    {
         return static_cast<size_t>(rot);
     }
 
     void draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const;
-    item_id_t get_machine_type() {return def->machine_type;};
+    item_id_t const &get_machine_type() const { return def->machine_type; }
+    bool is_active() const {
+        return (def && def->machine_type == "altar") || (current_recipe && processing_timer > 0.0f);
+    }
 
     // These may not change once placed.
     Rotation rotation = Rotation::EAST;

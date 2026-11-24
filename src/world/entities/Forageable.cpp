@@ -70,6 +70,7 @@ void Forageable::on_interact(Context &ctx) {
 	}
 	// pick everything that fits in the bag; whatever doesn't fit stays on it
 	int left = ctx.player_inventory.add(def->drop, count);
+	ctx.picked_up_item = left < count;
 	count = left;
 	if (left > 0) ctx.message = "Your bag is full";
 }

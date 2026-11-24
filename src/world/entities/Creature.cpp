@@ -245,6 +245,7 @@ void Creature::on_interact(Context &ctx) {
 		return;
 	}
 	drops -= 1;
+	ctx.picked_up_item = true;
 	harvested_pending = true;
 	start_fleeing(); //and off it goes
 }

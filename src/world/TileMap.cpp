@@ -11,11 +11,14 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <limits>
 
 
 using GameConfig::TILE_SIZE;
 
 const int32_t SOLID_MASK = 1 << 31;
+// Optional section after the tile layers. Each area has a count and x/y/w/h floats.
+static constexpr std::array<char, 4> AREA_SECTION = {'A', 'R', '0', '1'};
 
 Tilemap::Tilemap(std::string const &path): map_path(path) {
 	std::ifstream file(map_path, std::ios::binary);
@@ -47,7 +50,27 @@ Tilemap::Tilemap(std::string const &path): map_path(path) {
 			throw std::runtime_error("Cannot read map cells");
 		}
 	}
-	file.close();
+	if (file.peek() == std::char_traits<char>::eof()) return;
+
+	std::array<char, AREA_SECTION.size()> section;
+	if (!file.read(section.data(), section.size()) || section != AREA_SECTION) {
+		throw std::runtime_error("Cannot read map area section: " + map_path);
+	}
+	for (auto &rects : area_rects) {
+		uint32_t count;
+		if (!file.read(reinterpret_cast<char *>(&count), sizeof(count))) {
+			throw std::runtime_error("Cannot read map area count: " + map_path);
+		}
+		for (uint32_t i = 0; i < count; ++i) {
+			float values[4];
+			if (!file.read(reinterpret_cast<char *>(values), sizeof(values))
+			    || !std::all_of(std::begin(values), std::end(values), [](float value) { return std::isfinite(value); })
+			    || values[2] <= 0.0f || values[3] <= 0.0f) {
+				throw std::runtime_error("Invalid map area rectangle: " + map_path);
+			}
+			rects.push_back(Rect{values[0], values[1], values[2], values[3]});
+		}
+	}
 }
 
 glm::vec2 Tilemap::size_px() const {
@@ -142,7 +165,11 @@ void Tilemap::draw(Sprites &batch, Texture const &tileset_texture, glm::vec2 vie
 
 void Tilemap::save() {
 	// Save this map; write it to file
-
+	for (auto const &rects : area_rects) {
+		if (rects.size() > std::numeric_limits<uint32_t>::max()) {
+			throw std::runtime_error("Too many map area rectangles: " + map_path);
+		}
+	}
 
 	std::ofstream file(map_path, std::ios::binary);
     if (!file) {
@@ -153,13 +180,23 @@ void Tilemap::save() {
     file.write(reinterpret_cast<char *>(&size.x), 4UL);
     file.write(reinterpret_cast<char *>(&size.y), 4UL);
 	file.write(reinterpret_cast<char *>(&num_layers), sizeof(num_layers));
-    if (!file) throw std::runtime_error("Cannot read map header");
-
 	for (uint32_t layer = 0; layer < num_layers; ++layer) {
 		file.write(
 			reinterpret_cast<char *>(tile_layers[layer].data()),
 			tile_layers[layer].size() * sizeof(int32_t)
 		);
 	}
+	if (std::any_of(area_rects.begin(), area_rects.end(), [](auto const &rects) { return !rects.empty(); })) {
+		file.write(AREA_SECTION.data(), AREA_SECTION.size());
+		for (auto const &rects : area_rects) {
+			uint32_t count = static_cast<uint32_t>(rects.size());
+			file.write(reinterpret_cast<char const *>(&count), sizeof(count));
+			for (Rect const &rect : rects) {
+				float values[] = {rect.x, rect.y, rect.w, rect.h};
+				file.write(reinterpret_cast<char const *>(values), sizeof(values));
+			}
+		}
+	}
 	file.close();
+	if (!file) throw std::runtime_error("Cannot write map: " + map_path);
 }

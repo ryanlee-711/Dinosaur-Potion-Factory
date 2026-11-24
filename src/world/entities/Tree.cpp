@@ -1,4 +1,5 @@
 #include "Tree.hpp"
+#include "../Music.hpp"
 #include "../World.hpp"
 #include "../TileMap.hpp"
 #include "../ItemEntity.hpp"
@@ -42,6 +43,7 @@ void Tree::update(FrameInput const &input, float elapsed, World const &world) {
 	if (chips_pending) {
 		chips_pending = false;
 		if (world.particles) world.particles->burst(Presets::WoodChips, base() - glm::vec2(0.0f, 8.0f));
+		if (world.music) world.music->sfx(Music::SFX::AxeMining);
 	}
 
 	if (state == Falling) {
@@ -54,6 +56,7 @@ void Tree::update(FrameInput const &input, float elapsed, World const &world) {
 		hits = 0;
 		glm::vec2 crown = base() + glm::vec2(float(fall_dir) * 40.0f, -4.0f);
 		if (world.particles) world.particles->burst(Presets::Leaves, crown);
+		if (world.music) world.music->sfx(Music::SFX::TreeFall);
 		if (world.spawned == nullptr) return;
 		std::uniform_real_distribution< float > jitter(-4.0f, 4.0f);
 		for (int i = 0; i < LUMBER_DROPS; ++i) {
