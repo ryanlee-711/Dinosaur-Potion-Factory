@@ -35,33 +35,33 @@ namespace
       if (!def.sound_name.empty())
         machine_samples.try_emplace(type, audio_path(def.sound_name));
     }
-    machine_samples.try_emplace(golem_type, audio_path("machine.golem.wav"));
+    machine_samples.try_emplace(golem_type, audio_path("machine.golem.opus"));
 
-    auto cave = std::make_shared<Sound::Sample const>(audio_path("ambience.cave.wav"));
-    auto mountain = std::make_shared<Sound::Sample const>(audio_path("ambience.mountain.wav"));
-    auto woods = std::make_shared<Sound::Sample const>(audio_path("ambience.woods.wav"));
+    auto cave = std::make_shared<Sound::Sample const>(audio_path("ambience.cave.opus"));
+    auto mountain = std::make_shared<Sound::Sample const>(audio_path("ambience.mountain.opus"));
+    auto woods = std::make_shared<Sound::Sample const>(audio_path("ambience.woods.opus"));
     return new MusicSamples{
       {
-        Sound::Sample(audio_path("theme.cave.wav")),
-        Sound::Sample(audio_path("theme.back_cave.wav")),
-        Sound::Sample(audio_path("theme.mountanside.wav")),
-        Sound::Sample(audio_path("theme.woods.wav")),
-        Sound::Sample(audio_path("theme.peaks.wav")),
+        Sound::Sample(audio_path("theme.cave.opus")),
+        Sound::Sample(audio_path("theme.back_cave.opus")),
+        Sound::Sample(audio_path("theme.mountanside.opus")),
+        Sound::Sample(audio_path("theme.woods.opus")),
+        Sound::Sample(audio_path("theme.peaks.opus")),
       },
       {cave, cave, mountain, woods, mountain},
       std::move(machine_samples),
       {
-        Sound::Sample(audio_path("sfx.axe_mining.wav")),
-        Sound::Sample(audio_path("sfx.bottle_filling.wav")),
-        Sound::Sample(audio_path("sfx.boulder_break.wav")),
-        Sound::Sample(audio_path("sfx.boulder_move.wav")),
-        Sound::Sample(audio_path("sfx.drink_potion.wav")),
-        Sound::Sample(audio_path("sfx.footsteps.wav")),
-        Sound::Sample(audio_path("sfx.item_drop.wav")),
-        Sound::Sample(audio_path("sfx.item_pickup.wav")),
-        Sound::Sample(audio_path("sfx.machine_placement.wav")),
-        Sound::Sample(audio_path("sfx.pickaxe_mine.wav")),
-        Sound::Sample(audio_path("sfx.tree_fall.wav")),
+        Sound::Sample(audio_path("sfx.axe_mining.opus")),
+        Sound::Sample(audio_path("sfx.bottle_filling.opus")),
+        Sound::Sample(audio_path("sfx.boulder_break.opus")),
+        Sound::Sample(audio_path("sfx.boulder_move.opus")),
+        Sound::Sample(audio_path("sfx.drink_potion.opus")),
+        Sound::Sample(audio_path("sfx.footsteps.opus")),
+        Sound::Sample(audio_path("sfx.item_drop.opus")),
+        Sound::Sample(audio_path("sfx.item_pickup.opus")),
+        Sound::Sample(audio_path("sfx.machine_placement.opus")),
+        Sound::Sample(audio_path("sfx.pickaxe_mine.opus")),
+        Sound::Sample(audio_path("sfx.tree_fall.opus")),
       },
     }; });
 

@@ -80,7 +80,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{{ivec2{3, 0}, ivec2{3, 1}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.cauldron.wav"
+            /* sound_name = */ "machine.cauldron.opus"
         });
 
         machines->emplace("crusher", MachineDef{
@@ -107,7 +107,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.press.wav"
+            /* sound_name = */ "machine.press.opus"
         });
 
         machines->emplace("furnace", MachineDef{
@@ -134,7 +134,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.furnace.wav"
+            /* sound_name = */ "machine.furnace.opus"
         });
 
         machines->emplace("chest", MachineDef{
@@ -187,7 +187,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{3, -1}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.distiller.wav"
+            /* sound_name = */ "machine.distiller.opus"
         });
 
         machines->emplace("fermenter", MachineDef{
@@ -214,7 +214,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.fermenter.wav"
+            /* sound_name = */ "machine.fermenter.opus"
         });
 
         machines->emplace("siphon", MachineDef{
@@ -241,7 +241,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{{ivec2{0, -3}, ivec2{-1, -3}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.siphon.wav"
+            /* sound_name = */ "machine.siphon.opus"
         });
 
         machines->emplace("altar", MachineDef{
@@ -268,7 +268,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
             },
             /* storage = */ false,
-            /* sound_name = */ "machine.altar.wav"
+            /* sound_name = */ "machine.altar.opus"
         });
 
         machines->emplace("fuelbox", MachineDef{

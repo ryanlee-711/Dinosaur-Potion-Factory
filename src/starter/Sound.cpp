@@ -38,12 +38,12 @@ void mix_audio(void *, SDL_AudioStream *stream, int additional_amount, int total
 //------------------------ public-facing --------------------------------
 
 Sound::Sample::Sample(std::string const &filename) {
-	if (filename.size() >= 4 && filename.substr(filename.size()-4) == ".wav") {
+	if (filename.size() >= 4 && filename.substr(filename.size()-4) == ".opus") {
 		load_wav(filename, &data);
 	} else if (filename.size() >= 5 && filename.substr(filename.size()-5) == ".opus") {
 		load_opus(filename, &data);
 	} else {
-		throw std::runtime_error("Sample '" + filename + "' doesn't end in either \".wav\" or \".opus\" -- unsure how to load.");
+		throw std::runtime_error("Sample '" + filename + "' doesn't end in either \".opus\" or \".opus\" -- unsure how to load.");
 	}
 }
 

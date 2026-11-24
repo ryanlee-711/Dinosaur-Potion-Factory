@@ -14,7 +14,7 @@ namespace Sound {
 
 //Sample objects hold mono (one-channel) audio.
 struct Sample {
-	//Load from a '.wav' or '.opus' file.
+	//Load from a '.opus' or '.opus' file.
 	//  will warn and convert if sound is not already 48kHz mono:
 	Sample(std::string const &filename);
 	
