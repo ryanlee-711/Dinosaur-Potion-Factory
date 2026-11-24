@@ -131,7 +131,7 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("dragon",
-            ItemVector{ ItemRecord{"copper_ore", 5}, ItemRecord{"snowgem", 1} },
+            ItemVector{ ItemRecord{"copper_ore", 5}, ItemRecord{"planks", 5} },
             ItemVector{ ItemRecord{"golem", 1} },
             0.5f, 1.0f
         );

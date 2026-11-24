@@ -453,6 +453,10 @@ void PlayMode::update(float elapsed)
 		input.flip.pressed = true;
 		input.flip.downs += 1;
 	}
+	if (keys[SDL_SCANCODE_BACKSLASH])
+	{
+		player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+	}
 	else
 	{
 		input.flip.pressed = false;

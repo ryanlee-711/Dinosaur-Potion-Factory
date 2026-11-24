@@ -69,21 +69,20 @@ ice_elf	after:How do I get through the snowstorm?	Brew them together with the cr
 minerguy	name	Steph the Miner
 minerguy	greet	hmmm... haven't seen you around here.
 minerguy	greet	I'm Steph. I mine for a living, but shiny stone is what I truly yearn for.
-minerguy	greet	If you see any bright, glowing rock, I'm more than happy to look.
 minerguy	hello	hmmm... Anything to your interest?
 minerguy	ask:What is this place?	The lakeside forest. Path to the mine is blocked, so I'm resting here.
-minerguy	ask:What is this place?	Meanwhile, I've spent my time appreciating those peculiar flowers.
-minerguy	ask:Anything interesting?	Did you see those red flowers around? Set them on fire, and they barely scorch!
-minerguy	ask:Anything interesting?	But I've heard those flowers could be turned into something really interesting...
+minerguy	ask:What is this place?	Meanwhile, I've spent my time appreciating those peculiar birds.
+minerguy	ask:Anything interesting?	Nothing as long as I'm stuck below.
 minerguy	ask:Have you heard the dragon?	O Certainly. It was its coughing that blocked the mine's entrance, after all.
+minerguy	ask:Have you heard the dragon?	If I could fly up over this hill, I could have clear the debris from behind. 
 minerguy	quest_offer	hmmm... aye. There is something I could use your help for.
-minerguy	quest_offer	See those red flowers around? They're Flameflowers. Highly fire resistant.
-minerguy	quest_offer	But I've heard they could be processed into beautiful crystals by distilling.
-minerguy	quest_offer	I will give you something useful, if you could give me some of those crystals.
+minerguy	quest_offer	See those birds flapping around? Turns out their feather are great for brewing.
+minerguy	quest_offer	If you get your hands on their feather danders, and brew it,\nthere's a potion that let ya float.
+minerguy	quest_offer	I will give you something useful, if you could give me one of those potion.
 minerguy	quest_accept	Great! (placeholder dialogue)
 minerguy	quest_decline	No rush. 
-minerguy	quest_waiting	Try distill solution of the Flameflower's pollen. That should produce something.
-minerguy	quest_done	Oh, that's the stuff! Beautiful gems!
+minerguy	quest_waiting	The bird runs fast, so you might wanna run faster to catch up.
+minerguy	quest_done	Oh, that's the stuff! Beautiful potion!
 minerguy	quest_done	Here's a secret. If you distill any potion, you get crystals. Some crystals have special effects.
 minerguy	quest_done	Try use the haste crystal on a plant. See what happens...
 
@@ -106,7 +105,7 @@ handbook	hello	The smithing recipes handbook.
 handbook	ask:Pipe and Bottle	2 copper = 2 pipes\n3 quartz = 6 bottles\n3 rocks = chest
 handbook	ask:Basic machines	3 copper + 1 iron = brewer\n3 copper + 1 rock = crusher\n3 copper + 1 lumber = furnace
 handbook	ask:Advanced machines	2 rock + 2 quartz = siphon\n2 iron + 2 quartz = distiller\n2 planks + 2 quartz = fermenter
-handbook	ask:Other stuff	5 copper + 1 snow gem = golem
+handbook	ask:Other stuff	5 copper + 5 planks = golem
 handbook	ask:How does machines work?	Machines can be placed on the ground.\nPress "R" to rotate the them, or for pipes, change color.
 handbook	ask:How does machines work?	Brewer is the core of everything. Brew any powder-like items into liquids for potions.
 handbook	ask:How does machines work?	Stone press crushes items into dust. Furnace bakes and burns ingredients.
@@ -125,5 +124,16 @@ dragon	quest2	Collect some copper ore by mining...\nAnd give it to me, to smith 
 dragon	quest3	Furnace is very powerful...\nDry the lichens... and grind them.
 dragon	quest3	Lichen powder yields a red solution...\nAdd drupe to it...\nto brew stronger potions...
 dragon	quest3	I can smith new machines for you...\nBring materials.
-dragon	quest4	You've mastered brewing...Please bring me 8 Strength potion.
-dragon	quest5	
+dragon	quest4	You've mastered brewing...Please bring me 8 Strength potion... to heal my claws...
+dragon	quest4	Machines are powerful. Link more machines together to automate...
+dragon	quest4	You can craft Golems. They patrol near their fuelbox,\ncollect items from closest place, and put in closest chest.
+dragon	quest5	My claws are healed... *ACHOOOO*. But my muscles are still tired... Bring me 7 haste potions.
+dragon	quest5	Haste potions can be crafted from faegrass.\nThey grow outside the cave. Grind them and brew.
+dragon	quest6	Great... Next, I need to heal my wings... Bring me 8 float potions.
+dragon	quest6	Float potions are not the easiest to craft...\nYou will need Vulmanid feathers.
+dragon	quest6	There are several ways to process Vulmanid feathers...\nYou can grind them, but inefficient. Try fermenting...
+dragon	quest7	Great... Next, *ACHOOOOOOO!!!*, ..., I need warmth in my lungs. Bring me 8 warmth potions...
+dragon	quest7	Brew potions from flameflowers... But they are unpure in its raw form. Dissolve it, then distill it...
+dragon	quest8	Thank you for all your hardworking... But to fully heal, bring me the final elixir of life...
+dragon	quest8	Elixir of Life must be brewed from the Dew of Life,\ncombined with the Essences of the four elements...
+dragon	quest8	You may ask around to learn where the Dew of Life might be...

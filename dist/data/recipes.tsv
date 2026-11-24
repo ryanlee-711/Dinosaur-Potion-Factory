@@ -50,7 +50,7 @@ brewer	1	12	flower_essence	10	base_potion	1	flame_potion	1
 brewer	1	12	flower_essence	10	extended_base_potion	1	flame_potion	1
 brewer	1	10	flower_essence	1	thick_potion	1	blooming_brew	1
 								
-brewer	1	30	snowgem_dust	5	water	1	mystic_solution	1
+brewer	1	30	life_dew	1	water	1	mystic_solution	1
 brewer	1	30	drupe_essence	5	mystic_solution	1	cocktail_1	1
 brewer	1	30	faegrass_essence	5	cocktail_1	1	cocktail_2	1
 brewer	1	30	feather_essence	5	cocktail_2	1	cocktail_3	1
