@@ -95,6 +95,15 @@ bridge	quest_decline	Perhaps not now...
 bridge	quest_waiting	The bridge still needs more planks. The lumberjack could help.
 bridge	quest_done	The bridge is fully repaired!
 
+bridge2	name	Wooden Bridge
+bridge2	greet	A broken wooden bridge... Can it be repaired?
+bridge2	hello	A bridge...?
+bridge2	quest_offer	The bridge requires some planks to be repaired.
+bridge2	quest_accept	Let's repair the bridge! Perhaps the Lumberjack could help.
+bridge2	quest_decline	Perhaps not now...
+bridge2	quest_waiting	The bridge still needs more planks. The lumberjack could help.
+bridge2	quest_done	The bridge is fully repaired!
+
 waystone	name	Waystone
 waystone	greet	Looks like a softlock prevention mechanism. Return home?
 waystone	hello	Return home?

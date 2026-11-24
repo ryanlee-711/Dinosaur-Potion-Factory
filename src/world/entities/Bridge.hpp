@@ -16,7 +16,9 @@ public:
         repaired = true;
         collision_layer = 0;
     }
+    int bridge_num = 0;
 
 private:
     bool repaired = false;
+
 };

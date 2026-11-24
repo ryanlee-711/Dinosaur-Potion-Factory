@@ -294,6 +294,12 @@ PlayMode::PlayMode() : map(data_path("maps/world.map"))
 	});
 
 	side_quests.emplace_back(SideQuest{
+		"bridge_fixing2", "Get some planks to repair the bridge", "bridge",
+		std::vector<ItemRecord>{ItemRecord{"planks", 10}},
+		std::vector<ItemRecord>{},
+	});
+
+	side_quests.emplace_back(SideQuest{
 		"miner_crystal", "Brew some Flameflower Crystals", "minerguy",
 		std::vector<ItemRecord>{ItemRecord{"float_potion", 1}},
 		std::vector<ItemRecord>{ItemRecord{"flower_crystal", 3}, ItemRecord{"haste_crystal", 3}},
@@ -308,6 +314,14 @@ PlayMode::~PlayMode()
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
+
+	// quiting:
+	if (evt.type == SDL_EVENT_QUIT) {
+		close_container(); // return items in cursor
+		save();
+		return false;
+	}
+
 	// one-off key presses go here; held keys (movement) are read in update().
 	if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_F3)
 	{
@@ -2630,9 +2644,10 @@ void PlayMode::load()
 			|| entity_type == "handbook"    
 		) {
 			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
-		} else if (entity_type == "bridge") {
+		} else if (entity_type == "bridge" || entity_type == "bridge2") {
 			add_entity<Bridge>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
 			if (auto *bridge = dynamic_cast<Bridge *>(entities.back().get())) {
+				if (entity_type == "bridge2") bridge->bridge_num = 1;
 				if (side_quest_state(bridge->definition().side_quest) == SideQuestState::Done) {
 					bridge->repair();
 				}

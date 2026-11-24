@@ -19,6 +19,10 @@ static Load< Texture > woodbridge_texture(LoadTagDefault, []() -> Texture const 
 	return new Texture(data_path("assets/sprites/bridge.png")); // the bridge
 });
 
+static Load< Texture > woodbridge2_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/bridge_alt.png")); // the bridge 2
+});
+
 static Load< Texture > waystone_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/waystone.png")); // the waysonte
 });
@@ -30,6 +34,7 @@ static NpcDef const npc_defs[] = {
 	{"lumberjack", "lumberjack", "lumberjack_axe", ItemRecord{"lumber", 1}, ItemRecord{"planks", 2}, true,   3.0f, &lumberjack_texture, glm::vec2{32.0f, 32.0f}},
 	{"ice_elf",    "ice_elf",    "ice_elf_lore",   ItemRecord{"", 0},       ItemRecord{"", 0},       false,  0.0f, &ice_elf_texture,    glm::vec2{32.0f, 32.0f}},
 	{"bridge", "bridge", "bridge_fixing", ItemRecord{"", 0}, ItemRecord{"", 0},                true,   3.0f, &woodbridge_texture, glm::vec2{32.0f, 32.0f}},
+	{"bridge2", "bridge2", "bridge_fixing2", ItemRecord{"", 0}, ItemRecord{"", 0},                true,   3.0f, &woodbridge2_texture, glm::vec2{32.0f, 32.0f}},
 	{"waystone", "waystone", "", ItemRecord{"", 0}, ItemRecord{"", 0}, true,   100.0f, &waystone_texture, glm::vec2{32.0f, 32.0f}},
 	{"minerguy", "minerguy", "miner_crystal", ItemRecord{"flower_crystal", 3}, ItemRecord{"feather", 1}, true,   100.0f, &lumberjack_texture, glm::vec2{32.0f, 32.0f}},
 	{"handbook", "handbook", "", ItemRecord{"", 0}, ItemRecord{"", 0}, true,   100.0f, &waystone_texture, glm::vec2{32.0f, 32.0f}},
