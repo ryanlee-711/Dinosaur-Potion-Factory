@@ -49,7 +49,7 @@ public:
 
 	// Golem
 	uint32_t fuelbox_uid() const { return fuel_box; }
-	void bind_fuelbox(uint32_t uid) { fuel_box = uid; initialized = true; }
+	void bind_fuelbox(uint32_t box_uid) { fuel_box = box_uid; initialized = true; }
 
 	// The area right in front of the feet, in the facing direction.
 	// Whatever entity this overlaps is what pressing E interacts with.

@@ -36,8 +36,8 @@ void Golem::update(FrameInput const &input, float elapsed, World const &world) {
 	absorb_item_cooldown -= elapsed;
 	state_change_timeout -= elapsed;
 
-	auto find_live = [&world](uint32_t uid) -> Entity * {
-		auto it = world.uid_to_entities.find(uid);
+	auto find_live = [&world](uint32_t target_uid) -> Entity * {
+		auto it = world.uid_to_entities.find(target_uid);
 		return it == world.uid_to_entities.end() || it->second->removed ? nullptr : it->second;
 	};
 	if (!initialized) reload_targets(world);
@@ -179,7 +179,7 @@ void Golem::reload_targets(World const &world) {
 		float distance = glm::distance(ptr->position, position);
 		if (auto *machine = dynamic_cast<Machine *>(ptr)) {
 			// the target chest should have space for stuff
-			if (machine->get_machine_type() == "chest" && distance < chest_distance && 
+			if (machine->get_machine_type() == "chest" && distance < chest_distance &&
 			    (inventory.empty() || machine->get_inventory()->space_for(inventory.get_slot_id(0)) > 0)) {
 				binded_chest = ptr->uid;
 				chest_distance = distance;
