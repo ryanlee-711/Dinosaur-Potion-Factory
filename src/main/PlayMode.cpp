@@ -253,6 +253,12 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		std::vector<ItemRecord>{},
 	});
 
+	side_quests.emplace_back(SideQuest{
+		"miner_crystal", "Brew some Flameflower Crystals", "minerguy",
+		std::vector<ItemRecord>{ItemRecord{"flower_crystal", 3}},
+		std::vector<ItemRecord>{ItemRecord{"feather", 10}},
+	});
+
 	load();
 
 }
@@ -1531,6 +1537,14 @@ std::vector<PlayMode::DialogueOption> PlayMode::dialogue_menu() const {
 
 	//questions, in the order they're in dialogue.tsv ("before:" ones until the side quest is done,
 	//"after:" ones once it's done)
+	if (def.type == "waystone") {
+		return {
+			DialogueOption{"Go Home", Action::GoHome},
+			DialogueOption("Stay here", Action::Bye),
+		};
+	}
+
+	//questions, in the order they're in dialogue.tsv
 	for (auto const &[question, key] : Dialogue::questions(def.dialogue)) {
 		bool quest_done = (state == SideQuestState::Done);
 		if (key.rfind("before:", 0) == 0 && quest_done) continue;
@@ -1663,6 +1677,10 @@ void PlayMode::dialogue_choose(size_t index) {
 		}
 		break;
 	}
+	case Action::GoHome:
+		close_dialogue();
+		player.position = Tilemap::tile_center(glm::ivec2{136, 52}) + glm::vec2(0.0f, TILE_SIZE * 0.25f);
+		break;
 	case Action::Bye:
 		close_dialogue();
 		break;
@@ -2161,7 +2179,7 @@ void PlayMode::load() {
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "vulmanid" || entity_type == "glaber" || entity_type == "ice_lizard") {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
-		} else if (entity_type == "lumberjack" || entity_type == "ice_elf") {
+		} else if (entity_type == "lumberjack" || entity_type == "waystone" || entity_type == "minerguy" || entity_type == "ice_elf") {
 			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
 		} else if (entity_type == "bridge") {
 			add_entity<Bridge>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc

@@ -109,7 +109,7 @@ struct PlayMode : Mode {
 
 	// ----- dialogue box (npcs and the dragon; lines from dist/data/dialogue.tsv) -----
 	struct DialogueOption {
-		enum class Action { Ask, QuestOffer, Accept, Decline, QuestWaiting, Give, Trade, DragonMore, Smith, Bye };
+		enum class Action { Ask, QuestOffer, Accept, Decline, QuestWaiting, Give, Trade, DragonMore, Smith, Bye, GoHome };
 		std::string label;
 		Action action;
 		std::string key = "";  // Ask: the dialogue key of the answer

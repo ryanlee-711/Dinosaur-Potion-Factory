@@ -60,6 +60,10 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 	float speed = WALK_SPEED;
 	speed *= 1.0f + SPEED_PER_LEVEL * float(effect_level("speed")); // "speed" effect
 	if (input.sprint) speed *= SPRINT_MULTIPLIER;  // Shift; stacks with the boost
+	// in the peak, move speed is decreased
+	if (position.y < 750.0f && direction.y <= 0.0f && effect_level("warmth") == 0) {
+		speed *= std::clamp((position.y - 600.0f) / 150.0f,  0.0f, 1.0f);
+	}
 	//move one axis at a time, this is what lets you slide along walls instead of sticking to them when moving diagonally
 	glm::vec2 step = direction * speed * elapsed;
 	glm::vec2 before = position;
