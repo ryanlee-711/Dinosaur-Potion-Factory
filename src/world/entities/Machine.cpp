@@ -104,7 +104,7 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
         machines->emplace("furnace", MachineDef{
             /* machine_type= */ "furnace",
             /* texture= */ furnace_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 48.0f},
+            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
             /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 32.0f, 64.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},

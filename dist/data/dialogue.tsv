@@ -66,6 +66,15 @@ ice_elf	after:How do I get through the snowstorm?	That storm is no ordinary snow
 ice_elf	after:How do I get through the snowstorm?	You need a potion that holds both fire and frost: flameflower to keep your blood warm, and snowgem so the storm takes you for one of its own.
 ice_elf	after:How do I get through the snowstorm?	Snowgems grow in the icy rocks up here. Mine them, and brew them together with flameflower.
 
+bridge	name	Wooden Bridge
+bridge	greet	A broken wooden bridge... Can it be repaired?
+bridge	hello	A bridge...?
+bridge	quest_offer	The bridge requires some planks to be repaired.
+bridge	quest_accept	Let's repair the bridge! Perhaps the Lumberjack could help.
+bridge	quest_decline	Perhaps not now...
+bridge	quest_waiting	The bridge still needs more planks. The lumberjack could help.
+bridge	quest_done	The bridge is fully repaired!
+
 dragon	name	Dragon
 dragon	quest0	Cough cough... I'm sick...\nplease bring me medicine my dwarf...\nI require the elixir of life...
 dragon	quest0	The cave collapsed and stones block you way... \ncough, because, ...\nmy coughs... *ACHOOOO*.

@@ -27,6 +27,7 @@
 #include "../world/entities/Splitter.hpp"
 #include "../world/entities/Golem.hpp"
 #include "../world/entities/Npc.hpp"
+#include "../world/entities/Bridge.hpp"
 #include "../world/entities/Prop.hpp"
 #include "../world/Dialogue.hpp"
 
@@ -244,6 +245,12 @@ PlayMode::PlayMode() : map(data_path("maps/world.map")) {
 		"ice_elf_lore", "Bring Nivra a Warmth Potion", "ice_elf",
 		std::vector<ItemRecord>{ItemRecord{"warmth_potion", 1}},
 		std::vector<ItemRecord>{}, //the reward is what she tells you ("after:" questions in dialogue.tsv)
+	});
+
+	side_quests.emplace_back(SideQuest{
+		"bridge_fixing", "Get some planks to repair the bridge", "bridge",
+		std::vector<ItemRecord>{ItemRecord{"planks", 10}},
+		std::vector<ItemRecord>{},
 	});
 
 	load();
@@ -1614,6 +1621,9 @@ void PlayMode::dialogue_choose(size_t index) {
 				got += (got.empty() ? "" : ", ") + (item ? item->name : record.first);
 			}
 			side_quest_states[quest->id] = SideQuestState::Done;
+			if (auto *bridge = dynamic_cast<Bridge *>(npc)) {
+				bridge->repair();
+			}
 			if (!got.empty()) {
 				message = "Got: " + got;
 				message_timer = MESSAGE_SECONDS;
@@ -2141,7 +2151,7 @@ void PlayMode::load() {
 			add_entity<AppleTree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "boulder") {
 			add_entity<Boulder>(entities, glm::vec2{0.0f, 0.0f}, uid);
-		} else if (entity_type == "copper_vein" || entity_type == "iron_vein" || entity_type == "snowgem_vein") {
+		} else if (entity_type == "copper_vein" || entity_type == "iron_vein" || entity_type == "snowgem_vein" || entity_type == "rock_vein" || entity_type == "quartz_vein") {
 			add_entity<OreVein>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which ore
 		} else if (entity_type == "dragon") {
 			add_entity<Dragon>(entities, glm::vec2{0.0f, 0.0f}, uid);
@@ -2153,6 +2163,13 @@ void PlayMode::load() {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
 		} else if (entity_type == "lumberjack" || entity_type == "ice_elf") {
 			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
+		} else if (entity_type == "bridge") {
+			add_entity<Bridge>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
+			if (auto *bridge = dynamic_cast<Bridge *>(entities.back().get())) {
+				if (side_quest_state(bridge->definition().side_quest) == SideQuestState::Done) {
+					bridge->repair();
+				}
+			}
 		} else if (entity_type == "woodpile" || entity_type == "chopping_stump") {
 			add_entity<Prop>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which prop
 		} else if (entity_type == "pipe") {

@@ -54,7 +54,7 @@ struct Entity {
     virtual void load(std::string line) = 0;
 
 	bool blocks(Entity const &other) const {
-		return (collision_mask & other.collision_mask) != 0;
+		return (collision_layer & other.collision_mask) != 0;
 	}
 
 	// For resetting UID counter

@@ -31,6 +31,14 @@ void Player::update(FrameInput const &input, float elapsed, World const &world) 
 		else ++it;
 	}
 
+	collision_mask = 0b1111;
+	//update collision layer based on effects
+	for (auto it = effects.begin(); it != effects.end(); ++it) {
+		if (it->first == "float") {
+			collision_mask = 0b1;
+		}
+	}
+
 	auto direction = input.direction;
 	//diagonal input shouldn't be faster than straight input
 	if (glm::length(direction) > 1.0f) direction = glm::normalize(direction);

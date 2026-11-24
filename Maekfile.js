@@ -163,6 +163,7 @@ const game_names = [
 	maek.CPP('src/world/entities/Tree.cpp'),
 	maek.CPP('src/world/entities/Creature.cpp'),
 	maek.CPP('src/world/entities/Npc.cpp'),
+	maek.CPP('src/world/entities/Bridge.cpp'),
 	maek.CPP('src/world/entities/Prop.cpp'),
 	maek.CPP('src/world/entities/Dragon.cpp'),
 	maek.CPP('src/world/entities/Splitter.cpp'),

@@ -66,7 +66,7 @@ public:
 
     bool met = false;  // talked to at least once
 
-private:
+protected:
     void set_def(std::string const &type);
     void face(glm::vec2 point);
 
