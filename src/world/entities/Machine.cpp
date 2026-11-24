@@ -72,7 +72,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.cauldron.wav"
         });
 
         machines->emplace("crusher", MachineDef{
@@ -97,7 +99,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, 0}, ivec2{4, 0}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.press.wav"
         });
 
         machines->emplace("furnace", MachineDef{
@@ -122,7 +126,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.furnace.wav"
         });
 
         machines->emplace("chest", MachineDef{
@@ -173,7 +179,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.distiller.wav"
         });
 
         machines->emplace("fermenter", MachineDef{
@@ -198,7 +206,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.fermenter.wav"
         });
 
         machines->emplace("siphon", MachineDef{
@@ -223,7 +233,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.siphon.wav"
         });
 
         machines->emplace("altar", MachineDef{
@@ -248,7 +260,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
                 std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-            }
+            },
+            /* storage = */ false,
+            /* sound_name = */ "machine.altar.wav"
         });
 
         machines->emplace("fuelbox", MachineDef{
@@ -280,10 +294,15 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
 	}
 );
 
+const MachineDef::MachineRegistry &MachineDef::all() {
+    return *machine_registry;
+}
+
 const MachineDef* MachineDef::get(item_id_t machine_id) {
     if (!machine_registry) return nullptr;
-	auto it = machine_registry->find(machine_id);
-	return it != machine_registry->end() ? &it->second : nullptr;
+    auto const &machines = all();
+    auto it = machines.find(machine_id);
+    return it != machines.end() ? &it->second : nullptr;
 }
 
 const float PUSH_COOLDOWN = 1.0f;
@@ -400,7 +419,7 @@ void Machine::update(FrameInput const &input, float elapsed, World const &world)
     }
 
     // step 2. reduce processing_timer
-    if (current_recipe || def->machine_type == "altar") {
+    if (current_recipe) {
         processing_timer -= elapsed;
     }
 

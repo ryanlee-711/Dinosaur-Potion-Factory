@@ -150,9 +150,8 @@ void Sound::PlayingSample::set_volume(float new_volume, float ramp) {
 }
 
 void Sound::PlayingSample::set_pan(float new_pan, float ramp) {
-	if (!(pan.value == pan.value)) return; //ignore if not in '2D' mode
 	Sound::lock();
-	pan.set(new_pan, ramp);
+	if (pan.value == pan.value) pan.set(new_pan, ramp); //ignore if not in '2D' mode
 	Sound::unlock();
 }
 

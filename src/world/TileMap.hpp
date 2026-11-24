@@ -4,6 +4,7 @@
 
 #include <glm/glm.hpp>
 
+#include <array>
 #include <cstdint>
 #include <cstddef>
 #include <deque>
@@ -14,13 +15,22 @@
 struct Sprites;
 struct Texture;
 
-// A grid of tiles loaded from a text .map file
+// A grid of tiles loaded from a binary .map file
 //
 // Coordinates:
 //   - tile coordinates: (column, row), (0,0) is the top-left tile
 //   - world coordinates: art pixels, (0,0) is the top-left corner of the map, y grows down
 //   - tile (tx, ty) covers world pixels [tx*TILE_SIZE, (tx+1)*TILE_SIZE)
 struct Tilemap {
+	enum Area : uint8_t {
+		Cave,
+		BackCave,
+		Mountainside,
+		Woods,
+		Peaks,
+	};
+	static constexpr uint8_t AREA_COUNT = 5;
+	using AreaRects = std::array<std::vector<Rect>, AREA_COUNT>;
 
 	// Loads the map
 	explicit Tilemap(std::string const &map_path);
@@ -33,6 +43,7 @@ struct Tilemap {
 	// each layer is row-major; each entry indexes tile_types
 	std::vector<std::vector< int32_t >> tile_layers;
 	std::vector<float> layer_visibilities;
+	AreaRects area_rects; // world pixels, indexed by Area
 
 	// --- queries ---
 	glm::vec2 size_px() const;

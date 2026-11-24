@@ -5,6 +5,7 @@
 #include "../world/TileMap.hpp"
 
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 #include <unordered_set>
@@ -13,28 +14,35 @@
 struct Tilemap;
 struct Entity;
 struct ParticleSystem;
+class Music;
 
 // A read-only view of everything an entity can bump into this frame:
 // (Read only in the sense that the vector can't be modified. But entities can!)
 // the tilemap plus the other entities
-struct World {
+struct World
+{
+	std::optional<Tilemap::Area> area_at(glm::vec2 point) const;
+	// Signed distance from any given area
+	float distance_to_area(Tilemap::Area area, glm::vec2 point) const;
+
 	Tilemap const &map;
-	std::vector< std::unique_ptr< Entity > > const &entities;
+	std::vector<std::unique_ptr<Entity>> const &entities;
 	Player const &player;
 	std::unordered_map<glm::ivec2, std::vector<Entity *>, TileHash> const &coord_to_entities;
 	std::unordered_map<uint32_t, Entity *> const &uid_to_entities;
 	std::mt19937 &rng;
-	//spawned entities
+	// spawned entities
 	std::vector<std::unique_ptr<Entity>> *spawned = nullptr;
 	std::unordered_set<item_id_t> *made_items = nullptr;
 	ParticleSystem *particles = nullptr;
+	Music *music = nullptr;
 
 	// Appends to 'out' every solid thing 'box' overlaps that 'mover' can't walk through
-	void solids_overlapping(Rect const &box, Entity const &mover, std::vector< Rect > &out) const;
+	void solids_overlapping(Rect const &box, Entity const &mover, std::vector<Rect> &out) const;
 
 	// True if 'box' overlaps anything solid for 'mover'.
 	bool blocked(Rect const &box, Entity const &mover) const;
 
 	// Find one entity at the given location.
-	Entity * entity_at(glm::ivec2 tile) const;
+	Entity *entity_at(glm::ivec2 tile) const;
 };

@@ -63,8 +63,10 @@ void ItemEntity::update(FrameInput const &input, float elapsed, World const &wor
     position += velocity * elapsed;
 
     // a decorative vertical speed/position...
+    bool was_airborne = height < 0.0f;
     vertical_velocity += VERTICAL_GRAVITY * elapsed;
     height = std::min(height + vertical_velocity, 0.0f);
+    landed = was_airborne && height == 0.0f;
 }
 
 void ItemEntity::draw(Sprites &batch) const {

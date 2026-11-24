@@ -43,6 +43,7 @@ Controls for the editor (many options only have keyboard shortcut, no clickable 
 - **press `B`** to enter PEN mode. (That's the shortcut in Aseprite and Photoshop)
 
 - **drag on Map** to draw: RECT draws rectangle. PEN draws free lines.
+- **press `A`** to toggle area editing. Pick an area with **`1`–`5`**, drag on the map to add a rectangle, or right-click one in the selected area to remove it. **`Z`** undoes area edits and **`S`** saves them with the map.
 
 - **press `Z`** to undo. There is only about 20 or so steps stored at most! No infinite undo!
 - **press `S`** to save. It WILL overwrite existing map, so remember to git stage/commit frequently!!!!!!

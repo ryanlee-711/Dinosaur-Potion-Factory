@@ -39,6 +39,7 @@ struct IInteractable {
         // --- outputs: set these to ask PlayMode to do something afterwards ---
         Inventory *open_container = nullptr; // show this inventory as an open panel (chests, cauldron contents...)
         std::string message;                 // short text to show the player, e.g. "Your bag is full"
+        bool picked_up_item = false;         // an item moved directly into the player's inventory
         // Add more as we go
     };
 

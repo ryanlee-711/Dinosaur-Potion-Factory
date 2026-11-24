@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,12 @@ using GameConfig::TILE_SIZE;
 static constexpr int TILESET_W = 256;
 static constexpr int TILESET_H = 512;
 static constexpr int ERASE_INDEX = 255;
+static const std::array<std::string, Tilemap::AREA_COUNT> area_names = {
+	"Cave", "Back Cave", "Mountainside", "Woods", "Peaks"
+};
+static const std::array<glm::u8vec3, Tilemap::AREA_COUNT> area_colors = {{
+	{90, 160, 255}, {180, 110, 255}, {255, 160, 70}, {85, 230, 120}, {120, 240, 250}
+}};
 
 static Load< Texture > arrow_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/ui/arrows.png"));
@@ -78,6 +85,8 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 			std::cout << "zoom in " << scale_slider << "\n";
 		} else if (evt.key.key == SDLK_E) {
 			erasing = !erasing;
+		} else if (evt.key.key == SDLK_A && !left_click.pressed && !left_click.popped) {
+			tool_mode = tool_mode == ToolMode::AREA ? ToolMode::RECT : ToolMode::AREA;
 		} else if (evt.key.key == SDLK_R || evt.key.key == SDLK_U) {
 			if (!left_click.pressed) {
 				tool_mode = ToolMode::RECT;
@@ -110,6 +119,11 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 		const SDL_Keycode num_key[8] = {SDLK_0, SDLK_1, SDLK_2, SDLK_3, SDLK_4, SDLK_5, SDLK_6, SDLK_7};
 		for (size_t idx = 0; idx < 8; ++idx) {
 			if (evt.key.key == num_key[idx]) {
+				if (tool_mode == ToolMode::AREA && idx >= 1 && idx <= Tilemap::AREA_COUNT) {
+					if (!left_click.pressed && !left_click.popped) selected_area = idx - 1;
+					return true;
+				}
+				if (idx >= layers_activated.size()) continue;
 				layers_activated[idx] = !layers_activated[idx];
 				map.layer_visibilities[idx] = layers_activated[idx] ? 1.0f : 0.0f;
 			}
@@ -130,6 +144,7 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 	if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_LEFT) {
 		left_click.pressed = false;
 		left_click.popped = true;
+		left_click.release_pos = glm::vec2(evt.button.x, evt.button.y);
 	} else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP && evt.button.button == SDL_BUTTON_RIGHT) {
 		right_click.pressed = false;
 	}
@@ -137,6 +152,14 @@ bool EditorMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_siz
 
 
 	return false;
+}
+
+Rect EditorMode::area_drag_rect() const {
+	glm::ivec2 lo = glm::max(glm::min(drawrect_topleft, drawrect_bottomright), glm::ivec2(0));
+	glm::ivec2 hi = glm::min(glm::max(drawrect_topleft, drawrect_bottomright), glm::ivec2(map.size) - 1);
+	glm::vec2 origin = Tilemap::tile_topleft(lo);
+	glm::vec2 size = Tilemap::tile_topleft(hi - lo + 1);
+	return Rect{origin.x, origin.y, size.x, size.y};
 }
 
 void EditorMode::update(float elapsed) {
@@ -168,7 +191,8 @@ void EditorMode::update(float elapsed) {
 			} else {
 				interact_with = InteractWith::MAP;
 				drawrect_topleft = find_tilemap_coord(left_click.pos, canvas, view_topleft);
-				if (!dragging) {
+				drawrect_bottomright = drawrect_topleft;
+				if (!dragging && tool_mode != ToolMode::AREA) {
 					add_history();
 				}
 			}
@@ -216,7 +240,7 @@ void EditorMode::update(float elapsed) {
 						}
 					}
 				}
-			} else if (left_click.pressed && (tool_mode == ToolMode::RECT)) {
+			} else if (left_click.pressed && (tool_mode == ToolMode::RECT || tool_mode == ToolMode::AREA)) {
 				// RECT
 				glm::ivec2 cursor_loc = find_tilemap_coord(glm::vec2{mouse_x, mouse_y}, canvas, view_topleft);
 				drawrect_bottomright = cursor_loc;
@@ -225,7 +249,14 @@ void EditorMode::update(float elapsed) {
 
 		// -------- MOUSE RELEASE ---------
 
-		if (interact_with == InteractWith::MAP && !dragging && tool_mode == ToolMode::RECT && left_click.popped) {
+		if (interact_with == InteractWith::MAP && !dragging && tool_mode == ToolMode::AREA && left_click.popped) {
+			drawrect_bottomright = find_tilemap_coord(left_click.release_pos, canvas, view_topleft);
+			Rect rect = area_drag_rect();
+			if (rect.w > 0.0f && rect.h > 0.0f) {
+				add_history();
+				map.area_rects[selected_area].push_back(rect);
+			}
+		} else if (interact_with == InteractWith::MAP && !dragging && tool_mode == ToolMode::RECT && left_click.popped) {
 			// draw the rectangle!
 			// allows different directions of dragging rectangle
 			glm::ivec2 rect_min = glm::min(drawrect_topleft, drawrect_bottomright);
@@ -250,6 +281,17 @@ void EditorMode::update(float elapsed) {
 			}
 			drawrect_topleft = glm::ivec2{0};
 			drawrect_bottomright = glm::ivec2{-1};
+		}
+	}
+
+	if (tool_mode == ToolMode::AREA && !dragging && !left_click.pressed
+	    && right_click.downs > 0 && right_click.pos.x * window_scale >= float(drawable_size_.y) * 0.5f) {
+		glm::vec2 point = Tilemap::tile_center(find_tilemap_coord(right_click.pos, canvas, view_topleft));
+		auto &rects = map.area_rects[selected_area];
+		auto found = std::find_if(rects.rbegin(), rects.rend(), [&](Rect const &rect) { return rect.contains(point); });
+		if (found != rects.rend()) {
+			add_history();
+			rects.erase(std::prev(found.base()));
 		}
 	}
 
@@ -327,7 +369,16 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 
 	}
 
-	if (tool_mode == ToolMode::RECT && left_click.pressed && !dragging) { // Highlighting rect
+	if (tool_mode == ToolMode::AREA) {
+		for (size_t i = 0; i < area_colors.size(); ++i) {
+			glm::u8vec4 tint(area_colors[i], i == selected_area ? 110 : 50);
+			for (Rect const &rect : map.area_rects[i]) batch.fill_rect(rect, tint);
+		}
+		if (left_click.pressed && interact_with == InteractWith::MAP && !dragging) {
+			Rect rect = area_drag_rect();
+			if (rect.w > 0.0f && rect.h > 0.0f) batch.fill_rect(rect, glm::u8vec4(area_colors[selected_area], 160));
+		}
+	} else if (tool_mode == ToolMode::RECT && left_click.pressed && !dragging) { // Highlighting rect
 		glm::ivec2 rect_min = glm::min(drawrect_topleft, drawrect_bottomright);
 		glm::ivec2 rect_max = glm::max(drawrect_topleft, drawrect_bottomright);
 		for (int y = rect_min.y; y <= rect_max.y; ++y) {
@@ -471,6 +522,20 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		// restore
 		glViewport(0, 0, drawable_size.x, drawable_size.y);
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
+		Rect area_label;
+		if (tool_mode == ToolMode::AREA) {
+			float margin = 12.0f * window_scale;
+			float width = 320.0f * window_scale;
+			float height = 68.0f * window_scale;
+			area_label = Rect{
+				std::max(margin, float(drawable_size.x) - width - margin),
+				std::max(margin, float(drawable_size.y) - height - margin),
+				width, height
+			};
+			ui_batch.begin(screen_to_clip);
+			ui_batch.fill_rect(area_label, glm::u8vec4(18, 21, 28, 245));
+			ui_batch.end();
+		}
 		DrawLines lines(screen_to_clip);
 
 		float H = 12.0f * float(canvas.scale) * 0.5f; //text height in screen pixels
@@ -478,6 +543,16 @@ void EditorMode::draw(glm::uvec2 const &drawable_size) {
 		//dark shadow, then white text on top:
 		lines.draw_text(hint, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 		lines.draw_text(hint, anchor, glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, -H, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+		if (tool_mode == ToolMode::AREA) {
+			float x = area_label.x + 12.0f * window_scale;
+			float title_size = 28.0f * window_scale;
+			float controls_size = 18.0f * window_scale;
+			std::string label = "Area " + std::to_string(selected_area + 1) + " " + area_names[selected_area];
+			lines.draw_text(label, glm::vec3(x, area_label.y + 34.0f * window_scale, 0.0f),
+				glm::vec3(title_size, 0.0f, 0.0f), glm::vec3(0.0f, -title_size, 0.0f), glm::u8vec4(area_colors[selected_area], 255));
+			lines.draw_text("1-5 Select / Right-click Remove", glm::vec3(x, area_label.y + 56.0f * window_scale, 0.0f),
+				glm::vec3(controls_size, 0.0f, 0.0f), glm::vec3(0.0f, -controls_size, 0.0f), glm::u8vec4(240, 242, 248, 255));
+		}
 	}
 
 	GL_ERRORS();

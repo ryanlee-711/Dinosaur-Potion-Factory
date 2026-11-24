@@ -1,4 +1,5 @@
 #include "Boulder.hpp"
+#include "../Music.hpp"
 #include "../World.hpp"
 #include "../TileMap.hpp"
 #include "../../rendering/Particles.hpp"
@@ -38,6 +39,7 @@ void Boulder::update(FrameInput const &input, float elapsed, World const &world)
         if (world.entity_at(target_tile) == nullptr && !world.blocked(hbox, *this)) {
             sprite_offset = position;
             position = Tilemap::tile_topleft(target_tile);
+            if (world.music) world.music->sfx(Music::SFX::BoulderMove);
         }
     }
     // lerp towards target

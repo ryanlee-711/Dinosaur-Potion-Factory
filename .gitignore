@@ -12,6 +12,7 @@ dist/editor.exe
 *.blend[0-9]
 maek-cache.json
 dist/README-*.txt
+dist/assets/audio/
 output/
 
 .DS_Store

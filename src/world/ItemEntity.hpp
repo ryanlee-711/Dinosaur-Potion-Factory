@@ -28,6 +28,7 @@ public:
 
     // Item
     auto is_absorbable() -> bool;
+    bool just_landed() const { return landed; }
 
     glm::vec2 velocity = glm::vec2{0.0f};
     bool attract = true;
@@ -38,4 +39,5 @@ private:
     float no_absorb_cooldown = 0.0f;  // A cooldown after spawning that prevents the item from being collected
     float height = 0.0f;              // a pseudo-3D height for the thing
     float vertical_velocity = 0.0f;   // vertical velocity (down is positive)
+    bool landed = false;             // reached the ground during the most recent update
 };

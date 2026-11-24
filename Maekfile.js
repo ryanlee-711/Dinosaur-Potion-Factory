@@ -165,7 +165,8 @@ const game_names = [
 	maek.CPP('src/world/entities/Splitter.cpp'),
 	maek.CPP('src/world/entities/Golem.cpp'),
 
-	//audio (not used yet):
+	//audio:
+	maek.CPP('src/world/Music.cpp'),
 	maek.CPP('src/starter/Sound.cpp'),
 	maek.CPP('src/starter/load_wav.cpp'),
 	maek.CPP('src/starter/load_opus.cpp'),
@@ -217,6 +218,10 @@ const common_names = [
 // exeFileBase: name of executable file to produce
 //returns exeFile: exeFileBase + a platform-dependant suffix (e.g., '.exe' on windows)
 const game_exe = maek.LINK([...game_names, ...common_names], 'dist/game');
+const music_assets = require('fs').readdirSync('assets/media/audio')
+	.filter(filename => /^(theme|ambience|machine|sfx)\..*\.wav$/.test(filename))
+	.map(filename => maek.COPY(`assets/media/audio/${filename}`, `dist/assets/audio/${filename}`));
+maek.tasks[game_exe].depends.push(...music_assets);
 
 //map editor
 const editor_exe = maek.LINK([...editor_names, ...common_names], 'dist/editor');

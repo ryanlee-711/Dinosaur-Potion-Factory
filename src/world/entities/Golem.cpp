@@ -28,6 +28,7 @@ static constexpr int PLAYER_FRAME_H = 16;
 Golem::Golem(): inventory(1) { }
 
 void Golem::update(FrameInput const &input, float elapsed, World const &world) {
+	moving = false;
 	work_cooldown -= elapsed;
 	absorb_item_cooldown -= elapsed;
 
@@ -87,7 +88,9 @@ void Golem::update(FrameInput const &input, float elapsed, World const &world) {
 		facing = direction;
 
 		glm::vec2 step = glm::normalize(direction) * WALK_SPEED * elapsed;
+		glm::vec2 before = position;
 		position += step;  // no collision. I am NOT writing A-star here!
+		moving = position != before;
 		return;
 	}
 
