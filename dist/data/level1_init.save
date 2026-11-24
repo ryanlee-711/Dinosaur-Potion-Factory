@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 float_potion 30 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 212
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 float_potion 30 warmth_potion 10 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 215
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -212,4 +212,5 @@
 2000000077 tree 3568 1952
 2000000078 tree 3360 2016
 2000000079 tree 3136 1872
-2000000080 tree 3600 20484012822756 ice_elf 3288 492
+2000000080 tree 3600 2048
+4012822756 ice_elf 3288 732

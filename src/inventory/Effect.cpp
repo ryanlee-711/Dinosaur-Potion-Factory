@@ -51,6 +51,9 @@ static Load< ConsumableRegistry > consumable_registry(LoadTagDefault, []() -> Co
 	add("float_potion", { {"float", 15.0f, 1} });
 	add("extended_float_potion", { {"float", 45.0f, 1} });
 
+	add("warmth_potion", { {"warmth", 120.0f, 1} });
+	add("extended_warmth_potion", { {"warmth", 360.0f, 1} });
+
 	return consumables.release();
 });
 
