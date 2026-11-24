@@ -229,7 +229,7 @@ PlayMode::PlayMode() : map(data_path("maps/world.map"))
 	// initialize quest
 	quests.emplace_back(
 			Quest{"Collect drupes, crush them, and brew a drink.\nE: interact, F: drink, Shift: sprint, Tab: Open Inventory",
-						std::vector<ItemRecord>{ItemRecord{"drupe", 6}, ItemRecord{"crushed_drupe", 3}, ItemRecord{"drupe_drink", 1}},
+						std::vector<ItemRecord>{ItemRecord{"drupe", 3}, ItemRecord{"crushed_drupe", 3}, ItemRecord{"drupe_drink", 1}},
 						1});
 
 	quests.emplace_back(

@@ -16,3 +16,4 @@ dist/assets/audio/
 output/
 
 .DS_Store
+dist/level1.save
