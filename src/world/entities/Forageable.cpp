@@ -14,6 +14,9 @@ static Load< Texture > lichen_rock_texture(LoadTagDefault, []() -> Texture const
 static Load< Texture > fae_grass_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/fae_grass.png")); //placeholder sprite
 });
+static Load< Texture > lifedew_plant_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/test/lifedew_plant.png")); //placeholder sprite
+});
 static Load< Texture > fire_flower_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/test/flameflower.png")); //placeholder sprite
 });
@@ -24,6 +27,7 @@ static ForageableDef const forageable_defs[] = {
 	{"lichen_rock", "lichen",  5,   5.0f,  glm::ivec2{2, 1},  glm::vec2{32.0f, 32.0f}, true,  "No lichen yet", &lichen_rock_texture},
 	{"fae_grass", "faegrass", 3,   8.0f,  glm::ivec2{1, 1},  glm::vec2{16.0f, 32.0f}, false, "No fae grass yet", &fae_grass_texture},
 	{"flameflower", "flower", 2, 15.0f, glm::ivec2{1, 1}, glm::vec2{16.0f, 32.0f}, false, "Flame flower hasn't rekindled yet", &fire_flower_texture},
+	{"lifedew_plant", "life_dew", 1, 0.0f, glm::ivec2{2, 1}, glm::vec2{32.0f, 48.0f}, true, "The bulb is empty, it will be another year for it to fill again", &lifedew_plant_texture},
 };
 
 ForageableDef const *ForageableDef::get(std::string const &type) {
@@ -46,6 +50,7 @@ void Forageable::set_def(std::string const &type) {
 }
 
 void Forageable::update(FrameInput const &input, float elapsed, World const &world) {
+	if (def->regrow_seconds <= 0.0f) return; //one-time pickup: never grows back
 	// regrow one every regrow_seconds, but only while it's not full
 	if (count >= def->max_count) {
 		regrow_timer = def->regrow_seconds;

@@ -4,8 +4,16 @@
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <sstream>
+
+static Load< Texture > dragon_texture(LoadTagDefault, []() -> Texture const * {
+    return new Texture(data_path("assets/sprites/entities/dragon.png")); //96x112, was tiles in the old tileset
+});
+
+//the sprite's top-left, relative to the dragon's position (it used to sit on map tiles (133,42)-(138,48))
+static glm::vec2 const SPRITE_OFFSET = glm::vec2(16.0f, -112.0f);
 
 
 Dragon::Dragon() : inventory(3) {
@@ -16,6 +24,28 @@ Dragon::Dragon() : inventory(3) {
 
 
 void Dragon::update(FrameInput const &input, float elapsed, World const &world) {
+
+    // need absolute match for dragon smithing :-/
+    auto inputs_match = [this](Recipe const &recipe) {
+        for (int slot = 0; slot < 2; ++slot) {
+            if (inventory.get_slot_count(slot) <= 0) continue;
+            auto const &id = inventory.get_slot_id(slot);
+            if (std::none_of(recipe.items_in.begin(), recipe.items_in.end(),
+                    [&id](ItemRecord const &item) { return item.first == id; })) {
+                return false;
+            }
+        }
+        for (ItemRecord const &item : recipe.items_in) {
+            int count = 0;
+            for (int slot = 0; slot < 2; ++slot) {
+                if (inventory.get_slot_id(slot) == item.first) {
+                    count += inventory.get_slot_count(slot);
+                }
+            }
+            if (count < item.second) return false;
+        }
+        return true;
+    };
 
     // Dragon Update:
     // 1. Verify which recipe to use. If current_recipe is empty or no longer have enough items,
@@ -29,12 +59,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
     if (current_recipe == nullptr) {
         recipe_stale = true;
     } else {
-        for (ItemRecord const &item : current_recipe->items_in) {
-            if (inventory.count(item.first) < item.second) {
-                recipe_stale = true;
-                break;
-            }
-        }
+        if (!inputs_match(*current_recipe)) recipe_stale = true;
         for (ItemRecord const &item : current_recipe->items_out) {
             if (inventory.space_for(item.first) < item.second) {
                 recipe_stale = true;
@@ -50,14 +75,7 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
         // try to find a new recipe
         auto recipes = Recipe::get_recipes("dragon");
         if (recipes != nullptr) for (Recipe const &recipe : *recipes) {
-            bool ok = true;
-            // check that inputs are sufficient
-            for (ItemRecord const &item : recipe.items_in) {
-                if (inventory.count(item.first) < item.second) {
-                    ok = false;
-                    break;
-                }
-            }
+            bool ok = inputs_match(recipe);
             // check that there is space for outputs
             for (ItemRecord const &item : recipe.items_out) {
                 if (inventory.space_for(item.first) < item.second) {
@@ -91,11 +109,20 @@ void Dragon::update(FrameInput const &input, float elapsed, World const &world) 
             inventory.add_to_slot_range(item.first, item.second, 2, 3);
             if (world.made_items) world.made_items->insert(item.first);
         }
+        recipe_stale = true;
     }
 }
 
 void Dragon::draw(Sprites &batch) const {
+    batch.draw(*dragon_texture, Rect{0.0f, 0.0f, 96.0f, 112.0f}, glm::round(position) + SPRITE_OFFSET);
+}
 
+glm::vec2 Dragon::hint_anchor() const {
+    return position + SPRITE_OFFSET + glm::vec2(48.0f, 80.0f);
+}
+
+glm::vec2 Dragon::marker_anchor() const {
+    return hint_anchor(); //same spot as the E key (over its horns would be off screen up close)
 }
 
 auto Dragon::hitbox() const -> Rect {
@@ -106,7 +133,7 @@ void Dragon::get_occupied(std::vector<glm::ivec2> *ans) const {
     auto tile = Tilemap::tile_at_point(position + glm::vec2{GameConfig::TILE_SIZE / 2.0f});
     for (int y = 0; y < 3; ++y) {
         for (int x = 0; x < 8; ++x) {
-            ans->emplace_back(tile + glm::ivec2{x, -y});   
+            ans->emplace_back(tile + glm::ivec2{x, -y});
         }
     }
 }
@@ -143,7 +170,7 @@ void Dragon::load(std::string line) {
      */
     uint32_t read_uid;
     std::string entity_type;
-    
+
     if (!(ss >> read_uid >> entity_type)) {
         throw std::runtime_error{"UID read failure"};
     }

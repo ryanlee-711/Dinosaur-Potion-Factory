@@ -130,19 +130,42 @@ void Pipe::update(FrameInput const &input, float elapsed, World const &world) {
     return;
 }
 
+static glm::u8vec4 pipe_tint(Pipe::Color color) {
+    glm::u8vec4 tint{0xff};
+    switch (color) {
+        case Pipe::Color::DEFAULT: break;
+        case Pipe::Color::GREEN:   tint = glm::u8vec4{0x60, 0xff, 0x80, 0xff}; break;
+        case Pipe::Color::BLUE:    tint = glm::u8vec4{0x50, 0x90, 0xff, 0xff}; break;
+        case Pipe::Color::MAGENTA: tint = glm::u8vec4{0xff, 0x60, 0xff, 0xff}; break;
+    }
+    return tint;
+}
+
 void Pipe::draw(Sprites &batch) const {
     Rect src{frame * 16.0f, 0.0f, 16.0f, 16.0f};
     //round to whole pixels so the sprite never sits between pixels:
     glm::vec2 top_left = glm::round(position);
-    batch.draw(*box_texture, src, top_left);
+    batch.draw(*box_texture, src, top_left, pipe_tint(color));
+}
 
+void Pipe::draw_placement_hint(Sprites &batch, glm::vec2 position, Color color) {
+    glm::u8vec4 tint = pipe_tint(color);
+    tint.a = 0x40;
+    batch.draw(*box_texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, glm::round(position), tint);
 }
 
 void Pipe::draw_hint(Sprites &batch) const {
     // Redraw it, for some reason.
     Rect src{frame * 16.0f, 0.0f, 16.0f, 16.0f};
     glm::vec2 top_left = glm::round(position);
-    batch.draw(*box_texture, src, top_left, glm::u8vec4{0xff, 0xff, 0x00, 0x80});
+    glm::u8vec4 tint{0xff};
+    switch (color) {
+        case Color::DEFAULT: break;
+        case Color::GREEN:   tint = glm::u8vec4{0x60, 0xff, 0x80, 0x80}; break;
+        case Color::BLUE:    tint = glm::u8vec4{0x50, 0x90, 0xff, 0x80}; break;
+        case Color::MAGENTA: tint = glm::u8vec4{0xff, 0x60, 0xff, 0x80}; break;
+    }
+    batch.draw(*box_texture, src, top_left, tint);
 }
 
 auto Pipe::hitbox() const -> Rect {

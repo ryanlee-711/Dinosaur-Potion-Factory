@@ -4,6 +4,7 @@
 #include "../../main/Rect.hpp"
 #include "../../starter/Load.hpp"
 #include "../../starter/data_path.hpp"
+#include "../../rendering/Particles.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -41,6 +42,11 @@ static Load< Texture > fuelbox_texture(LoadTagDefault, []() -> Texture const * {
 	return new Texture(data_path("assets/sprites/machines/golem_dropbox.png"));
 });
 
+static Load< Texture > siphon_texture(LoadTagDefault, []() -> Texture const * {
+	return new Texture(data_path("assets/sprites/machines/siphon.png"));
+});
+
+
 
 // MACHINE DEFINITIONS
 using ivec2 = glm::ivec2;
@@ -55,23 +61,23 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* texture= */ brewer_texture,
             /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 32.0f, 64.0f},
+            /* hitbox_rot_rect= */ Rect{32.0f, -48.0f, 32.0f, 64.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 2,
             /* output_slot_end= */ 3,
             /* num_sprite_rows= */ 4,
             /* num_sprite_columns= */ 4,
             /* port_locs_in = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{2, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{2, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{2, 0}, ivec2{2, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{1, -1}}, {ivec2{3, 0}, ivec2{3, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -1}, ivec2{4, -1}}, {ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -3}, ivec2{2, -4}}, {ivec2{3, -1}, ivec2{4, -1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{3, -1}, ivec2{4, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -1}, ivec2{4, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -3}, ivec2{2, -4}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, 0}, ivec2{3, 1}}},
             },
             /* storage = */ false,
             /* sound_name = */ "machine.cauldron.wav"
@@ -107,9 +113,9 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
         machines->emplace("furnace", MachineDef{
             /* machine_type= */ "furnace",
             /* texture= */ furnace_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 48.0f},
+            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
             /* hitbox_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 32.0f, 64.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 1,
             /* output_slot_end= */ 2,
@@ -143,16 +149,16 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* num_sprite_rows= */ 4,
             /* num_sprite_columns= */ 4,
             /* port_locs_in = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, 0}, ivec2{2, 0}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, 0}, ivec2{2, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
             },
             /* storage = */ true
         });
@@ -161,24 +167,24 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
             /* machine_type= */ "distiller",
             /* texture= */ distiller_texture,
             /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
-            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* hitbox_rect= */ Rect{0.0f, -16.0f, 48.0f, 32.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -16.0f, 48.0f, 32.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 1,
             /* output_slot_end= */ 3,
-            /* num_sprite_rows= */ 4,
+            /* num_sprite_rows= */ 1,
             /* num_sprite_columns= */ 4,
             /* port_locs_in = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}, MachineDef::PortPair{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{1, 0}, ivec2{1, 1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{2, -1}, ivec2{3, -1}}},
             },
             /* storage = */ false,
             /* sound_name = */ "machine.distiller.wav"
@@ -187,25 +193,25 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
         machines->emplace("fermenter", MachineDef{
             /* machine_type= */ "fermenter",
             /* texture= */ fermenter_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
-            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -16.0f, 64.0f, 32.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
             /* output_slot_begin= */ 2,
             /* output_slot_end= */ 4,
             /* num_sprite_rows= */ 4,
-            /* num_sprite_columns= */ 4,
+            /* num_sprite_columns= */ 1,
             /* port_locs_in = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}, MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}, MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{0, 0}, ivec2{0, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -1}, ivec2{-1, -1}}, {ivec2{0, 0}, ivec2{0, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -1}, ivec2{4, -1}}, {ivec2{3, 0}, ivec2{3, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -1}, ivec2{4, -1}}, {ivec2{3, 0}, ivec2{3, 1}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, 0}, ivec2{3, 0}}, MachineDef::PortPair{ivec2{2, -2}, ivec2{3, -2}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, 0}, ivec2{-1, 0}}, MachineDef::PortPair{ivec2{0, -2}, ivec2{-1, -2}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, 0}, ivec2{4, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, 0}, ivec2{-1, 0}}},
             },
             /* storage = */ false,
             /* sound_name = */ "machine.fermenter.wav"
@@ -213,26 +219,26 @@ static Load<MachineRegistry> machine_registry(LoadTagDefault,
 
         machines->emplace("siphon", MachineDef{
             /* machine_type= */ "siphon",
-            /* texture= */ fermenter_texture,
-            /* draw_rect= */ Rect{0.0f, 0.0f, 48.0f, 64.0f},
-            /* hitbox_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
-            /* hitbox_rot_rect= */ Rect{0.0f, -32.0f, 48.0f, 48.0f},
+            /* texture= */ siphon_texture,
+            /* draw_rect= */ Rect{0.0f, 0.0f, 64.0f, 64.0f},
+            /* hitbox_rect= */ Rect{0.0f, -48.0f, 64.0f, 64.0f},
+            /* hitbox_rot_rect= */ Rect{0.0f, -48.0f, 64.0f, 64.0f},
             /* draw_offset= */ glm::vec2{0.0f, -48.0f},
-            /* output_slot_begin= */ 2,
-            /* output_slot_end= */ 4,
+            /* output_slot_begin= */ 1,
+            /* output_slot_end= */ 2,
             /* num_sprite_rows= */ 4,
-            /* num_sprite_columns= */ 4,
+            /* num_sprite_columns= */ 1,
             /* port_locs_in = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -2}, ivec2{4, -2}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -2}, ivec2{-1, -2}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -2}, ivec2{-1, -2}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -2}, ivec2{4, -2}}},
             },
             /* port_locs_out = */ MachineDef::PortLocs{
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{2, -1}, ivec2{3, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
-                std::vector<MachineDef::PortPair>{MachineDef::PortPair{ivec2{0, -1}, ivec2{-1, -1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, -3}, ivec2{1, -4}}},
+                std::vector<MachineDef::PortPair>{{ivec2{1, 0}, ivec2{1, 1}}},
+                std::vector<MachineDef::PortPair>{{ivec2{3, -3}, ivec2{4, -3}}},
+                std::vector<MachineDef::PortPair>{{ivec2{0, -3}, ivec2{-1, -3}}},
             },
             /* storage = */ false,
             /* sound_name = */ "machine.siphon.wav"
@@ -350,7 +356,12 @@ void Machine::configure_inventory(item_id_t machine_type) {
     }
 }
 
+ParticlePreset const *Machine::break_hit_particles() const {
+    return &Presets::RockChips;
+}
+
 void Machine::update(FrameInput const &input, float elapsed, World const &world) {
+    shake_timer = std::max(0.0f, shake_timer - elapsed);
 
     // animation
     if (def->machine_type == "brewer" || processing_timer > 0.0f) {
@@ -501,7 +512,10 @@ void Machine::draw(Sprites &batch) const {
     }
 
     glm::vec2 top_left = glm::round(position) + def->draw_offset;
-    batch.draw(*def->texture, Rect{def->texture_rect.w * frame, def->texture_rect.h * rot2idx(rotation), def->texture_rect.w, def->texture_rect.h}, top_left);
+    if (shake_timer > 0.0f) top_left.x += (std::fmod(shake_timer, 0.06f) < 0.03f) ? 1.0f : -1.0f; //wobble from a pickaxe hit
+    // Some sheets only provide one orientation; reuse it for every rotation.
+    size_t row = rot2idx(rotation) % def->num_sprite_rows;
+    batch.draw(*def->texture, Rect{def->texture_rect.w * frame, def->texture_rect.h * row, def->texture_rect.w, def->texture_rect.h}, top_left);
 
 }
 
@@ -544,7 +558,8 @@ void Machine::draw_hint(Sprites &batch, Load<Texture> &tex, float timer) const {
 
 
 auto Machine::hitbox() const -> Rect {
-    return def->hitbox_rect.offset_by(position);
+    Rect const &rect = rot2idx(rotation) % 2 ? def->hitbox_rot_rect : def->hitbox_rect;
+    return rect.offset_by(position);
 }
 
 void Machine::get_occupied(std::vector<glm::ivec2> *ans) const {

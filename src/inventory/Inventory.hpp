@@ -20,6 +20,7 @@ struct Inventory {
 		bool can_insert = true;      // false = take-only slot (products, apple tree)
 		bool can_extract = true;     // false = put-only slot
 		uint32_t required_tags = 0;  // 0 = any item
+		item_id_t required_item = ""; // "" = any item; otherwise only this item (npc trade slots)
 	};
 
 	explicit Inventory(size_t slot_count = DEFAULT_SLOTS);

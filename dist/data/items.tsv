@@ -110,7 +110,9 @@ altar	Altar	TODO	assets/sprites/items/missing_no.png							1
 copper_ore	Copper Ore	TODO	assets/sprites/items/ingredients/copper_ore.png
 timber	Timber	TODO	assets/sprites/items/missing_no.png
 iron_ore	Iron Ore	TODO	assets/test/iron_ore.png
+life_dew	Life Dew	A drop of living light. Only one ever grows	assets/test/life_dew.png			1
 lumber	Lumber	A steady wood	assets/test/lumber.png
+planks	Planks	Sawn boards, ready for building	assets/test/planks.png
 rock	Rock	TODO	assets/sprites/items/ingredients/rock.png
 quartz	Quartz	TODO	assets/sprites/items/missing_no.png
 empty_bottle	Empty Bottle	TODO	assets/sprites/items/potions/empty_bottle.png

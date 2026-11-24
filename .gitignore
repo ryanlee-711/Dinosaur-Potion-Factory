@@ -4,8 +4,8 @@ dist/README-glm.txt
 dist/README-libpng.txt
 dist/game.ilk
 dist/game.pdb
-dist/game.pdb
-dist/game.exe
+/dist/game
+/dist/game.exe
 dist/editor.pdb
 dist/editor
 dist/editor.exe

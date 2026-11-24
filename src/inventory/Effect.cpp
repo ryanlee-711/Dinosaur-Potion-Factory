@@ -20,6 +20,8 @@ static Load< EffectRegistry > effect_registry(LoadTagDefault, []() -> EffectRegi
 
 	add("speed", "Swift", "Walk faster (more per level)");
 	add("strength", "Strong", "Level 1: break small rocks. Level 2: break large boulders");
+	add("float", "Float", "Levitate and fly pass obstacles.");
+	add("warmth", "Warmth", "Survive the cold the of snowy peaks.");
 
 	return effects.release();
 });
@@ -44,6 +46,13 @@ static Load< ConsumableRegistry > consumable_registry(LoadTagDefault, []() -> Co
 	add("sweet_brew", { {"strength", 120.0f, 1} });
 	add("strength_potion", { {"strength", 60.0f, 2} });
 	add("extended_strength_potion", { {"strength", 180.0f, 2} });
+
+	// ---- mountainside: haste and float -----
+	add("float_potion", { {"float", 15.0f, 1} });
+	add("extended_float_potion", { {"float", 45.0f, 1} });
+
+	add("warmth_potion", { {"warmth", 120.0f, 1} });
+	add("extended_warmth_potion", { {"warmth", 360.0f, 1} });
 
 	return consumables.release();
 });

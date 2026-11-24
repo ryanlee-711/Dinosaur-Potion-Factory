@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-class Dragon : public Entity, public IInteractable, public IInventoryHolder, public IProgress{
+class Dragon : public Entity, public IInteractable, public IInventoryHolder, public IProgress, public IHintable {
     /* Dragon implementation for demo. */
 public:
     Dragon();
@@ -31,6 +31,14 @@ public:
 
     // IProgress
     float get_progress() const override;
+
+    // IHintable: the E key over its head while the dwarf faces it
+    bool show_hint() const override { return true; }
+    item_id_t hint_tool() const override { return ""; }
+    glm::vec2 hint_anchor() const override; //between its claws
+
+    // Where the "!" floats (bottom center of it) when the main quest is ready, world pixels
+    glm::vec2 marker_anchor() const;
 
 private:
     Inventory inventory;
