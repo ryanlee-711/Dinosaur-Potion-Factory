@@ -252,6 +252,26 @@ PlayMode::PlayMode() : map(data_path("maps/world.map"))
 						std::vector<ItemRecord>{ItemRecord{"strength_potion", 8}},
 						-1});
 
+	quests.emplace_back(
+			Quest{"Get some haste potions",
+						std::vector<ItemRecord>{ItemRecord{"haste_potion", 8}},
+						-1});
+
+	quests.emplace_back(
+			Quest{"Get some float potions",
+						std::vector<ItemRecord>{ItemRecord{"float_potion", 8}},
+						-1});
+
+	quests.emplace_back(
+			Quest{"Get some warmth potions",
+						std::vector<ItemRecord>{ItemRecord{"warmth_potion", 8}},
+						-1});
+
+	quests.emplace_back(
+			Quest{"Get the ultimate elixir of life",
+						std::vector<ItemRecord>{ItemRecord{"elixir", 1}},
+						-1});
+
 	for (size_t i = 0; i < 10; ++i)
 		quest_goals_cleared.emplace_back(false);
 
@@ -275,8 +295,8 @@ PlayMode::PlayMode() : map(data_path("maps/world.map"))
 
 	side_quests.emplace_back(SideQuest{
 		"miner_crystal", "Brew some Flameflower Crystals", "minerguy",
-		std::vector<ItemRecord>{ItemRecord{"flower_crystal", 3}},
-		std::vector<ItemRecord>{ItemRecord{"feather", 10}},
+		std::vector<ItemRecord>{ItemRecord{"float_potion", 1}},
+		std::vector<ItemRecord>{ItemRecord{"flower_crystal", 3}, ItemRecord{"haste_crystal", 3}},
 	});
 
 	load();

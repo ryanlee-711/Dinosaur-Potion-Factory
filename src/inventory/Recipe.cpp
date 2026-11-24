@@ -154,6 +154,30 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
             0.5f, 1.0f
         );
 
+        add("dragon",
+            ItemVector{  ItemRecord{"pipe", 2} },
+            ItemVector{ ItemRecord{"splitter", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{  ItemRecord{"splitter", 1} },
+            ItemVector{ ItemRecord{"joiner", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{  ItemRecord{"joiner", 1} },
+            ItemVector{ ItemRecord{"crossover", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{  ItemRecord{"crossover", 1} },
+            ItemVector{ ItemRecord{"splitter", 1} },
+            0.5f, 1.0f
+        );
+
 		return recipes.release();
 	}
 );
