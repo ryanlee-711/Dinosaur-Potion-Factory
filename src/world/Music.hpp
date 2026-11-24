@@ -40,8 +40,8 @@ public:
   void sfx(SFX effect);
 
   // Fade distances in world pixels.
-  float max_area_distance = 8.0f * GameConfig::TILE_SIZE;
-  float max_machine_distance = 6.0f * GameConfig::TILE_SIZE;
+  float max_area_distance = 10.0f * GameConfig::TILE_SIZE;
+  float max_machine_distance = 8.0f * GameConfig::TILE_SIZE;
 
   // Volume multipliers from 0 (silent) to 1 (full volume).
   float ambient_volume = 1.0f;
