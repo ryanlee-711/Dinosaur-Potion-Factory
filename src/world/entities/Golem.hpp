@@ -12,7 +12,7 @@ struct World;
 
 
 // 'position' is the point under the golem's feet (bottom-center of the sprite),
-struct Golem : public Entity, public IInventoryHolder {
+struct Golem : public Entity, public IInventoryHolder, public IBreakable {
 public:
 	Golem();
 	glm::ivec2 facing = glm::ivec2(0, 1);  // last direction moved: (0,1)=down, (0,-1)=up, (+-1,0)=right/left
@@ -44,6 +44,12 @@ public:
 
 	// IInventoryHolder
 	auto get_inventory() -> Inventory* override {return &inventory;};
+
+	item_id_t get_drop_id() override { return ""; }
+
+	// Golem
+	uint32_t fuelbox_uid() const { return fuel_box; }
+	void bind_fuelbox(uint32_t uid) { fuel_box = uid; initialized = true; }
 
 	// The area right in front of the feet, in the facing direction.
 	// Whatever entity this overlaps is what pressing E interacts with.

@@ -23,6 +23,16 @@ glm::vec2 Tree::base() const {
 	return position + glm::vec2(GameConfig::TILE_SIZE, GameConfig::TILE_SIZE);
 }
 
+bool Tree::restore() {
+	if (state != Stump) return false;
+	state = Standing;
+	hits = 0;
+	timer = 0.0f;
+	shake_timer = 0.0f;
+	chips_pending = false;
+	return true;
+}
+
 bool Tree::mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) {
 	if (state == Stump) return false;   //nothing to chop until it regrows
 	if (state == Falling) return true;  //already coming down, ignore extra swings

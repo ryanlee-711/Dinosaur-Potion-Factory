@@ -45,6 +45,7 @@ public:
     // IMineable
     item_id_t required_tool() const override { return "pickaxe"; }
     bool mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) override;
+    bool restore(); // refill
     static constexpr float SHAKE_SECONDS = 0.15f; // wobble after each hit, like trees
 
     std::string empty_message() const override { return "Nothing left to mine. It grows back slowly"; }

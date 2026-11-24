@@ -1,4 +1,4 @@
-1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 drupe_drink 2 float_potion 30 warmth_potion 10 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 215
+1 0 3 0 0 0 30 water 15 pipe 10 pickaxe 1 axe 1 strength_potion 3 golem 2 float_potion 30 warmth_potion 10 haste_crystal 4 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 null 0 216
 15213 player 2184 844 0
 1995043365 pipe 2208 1312 0 0 0 0 null 0
 2464277274 pipe 2224 1312 0 0 0 0 null 0
@@ -115,7 +115,7 @@
 1716180 tree 3456 1040
 1826825441 woodpile 3088 1504
 2745037658 chopping_stump 3168 1520
-40591760 lumberjack 3144 1564
+40591760 lumberjack 3584 464
 3704198039 lifedew_plant 3408 1536 1
 1000000001 rock_vein 1344 720 5
 1000000002 rock_vein 1376 720 5
@@ -214,3 +214,4 @@
 2000000079 tree 3136 1872
 2000000080 tree 3600 2048
 4012822756 ice_elf 3288 732
+4012822757 handbook 2096 832

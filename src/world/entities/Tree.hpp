@@ -35,6 +35,7 @@ public:
     // IMineable
     item_id_t required_tool() const override { return "axe"; }
     bool mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) override;
+    bool restore();
     std::string empty_message() const override { return "Just a stump. It will grow back"; }
 
     // IHintable: axe icon, only on a standing tree (not while falling, not a stump)

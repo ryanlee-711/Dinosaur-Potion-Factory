@@ -725,6 +725,24 @@ void PlayMode::do_world_interaction(float elapsed)
 		}
 	}
 
+	// use haste crystal (fertilizer)
+	if (left_new && item_id == "haste_crystal" && tile_in_reach(coord, TOOL_REACH))
+	{
+		Entity *target = entity_at(coord);
+		bool restored = false;
+		if (target != nullptr && !target->removed)
+		{
+			if (auto *plant = dynamic_cast<Forageable *>(target))
+				restored = plant->restore();
+			else if (auto *vein = dynamic_cast<OreVein *>(target))
+				restored = vein->restore();
+			else if (auto *tree = dynamic_cast<Tree *>(target))
+				restored = tree->restore();
+		}
+		if (restored)
+			inventory.extract_from_slot(size_t(hotbar_selected), 1);
+	}
+
 	// Click with a tool on a resource (ore vein: pickaxe, tree: axe): one hit, whatever comes loose pops out toward player
 	if (left_new && holding_tool && tile_in_reach(coord, TOOL_REACH))
 	{
@@ -894,11 +912,11 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 		add_machine(entities, world_pos, "fermenter");
 	} else if (id == "distiller" && check_tile_empty(glm::ivec2{0, -1}, glm::ivec2{2, 0})) {
 		add_machine(entities, world_pos, "distiller");
-	} else if (id == "fuelbox" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
-		add_machine(entities, world_pos, "fuelbox");
 	} else if (id == "golem" && check_tile_empty(glm::ivec2{1, 0}, glm::ivec2{1, 0})) {
 		add_machine(entities, world_pos, "fuelbox");
+		uint32_t box_uid = entities.back()->uid;
 		add_entity<Golem>(entities, world_pos);
+		static_cast<Golem *>(entities.back().get())->bind_fuelbox(box_uid);
 	} else if (id == "siphon") {
 		auto const *def = MachineDef::get(id);
 		if (!def) return false;
@@ -922,6 +940,7 @@ bool PlayMode::place_machine(item_id_t const &id, glm::vec2 world_pos) {
 	}
 	// refresh pipes nearby if any!
 	for (size_t i = first_new_entity; i < entities.size(); ++i) {
+		uid_to_entities[entities[i]->uid] = entities[i].get();
 		if (dynamic_cast<IItemPort *>(entities[i].get()) == nullptr) continue;
 		std::vector<glm::ivec2> occupied;
 		entities[i]->get_occupied(&occupied);
@@ -1032,6 +1051,18 @@ bool PlayMode::tile_in_reach(glm::ivec2 tile, float reach) const
 void PlayMode::remove_objects(float elapsed)
 {
 	World world{map, entities, player, coord_to_entities, uid_to_entities, mt};
+	// Dismantle a golem and its fuelbox together before collecting either inventory.
+	for (auto const &entity : entities) {
+		auto *golem = dynamic_cast<Golem *>(entity.get());
+		if (!golem) continue;
+		auto found = uid_to_entities.find(golem->fuelbox_uid());
+		auto *box = found == uid_to_entities.end() ? nullptr : dynamic_cast<Machine *>(found->second);
+		if (!box || box->get_machine_type() != "fuelbox") {
+			golem->removed = true;
+		} else if (golem->removed || box->removed) {
+			golem->removed = box->removed = true;
+		}
+	}
 	// Remove entities that asked to be removed this frame.
 	if (opened_entity != nullptr && opened_entity->removed)
 	{
@@ -1304,7 +1335,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 																	 : glm::u8vec4(0xee, 0x44, 0x44, 0x28); // red: too far
 			batch.fill_rect(Tilemap::tile_rect(hovered_coord), color);
 			// for placeable machines, draw a ghost sprite over
-			if (auto def = MachineDef::get(inventory.get_slot_id(hotbar_selected)))
+			item_id_t preview_id = inventory.get_slot_id(hotbar_selected);
+			if (preview_id == "golem") preview_id = "fuelbox";
+			if (auto def = MachineDef::get(preview_id))
 			{
 				Rect rect = def->texture_rect;
 				rect.y += def->texture_rect.h * ((variety % 4) % def->num_sprite_rows);
@@ -2559,7 +2592,13 @@ void PlayMode::load()
 			add_entity<Tree>(entities, glm::vec2{0.0f, 0.0f}, uid);
 		} else if (entity_type == "vulmanid" || entity_type == "glaber" || entity_type == "ice_lizard") {
 			add_entity<Creature>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which creature
-		} else if (entity_type == "lumberjack" || entity_type == "waystone" || entity_type == "minerguy" || entity_type == "ice_elf") {
+		} else if (
+			entity_type == "lumberjack"
+			|| entity_type == "waystone"
+			|| entity_type == "minerguy"
+			|| entity_type == "ice_elf"
+			|| entity_type == "handbook"    
+		) {
 			add_entity<Npc>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
 		} else if (entity_type == "bridge") {
 			add_entity<Bridge>(entities, glm::vec2{0.0f, 0.0f}, uid); //load() sets which npc
@@ -2601,4 +2640,7 @@ void PlayMode::load()
 		}
 	}
 	Entity::reset_uid_counter(largest_uid);
+
+	rebuild_coord_to_entities();
+	rebuild_uid_to_entities();
 }

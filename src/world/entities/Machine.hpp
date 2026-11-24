@@ -82,7 +82,9 @@ public:
     float get_progress() const override;
 
     // IBreakable
-    item_id_t get_drop_id() override {return def ? def->machine_type : "";}
+    item_id_t get_drop_id() override {
+        return def ? (def->machine_type == "fuelbox" ? "golem" : def->machine_type) : "";
+    }
     void on_break_hit() override { shake_timer = SHAKE_SECONDS; }    // wobble on each pickaxe hit
     ParticlePreset const *break_hit_particles() const override;    // rock chips on each pickaxe hit
 

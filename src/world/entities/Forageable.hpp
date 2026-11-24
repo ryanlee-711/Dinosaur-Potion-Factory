@@ -46,6 +46,9 @@ public:
     // IInteractable
     void on_interact(Context &ctx) override;
 
+    // used for refill with a haste crystal
+    bool restore();
+
     // IHintable: E key while there's something to pick
     bool show_hint() const override { return count > 0; }
     item_id_t hint_tool() const override { return ""; }

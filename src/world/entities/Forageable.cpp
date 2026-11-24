@@ -63,6 +63,13 @@ void Forageable::update(FrameInput const &input, float elapsed, World const &wor
 	}
 }
 
+bool Forageable::restore() {
+	if (count >= def->max_count) return false;
+	count = def->max_count;
+	regrow_timer = def->regrow_seconds;
+	return true;
+}
+
 void Forageable::on_interact(Context &ctx) {
 	if (count <= 0) {
 		ctx.message = def->empty_message;

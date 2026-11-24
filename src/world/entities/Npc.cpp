@@ -32,6 +32,7 @@ static NpcDef const npc_defs[] = {
 	{"bridge", "bridge", "bridge_fixing", ItemRecord{"", 0}, ItemRecord{"", 0},                true,   3.0f, &woodbridge_texture, glm::vec2{32.0f, 32.0f}},
 	{"waystone", "waystone", "", ItemRecord{"", 0}, ItemRecord{"", 0}, true,   100.0f, &waystone_texture, glm::vec2{32.0f, 32.0f}},
 	{"minerguy", "minerguy", "miner_crystal", ItemRecord{"flower_crystal", 3}, ItemRecord{"feather", 1}, true,   100.0f, &lumberjack_texture, glm::vec2{32.0f, 32.0f}},
+	{"handbook", "handbook", "", ItemRecord{"", 0}, ItemRecord{"", 0}, true,   100.0f, &waystone_texture, glm::vec2{32.0f, 32.0f}},
 };
 
 NpcDef const *NpcDef::get(std::string const &type) {

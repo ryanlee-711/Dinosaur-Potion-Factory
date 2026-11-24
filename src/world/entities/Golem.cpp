@@ -9,6 +9,9 @@
 #include "../ItemEntity.hpp"
 #include "../../rendering/Particles.hpp"
 #include "Machine.hpp"
+#include "Forageable.hpp"
+#include "OreVein.hpp"
+#include "Tree.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -31,185 +34,178 @@ void Golem::update(FrameInput const &input, float elapsed, World const &world) {
 	moving = false;
 	work_cooldown -= elapsed;
 	absorb_item_cooldown -= elapsed;
+	state_change_timeout -= elapsed;
 
-	// Check target entity. If expired, it must rediscover a new one.
-	if (!world.uid_to_entities.contains(target_entity) || state_change_timeout < 0.0f) {
-		// Discover new target entity
-		reload_targets(world);
-		state_change_timeout = 15.0f;
-	}
-
-	// If the fuel box is no longer there, don't act at all
-	if (!world.uid_to_entities.contains(fuel_box)) {
+	auto find_live = [&world](uint32_t uid) -> Entity * {
+		auto it = world.uid_to_entities.find(uid);
+		return it == world.uid_to_entities.end() || it->second->removed ? nullptr : it->second;
+	};
+	if (!initialized) reload_targets(world);
+	auto *box = dynamic_cast<Machine *>(find_live(fuel_box));
+	if (!box || box->get_machine_type() != "fuelbox") {
 		removed = true;
 		return;
 	}
+	Inventory &fuel = *box->get_inventory();
 
-	// If there is still no target, return immediately
-	if (target_entity == 0) return;
-
-	// Clear items within a radius
-	if (absorb_item_cooldown < 0.0f) {
+	if (absorb_item_cooldown <= 0.0f) {
 		absorb_item_cooldown = 0.5f;
 		for (auto &entity : world.entities) {
-			if (auto* item = dynamic_cast<ItemEntity*>(entity.get())) {
-				if (item->removed) {
-					target_entity = 0;
-					return;
-				}
-
-				if (glm::length(item->position - position) > 2.5f * TILE_SIZE) {
-					continue;
-				}
-
-				auto* source = item->get_inventory();
-				auto id = source->get_slot_id(0);  // copy before modifying source
-				int count = source->get_slot_count(0);
-
-				if (!id.empty() && count > 0) {
-					int leftover = inventory.add(id, count);
-					int collected = count - leftover;
-					source->remove(id, collected);
-				}
-
-				if (source->empty()) item->removed = true;
+			auto *item = dynamic_cast<ItemEntity *>(entity.get());
+			if (!item || item->removed) continue;
+			if (glm::distance(item->position, position) > 3.5f * TILE_SIZE || glm::distance(item->position, box->position) > 8.0f * TILE_SIZE) continue;
+			auto *source = item->get_inventory();
+			auto id = source->get_slot_id(0);
+			int count = source->get_slot_count(0);
+			if (!id.empty() && count > 0) {
+				int leftover = inventory.add(id, count);
+				source->remove(id, count - leftover);
 			}
+			if (source->empty()) item->removed = true;
 		}
 	}
 
+	if (!find_live(target_entity) || state_change_timeout <= 0.0f || (!inventory.empty() && target_entity != binded_chest) || (inventory.empty() && target_entity == binded_chest)) {
+		reload_targets(world);
+		state_change_timeout = 15.0f;
+	}
+	Entity *target = find_live(target_entity);
+	if (!target) return;
 
-	// Move towards the target entity
-	glm::vec2 direction = world.uid_to_entities.at(target_entity)->position - position;
-	if (glm::length(direction) > 1.0f) {
-		// move
+	glm::vec2 direction = target->position - position;
+	float distance = glm::length(direction);
+	if (distance > 1.0f) {
 		animation_timer += elapsed;
-
-		// update facing
 		facing = direction;
-
-		glm::vec2 step = glm::normalize(direction) * WALK_SPEED * elapsed;
-		glm::vec2 before = position;
-		position += step;  // no collision. I am NOT writing A-star here!
-		moving = position != before;
+		position += direction / distance * std::min(WALK_SPEED * elapsed, distance);
+		moving = true;
 		return;
 	}
-
 	animation_timer = 0.0f;
+	if (work_cooldown > 0.0f) return;
+	work_cooldown = 0.1f;
 
-	// If within a distance from the target, starts working.
-	state_change_timeout -= elapsed;
-	if (work_cooldown < 0.0f) {
-		work_cooldown = 0.1f;
-		// WORK
-		if (target_entity == binded_chest) {
-			auto chest = dynamic_cast<Machine *>(world.uid_to_entities.at(target_entity));
-			if (chest) {
-				// put thing inside
-				if (inventory.slots[0].second <= 0) {
-					reload_targets(world);
-					return;
-				}
-				int item_sent = chest->push_item({inventory.slots[0].first, 1});
+	if (target_entity == binded_chest) {
+		if (auto *chest = dynamic_cast<Machine *>(target)) {
+			int sent = chest->push_item({inventory.get_slot_id(0), 1});
+			inventory.extract_from_slot(0, sent);
+			if (sent == 0 || inventory.empty()) reload_targets(world);
+		}
+		return;
+	}
+	if (!inventory.empty()) return;
 
-				if (item_sent != 0) {
-					inventory.slots[0].second -= item_sent;
-					if (inventory.slots[0].second <= 0) {
-						inventory.slots[0].first = "";
-						inventory.slots[0].second = 0;
-					}
-				}
-			}
+	if (auto *plant = dynamic_cast<Forageable *>(target)) {
+		if (!plant->show_hint() && fuel.has("haste_crystal") && plant->restore()) {
+			fuel.remove("haste_crystal", 1);
+		}
+		// Forageable only uses the destination inventory in this context.
+		// Copy the player to satisfy the existing API without touching player state.
+		Player worker = world.player;
+		worker.position = position;
+		IInteractable::Context ctx{worker, inventory};
+		plant->on_interact(ctx);
+		reload_targets(world);
+	} else if (auto *mineable = dynamic_cast<IMineable *>(target)) {
+		if (!fuel.has("strength_crystal")) {
+			reload_targets(world);
 			return;
 		}
-		// Target is a producer. Can try to use stored item on it...
+		if (auto *vein = dynamic_cast<OreVein *>(target)) {
+			if (!vein->show_hint() && fuel.has("haste_crystal") && vein->restore()) {
+				fuel.remove("haste_crystal", 1);
+			}
+			if (!vein->show_hint()) {
+				reload_targets(world);
+				return;
+			}
+		} else if (auto *tree = dynamic_cast<Tree *>(target)) {
+			if (!tree->show_hint() && fuel.has("haste_crystal") && tree->restore()) {
+				fuel.remove("haste_crystal", 1);
+			}
+			// restore() refuses falling trees. Do not charge strength for idle hits.
+			if (!tree->show_hint()) {
+				reload_targets(world);
+				return;
+			}
+		}
 
+		if (!world.spawned) return;
+		std::vector<ItemRecord> drops;
+		if (mineable->mine(1, position, drops)) {
+			if (std::bernoulli_distribution(0.05)(world.rng)) fuel.remove("strength_crystal", 1);
+			for (auto const &[id, count] : drops) {
+				int leftover = inventory.add(id, count);
+				if (leftover > 0) {
+					auto item = std::make_unique<ItemEntity>(id, leftover);
+					item->position = position;
+					world.spawned->push_back(std::move(item));
+				}
+			}
+		}
+		if (!inventory.empty()) reload_targets(world);
 	}
 }
 
 void Golem::reload_targets(World const &world) {
-	// First, recheck that both the producer and the chest is not expired
 	if (!initialized) {
-		// Only initialize once in its entire lifetime. Failure means it is frozen forever
 		initialized = true;
 		for (auto const &entity : world.entities) {
-			auto ptr = entity.get();
-			if (auto machine = dynamic_cast<Machine *>(ptr)) {
-				// Check if it is chest, else continue
-				if (machine->get_machine_type() != "fuelbox") continue;
-				float distance;
-				if (distance = glm::distance(machine->position, position); distance > 8.0f * TILE_SIZE) continue;
-
-				// add it as fuelbox
+			if (entity->removed) continue;
+			auto *machine = dynamic_cast<Machine *>(entity.get());
+			if (machine && machine->get_machine_type() == "fuelbox" &&
+			    glm::distance(machine->position, position) <= 8.0f * TILE_SIZE) {
 				fuel_box = machine->uid;
 				break;
 			}
 		}
 	}
 
-	if (world.uid_to_entities.count(fuel_box) == 0) return;
+	target_entity = binded_chest = binded_producer = 0;
 
-	auto fuel_box_ptr = world.uid_to_entities.at(fuel_box);
 
-	if (!world.uid_to_entities.contains(binded_chest) || !world.uid_to_entities.contains(binded_producer)) {
-		// rebind. take a bit longer to enumerate all
+	auto found = world.uid_to_entities.find(fuel_box);
+	if (found == world.uid_to_entities.end() || found->second->removed) return;
+	auto *box = dynamic_cast<Machine *>(found->second);
+	if (!box || box->get_machine_type() != "fuelbox") return;
+	Inventory const &fuel = *box->get_inventory();
+	bool has_strength = fuel.has("strength_crystal");
+	bool has_haste = fuel.has("haste_crystal");
+	float chest_distance = 3000.0f, producer_distance = 3000.0f;
 
-		Entity *nearest_chest = nullptr;
-		float nearest_chest_distance = 3000.0f;
-		Entity *nearest_producer = nullptr;
-		float nearest_producer_distance = 3000.0f;
-
-		for (auto const &entity : world.entities) {
-			auto ptr = entity.get();
-			if (auto machine = dynamic_cast<Machine *>(ptr)) {
-				// Check if it is chest, else continue
-				if (machine->get_machine_type() != "chest") continue;
-				float distance;
-				if (distance = glm::distance(machine->position, fuel_box_ptr->position); distance > 8.0f * TILE_SIZE) continue;
-				if (distance > nearest_chest_distance) continue;
-				nearest_chest_distance = distance;
-				nearest_chest = machine;
-			}
-
-			if (dynamic_cast<IWorkable *>(ptr) != nullptr) {
-				float distance;
-				if (distance = glm::distance(ptr->position, fuel_box_ptr->position); distance > 8.0f * TILE_SIZE) continue;
-				if (distance > nearest_producer_distance) continue;
-				nearest_producer = ptr;
-				nearest_producer_distance = distance;
+	for (auto const &entity : world.entities) {
+		Entity *ptr = entity.get();
+		if (ptr->removed || glm::distance(ptr->position, box->position) > 8.0f * TILE_SIZE) continue;
+		float distance = glm::distance(ptr->position, position);
+		if (auto *machine = dynamic_cast<Machine *>(ptr)) {
+			// the target chest should have space for stuff
+			if (machine->get_machine_type() == "chest" && distance < chest_distance && 
+			    (inventory.empty() || machine->get_inventory()->space_for(inventory.get_slot_id(0)) > 0)) {
+				binded_chest = ptr->uid;
+				chest_distance = distance;
 			}
 		}
-		// Overwrite existing values.
-		if (nearest_chest) binded_chest = nearest_chest->uid;
-		else binded_chest = 0;
-		if (nearest_producer) binded_producer = nearest_producer->uid;
-		else binded_producer = 0;
-	}
 
-	// If neither are valid, just give up
-	if (binded_chest == 0 && binded_producer == 0) {
-		target_entity = 0;
-		return;
+		bool workable = false;
+		// Forageable-->can grow
+		// Mineable --> must use fuel
+		if (auto *plant = dynamic_cast<Forageable *>(ptr)) {
+			workable = plant->show_hint() || has_haste;
+		} else if (dynamic_cast<IMineable *>(ptr) != nullptr) {
+			auto *hint = dynamic_cast<IHintable *>(ptr);
+			workable = has_strength && (!hint || hint->show_hint() || has_haste);
+		} else if (auto *item = dynamic_cast<ItemEntity *>(ptr)) {
+			workable = !item->get_inventory()->empty() &&
+			    inventory.space_for(item->get_inventory()->get_slot_id(0)) > 0;
+		} else {
+			workable = dynamic_cast<IWorkable *>(ptr) != nullptr;
+		}
+		if (workable && distance < producer_distance) {
+			binded_producer = ptr->uid;
+			producer_distance = distance;
+		}
 	}
-
-	// Check which ones are actually valid. If one is invalid, use the other.
-	if (binded_chest == 0 && binded_producer != 0) {
-		target_entity = binded_producer;
-		return;
-	} else if (binded_chest != 0 && binded_producer == 0) {
-		target_entity = binded_chest;
-		return;
-	}
-
-	// If both are valid, binding is based on inventory fullness, fuel usage or timeout.
-	if (inventory.get_slot_count(0) <= 0) {
-		target_entity = binded_producer;
-		return;
-	}
-
-	if (state_change_timeout - static_cast<float>(inventory.get_slot_count(0)) < 0.0f) {
-		target_entity = binded_chest;
-		return;
-	}
+	target_entity = inventory.empty() ? binded_producer : binded_chest;
 }
 
 
@@ -295,6 +291,9 @@ std::string Golem::save() const {
     ss << uid;
 	ss << ' ' << "golem";
     ss << ' ' << position.x << ' ' << position.y;
+	ss << ' ' << fuel_box;
+	item_id_t carried = inventory.get_slot_id(0);
+	ss << ' ' << (carried.empty() ? "null" : carried) << ' ' << inventory.get_slot_count(0);
     return ss.str();
 }
 
@@ -303,7 +302,7 @@ void Golem::load(std::string line) {
 
     /**
      * Store Format:
-     *   <uid> <pos.x> <pos.y> <effect_count> [EFFECTS]
+     *   <uid> golem <pos.x> <pos.y> <fuelbox_uid> <carried_item> <carried_count>
      */
     uint32_t read_uid;
 	std::string entity_type;
@@ -318,8 +317,16 @@ void Golem::load(std::string line) {
     if (!(ss >> position.x >> position.y)) {
         throw std::runtime_error{"Didn't read position"};
     }
-
-
+	uint32_t saved_box;
+	item_id_t carried;
+	int count;
+	if (!(ss >> saved_box >> carried >> count)) {
+		throw std::runtime_error{"Didn't read golem fuelbox / inventory"};
+	}
+	bind_fuelbox(saved_box);
+	if (carried == "null" || count <= 0) inventory.set_slot(0, "", 0);
+	else inventory.set_slot(0, carried, count);
+	target_entity = binded_chest = binded_producer = 0;
 	held_item.first = "";
 	held_item.second = 0;
 }

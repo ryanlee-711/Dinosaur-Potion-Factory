@@ -63,8 +63,8 @@ ice_elf	after:Where can I find it?	Higher in these peaks, past the frozen lake, 
 ice_elf	after:Where can I find it?	In its heart grows a single plant with a bulb full of light. Press it gently and it gives up its dew.
 ice_elf	after:Where can I find it?	Only one drop ever grows. Waste it, and it is gone for good.
 ice_elf	after:How do I get through the snowstorm?	That storm is no ordinary snow. Its cold would freeze you solid long before you reached the center.
-ice_elf	after:How do I get through the snowstorm?	You need a potion that holds both fire and frost: flameflower to keep your blood warm, and snowgem so the storm takes you for one of its own.
-ice_elf	after:How do I get through the snowstorm?	Snowgems grow in the icy rocks up here. Mine them, and brew them together with flameflower.
+ice_elf	after:How do I get through the snowstorm?	You need a potion that holds both fire: flameflower to keep your blood warm.
+ice_elf	after:How do I get through the snowstorm?	Brew them together with the crystals from flameflowers.
 
 minerguy	name	Steph the Miner
 minerguy	greet	hmmm... haven't seen you around here.
@@ -84,7 +84,8 @@ minerguy	quest_accept	Great! (placeholder dialogue)
 minerguy	quest_decline	No rush. 
 minerguy	quest_waiting	Try distill solution of the Flameflower's pollen. That should produce something.
 minerguy	quest_done	Oh, that's the stuff! Beautiful gems!
-minerguy	quest_done	Here's something something (placeholder).
+minerguy	quest_done	Here's a secret. If you distill any potion, you get crystals. Some crystals have special effects.
+minerguy	quest_done	Try use the haste crystal on a plant. See what happens...
 
 bridge	name	Wooden Bridge
 bridge	greet	A broken wooden bridge... Can it be repaired?
@@ -99,6 +100,20 @@ waystone	name	Waystone
 waystone	greet	Looks like a softlock prevention mechanism. Return home?
 waystone	hello	Return home?
 
+handbook	name	Handbook
+handbook	greet	A handbook with the title "How to smith items - from beginner to expert".
+handbook	hello	The smithing recipes handbook.
+handbook	ask:Pipe and Bottle	2 copper = 2 pipes\n3 quartz = 6 bottles\n3 rocks = chest
+handbook	ask:Basic machines	3 copper + 1 iron = brewer\n3 copper + 1 rock = crusher\n3 copper + 1 lumber = furnace
+handbook	ask:Advanced machines	2 rock + 2 quartz = siphon\n2 iron + 2 quartz = distiller\n2 planks + 2 quartz = fermenter
+handbook	ask:Other stuff	5 copper + 1 snow gem = golem
+handbook	ask:How does machines work?	Machines can be placed on the ground.\nPress "R" to rotate the them, or for pipes, change color.
+handbook	ask:How does machines work?	Brewer is the core of everything. Brew any powder-like items into liquids for potions.
+handbook	ask:How does machines work?	Stone press crushes items into dust. Furnace bakes and burns ingredients.
+handbook	ask:How does machines work?	Distiller distills the soluted crystallites from potions.
+handbook	ask:What about other machines?	Fermenter can ferment items, and produce infused water. It is sometimes an alternative to brewing.
+handbook	ask:What about other machines?	Siphon fills bottles with water. Altar removes water from anything and return emptied bottles.
+
 dragon	name	Dragon
 dragon	quest0	Cough cough... I'm sick...\nplease bring me medicine my dwarf...\nI require the elixir of life...
 dragon	quest0	The cave collapsed and stones block you way... \ncough, because, ...\nmy coughs... *ACHOOOO*.
@@ -110,4 +125,5 @@ dragon	quest2	Collect some copper ore by mining...\nAnd give it to me, to smith 
 dragon	quest3	Furnace is very powerful...\nDry the lichens... and grind them.
 dragon	quest3	Lichen powder yields a red solution...\nAdd drupe to it...\nto brew stronger potions...
 dragon	quest3	I can smith new machines for you...\nBring materials.
-dragon	quest4	You've mastered brewing...Please bring me 8 Strength potion.\n(Smithing recipe)\nApple+Copper*3=Brewer\nLichen+Copper*3=Furnace\nRock+Copper*3=Crusher\nRock*3=Chest
+dragon	quest4	You've mastered brewing...Please bring me 8 Strength potion.
+dragon	quest5	

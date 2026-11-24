@@ -68,6 +68,13 @@ void OreVein::update(FrameInput const &input, float elapsed, World const &world)
 	}
 }
 
+bool OreVein::restore() {
+	if (ores >= def->max_ores) return false;
+	ores = def->max_ores;
+	regrow_timer = def->regrow_seconds;
+	return true;
+}
+
 bool OreVein::mine(int power, glm::vec2 from, std::vector<ItemRecord> &drops) {
 	//every hit wobbles the rock and sprays chips, so you can see the pickaxe connect (even on an empty vein)
 	shake_timer = SHAKE_SECONDS;

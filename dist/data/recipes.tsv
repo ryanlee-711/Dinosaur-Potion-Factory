@@ -37,6 +37,10 @@ brewer	1	12	flower_powder	4	water	1	pollen_water	1
 brewer	1	12	flower_powder	4	base_potion	1	useless_potion	1
 brewer	1	12	flower_powder	4	extended_base_potion	1	useless_potion	1
 brewer	1	10	flower_powder	4	thick_potion	1	glowing_brew	1
+brewer	1	12	flower_crystal	4	water	1	pollen_water	1
+brewer	1	12	flower_crystal	4	base_potion	1	warmth_potion	1
+brewer	1	12	flower_crystal	4	extended_base_potion	1	extended_warmth_potion	1
+brewer	1	10	flower_crystal	4	thick_potion	1	glowing_brew	1
 brewer	1	12	hot_flower_crystal	4	water	1	pollen_water	1
 brewer	1	12	hot_flower_crystal	4	base_potion	1	warmth_potion	1
 brewer	1	12	hot_flower_crystal	4	extended_base_potion	1	extended_warmth_potion	1

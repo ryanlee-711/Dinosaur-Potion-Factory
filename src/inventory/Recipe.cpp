@@ -125,6 +125,18 @@ static Load<RecipeRegistry> recipe_registry(LoadTagDefault,
         );
 
         add("dragon",
+            ItemVector{ ItemRecord{"rock", 2}, ItemRecord{"quartz", 2} },
+            ItemVector{ ItemRecord{"altar", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
+            ItemVector{ ItemRecord{"copper_ore", 5}, ItemRecord{"snowgem", 1} },
+            ItemVector{ ItemRecord{"golem", 1} },
+            0.5f, 1.0f
+        );
+
+        add("dragon",
             ItemVector{ ItemRecord{"planks", 2}, ItemRecord{"quartz", 2} },
             ItemVector{ ItemRecord{"fermenter", 1} },
             0.5f, 1.0f
