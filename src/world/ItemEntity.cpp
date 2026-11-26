@@ -27,9 +27,11 @@ static Load< Texture > missing_no_texture(LoadTagDefault, []() -> Texture const 
 
 ItemEntity::ItemEntity(): inventory(1) {
     collision_layer = 0x0;
+    collision_mask = 0x0;
 }
 
 ItemEntity::ItemEntity(item_id_t item_id, int item_count): inventory(1) {
+    collision_layer = 0x0;
     collision_mask = 0x0;
     inventory.add(item_id, item_count);
     vertical_velocity = -1.2f;
