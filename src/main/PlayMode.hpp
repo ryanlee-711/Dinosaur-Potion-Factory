@@ -3,6 +3,7 @@
 #include "../starter/Mode.hpp"
 #include "../starter/DrawLines.hpp"
 
+#include "../rendering/TextRenderer.hpp"
 #include "../rendering/Camera2D.hpp"
 #include "../rendering/PixelCanvas.hpp"
 #include "../rendering/Particles.hpp"
@@ -56,6 +57,12 @@ struct PlayMode : Mode {
 	Entity * entity_at(glm::ivec2 tile) const;
 	void rebuild_coord_to_entities();
 	void rebuild_uid_to_entities();
+
+	//----- text rendering ------
+	glm::vec2 draw_text_line(Sprites &sprites, std::string text, glm::vec2 top_left, const glm::u8vec4& tint, int font_size = 36, bool do_cache=true);
+	glm::vec2 get_text_size(std::string const &text, int font_size = 48);
+
+	void draw_item_stack(Sprites &sprites, DrawLines &lines, ItemRecord const &record, Rect const &rect);
 
 	//----- world -----
 	Tilemap map;
@@ -199,6 +206,8 @@ struct PlayMode : Mode {
 	Camera2D camera;
 	Sprites batch;
 	Sprites ui_batch;
+	TextBuffer text_buffer;
+	std::vector<GLuint> text_textures;
 	PixelCanvas canvas;
 	ParticleSystem particles;
 	float window_scale = 1.0f;   // related to retina schenanigans

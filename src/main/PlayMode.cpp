@@ -2,6 +2,7 @@
 
 #include "GameConfig.hpp"
 
+#include "../rendering/TextRenderer.hpp"
 #include "../starter/DrawLines.hpp"
 #include "../starter/Load.hpp"
 #include "../starter/data_path.hpp"
@@ -102,25 +103,25 @@ static Load< Texture > missing_texture(LoadTagDefault, []() -> Texture const * {
 
 //----- inventory UI -----
 // Draws an item icon filling 'rect' with its count in the bottom-right corner (screen pixels).
-static void draw_item_stack(Sprites &batch, DrawLines &lines, ItemRecord const &record, Rect const &rect)
+void PlayMode::draw_item_stack(Sprites &sprites, DrawLines &lines, ItemRecord const &record, Rect const &rect)
 {
 	if (record.second <= 0)
 		return;
 	Item const *item = Item::get(record.first);
 	if (item == nullptr)
 	{
-		batch.draw(*missing_texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+		sprites.draw(*missing_texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
 	}
 	else
 	{
-		batch.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
+		sprites.draw(*item->texture, Rect{0.0f, 0.0f, 16.0f, 16.0f}, rect);
 	}
 
-	float text_h = rect.w * 0.375f; // count text height in screen pixels
-	glm::vec3 anchor(rect.x + rect.w * 0.875f, rect.y + rect.h, 0.0f);
+	glm::vec2 anchor(rect.x + rect.w * 0.8f, rect.y + rect.h * 0.8f);
 	std::string text = std::to_string(record.second);
-	lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-	lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+	int font_size = static_cast<int>(rect.w * 0.4);
+	draw_text_line(sprites, text, anchor + glm::vec2{1.0f, 1.0f}, glm::u8vec4(0x00, 0x00, 0x00, 0xff), font_size);
+	draw_text_line(sprites, text, anchor, glm::u8vec4(0xff, 0xff, 0xff, 0xff), font_size);
 }
 
 // Width of 'text' as DrawLines::draw_text would draw it at height 1 (same glyph lookup), for centering text.
@@ -203,7 +204,7 @@ static std::string roman_level(int level)
 
 std::mt19937 mt(0x64696e6f); // "dino"
 
-PlayMode::PlayMode() : map(data_path("maps/world.map"))
+PlayMode::PlayMode() : map(data_path("maps/world.map")), text_buffer(data_path("assets/m6x11.ttf"))
 {
 	// initialize window scale, OS specific
 	int window_w, window_h, drawable_w, drawable_h;
@@ -403,9 +404,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 	//----- inventory mouse controls (see ItemCursor.hpp for the full scheme) -----
 	// Clicks are handled here, as events, so even very fast clicks are never missed.
-	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN && evt.button.button == SDL_BUTTON_LEFT)
+	if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
 	{
-		if (book_open)
+		if (evt.button.button == SDL_BUTTON_LEFT && book_open)
 		{
 			// recipe book: the arrows turn two pages at a time
 			glm::vec2 p = glm::vec2(evt.button.x, evt.button.y) * window_scale;
@@ -428,8 +429,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			else
 			{
 				// a panel is open: move items with the cursor
-				bool shift = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
-				show_slot_result(cursor.click(*hit->inventory, hit->slot, shift));
+				bool shift = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 || evt.button.button == SDL_BUTTON_RIGHT;
+				show_slot_result(cursor.click(*hit->inventory, hit->slot, !shift));
 			}
 			ui_mouse_down = true; // the world ignores this press until it's released
 			return true;
@@ -1482,10 +1483,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 					if (view.inventory == &inventory && view.rect.y < first.y)
 						first = view.rect;
 				}
-				float text_h = slot * 0.4f;
-				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
-				lines.draw_text(message, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-				lines.draw_text(message, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+				// float text_h = slot * 0.4f;
+				glm::vec2 anchor(first.x, first.y - slot * 0.8f);
+				draw_text_line(ui_batch, message, anchor, glm::u8vec4(0xff, 0xff, 0xff, 0xff), static_cast<int>(slot * 0.4f));
 			}
 			else if (std::string sel_id = inventory.get_slot_id(hotbar_selected); !ui_slots.empty() && sel_id != "")
 			{
@@ -1501,10 +1501,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 				}
 
 				Rect const &first = ui_slots.front().rect;
-				float text_h = slot * 0.4f;
-				glm::vec3 anchor(first.x, first.y - slot * 0.35f, 0.0f);
-				lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-				lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+				glm::vec3 anchor(first.x, first.y - slot * 0.8f, 0.0f);
+				draw_text_line(ui_batch, text, anchor, glm::u8vec4(0xff, 0xff, 0xff, 0xff), static_cast<int>(slot * 0.4f));
 			}
 			ui_batch.end();
 		} //(lines draw here, on top of the slots)
@@ -1515,17 +1513,19 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 			if (Item const *item = Item::get(hovered->inventory->slots[hovered->slot].first))
 			{
 				Rect const &r = hovered->rect;
+				
 				float text_h = slot * 0.4f;
-				float text_w = text_width(item->name) * text_h;
+				auto text_size = get_text_size(item->name, static_cast<int>(text_h));
+				float text_w = text_size.x;
 				float pad = slot * 0.12f;
 				// background box, just above the slot
 				Rect box{std::floor(r.x + (r.w - text_w) * 0.5f - pad), std::floor(r.y - slot * 0.15f - text_h - 2.0f * pad), text_w + 2.0f * pad, text_h + 2.0f * pad};
 				DrawLines lines(screen_to_clip);
 				ui_batch.begin(screen_to_clip);
 				ui_batch.fill_rect(box, glm::u8vec4(0x18, 0x10, 0x28, 0xe8));
+				glm::vec3 anchor(box.x + pad, box.y + pad, 0.0f); // text baseline
+				draw_text_line(ui_batch, item->name, anchor, glm::u8vec4(0xff, 0xff, 0xff, 0xff), static_cast<int>(text_h));
 				ui_batch.end();
-				glm::vec3 anchor(box.x + pad, box.y + pad + text_h, 0.0f); // text baseline
-				lines.draw_text(item->name, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 			}
 		}
 
@@ -1545,7 +1545,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	{
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
 		DrawLines lines(screen_to_clip);
+		ui_batch.begin(screen_to_clip);
 		draw_quest_ui(ui_batch, lines, drawable_size);
+		ui_batch.end();
 	}
 
 	//---- dialogue box ----
@@ -1576,7 +1578,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		glm::mat4 screen_to_clip = glm::ortho(0.0f, float(drawable_size.x), float(drawable_size.y), 0.0f);
 		DrawLines lines(screen_to_clip);
 		float text_h = 8.0f * float(canvas.scale);
-		float y = text_h * 1.5f;
+		int font_size = static_cast<int>(text_h);
+		float y = text_h * 0.5f;
+
+		ui_batch.begin(screen_to_clip);
 		for (auto const &[id, active] : player.active_effects())
 		{
 			Effect const *effect = Effect::get(id);
@@ -1584,13 +1589,50 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 			// right-aligned: start one text width (plus a margin) in from the right edge
 			float x = std::floor(float(drawable_size.x) - text_h * 0.5f - text_width(text) * text_h);
 			glm::vec3 anchor(x, y, 0.0f);
-			lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-			lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0xff, 0xf0, 0xa0, 0xff));
+			
+			draw_text_line(ui_batch, text, anchor, glm::u8vec4(0xff, 0xf0, 0xa0, 0xff), font_size);
 			y += text_h * 1.4f;
 		}
+		ui_batch.end();
+	}
+
+	// Delete text textures
+	if (!text_textures.empty()) {
+		glDeleteTextures(static_cast<GLsizei>(text_textures.size()), text_textures.data());
+		text_textures.clear();
 	}
 
 	GL_ERRORS();
+}
+
+// -------- helper to draw text --------
+
+glm::vec2 PlayMode::draw_text_line(Sprites &sprites, std::string text, glm::vec2 top_left, const glm::u8vec4& tint, int font_size, bool do_cache) {
+	auto const &buf = text_buffer.draw(text, font_size, do_cache);
+	glm::uvec2 size {text_buffer.width, text_buffer.height};
+	glm::vec2 size_float(size);
+
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.data());
+
+	//GL_NEAREST keeps pixels crisp instead of blurring them
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	sprites.draw_raw(tex, size, Rect{0, size_float.y, size_float.x, -size_float.y}, Rect{top_left.x, top_left.y, size_float.x, size_float.y}, tint);
+	text_textures.emplace_back(tex);
+
+	return size_float;
+}
+
+glm::vec2 PlayMode::get_text_size(std::string const &text, int font_size) {
+	text_buffer.draw(text, font_size);
+	return glm::vec2{text_buffer.width, text_buffer.height};
 }
 
 // =================== Recipe book ================= //
@@ -1649,7 +1691,7 @@ void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &
 	// draws 'str' with the left end of its baseline at (x, y), 'h' pixels tall
 	auto text = [&](std::string const &str, float x, float y, float h, glm::u8vec4 color)
 	{
-		lines.draw_text(str, glm::vec3(x, y, 0.0f), glm::vec3(h, 0.0f, 0.0f), glm::vec3(0.0f, -h, 0.0f), color);
+		draw_text_line(sprites, str, glm::vec2{x, y}, color, static_cast<int>(h));
 	};
 	Rect const sprite_src{0.0f, 0.0f, 16.0f, 16.0f};
 
@@ -1746,13 +1788,12 @@ void PlayMode::draw_book_page(Sprites &sprites, DrawLines &lines, Recipe const &
 void PlayMode::draw_quest_ui(Sprites &sprites, DrawLines &lines, glm::uvec2 drawable_size) {
 	float text_h = 8.0f * float(canvas.scale);
 	float x = std::floor(text_h * 0.5f);
-	float y = text_h * 1.5f; //top left (effects are drawn top right)
+	float y = text_h * 0.5f; //top left (effects are drawn top right)
 
 	//one line of text with a drop shadow, then move down a line
 	auto line = [&](std::string const &text, glm::u8vec4 color) {
 		glm::vec3 anchor(x, y, 0.0f);
-		lines.draw_text(text, anchor + glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-		lines.draw_text(text, anchor, glm::vec3(text_h, 0.0f, 0.0f), glm::vec3(0.0f, -text_h, 0.0f), color);
+		draw_text_line(sprites, text, anchor, color, static_cast<int>(text_h));
 		y += text_h * 1.4f;
 	};
 	glm::u8vec4 const DONE(0xbf, 0xff, 0x90, 0xff), TODO(0xf0, 0xab, 0x90, 0xff);
@@ -2079,7 +2120,7 @@ static std::vector<std::string> wrap_text(std::string const &text, float max_wid
 		std::string word, current;
 		while (words >> word) {
 			std::string longer = current.empty() ? word : current + " " + word;
-			if (!current.empty() && text_width(longer) > max_width) {
+			if (!current.empty() && false/*&& text_width(longer) > max_width*/) {
 				out.push_back(current);
 				current = word;
 			} else {
@@ -2140,12 +2181,12 @@ void PlayMode::draw_dialogue(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 	sprites.fill_rect(panel, BOOK_PAPER);
 
 	auto text = [&](std::string const &str, float tx, float ty, float h, glm::u8vec4 color) {
-		lines.draw_text(str, glm::vec3(tx, ty, 0.0f), glm::vec3(h, 0.0f, 0.0f), glm::vec3(0.0f, -h, 0.0f), color);
+		draw_text_line(sprites, str, glm::vec2{tx, ty}, color, static_cast<int>(h), false);
 	};
 
 	//speaker, and the last message (e.g. "Got: Axe") on the right of the same line
 	float x = panel.x + pad;
-	float y = panel.y + pad + name_h;
+	float y = panel.y + pad;
 	text(dialogue.speaker, x, y, name_h, BOOK_RED);
 	if (!message.empty()) {
 		text(message, panel.x + panel.w - pad - text_width(message) * text_h, y, text_h, BOOK_FADED);
@@ -2176,7 +2217,7 @@ void PlayMode::draw_dialogue(Sprites &sprites, DrawLines &lines, glm::uvec2 draw
 			bool hovered = r.contains(mouse);
 			sprites.fill_rect(r, hovered ? BOOK_FADED : BOOK_SPINE);
 			sprites.fill_rect(Rect{r.x + edge, r.y + edge, r.w - 2.0f * edge, r.h - 2.0f * edge}, hovered ? BOOK_SPINE : BOOK_PAPER);
-			text(labels[i], r.x + button_pad, r.y + (r.h + text_h) * 0.5f - edge, text_h, BOOK_INK);
+			text(labels[i], r.x + button_pad, r.y + (r.h) * 0.5f - edge, text_h, BOOK_INK);
 		}
 	} else if (dialogue.shown_chars >= float(dialogue.pages[dialogue.page].size()) && std::fmod(hint_time, 1.0f) < 0.6f) {
 		//little down-pointing triangle in the bottom right corner

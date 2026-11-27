@@ -57,7 +57,7 @@ static Load< ConsumableRegistry > consumable_registry(LoadTagDefault, []() -> Co
 	add("haste_potion", { {"speed", 90.0f, 2} });
 	add("extended_haste_potion", { {"speed", 180.0f, 2} });
 
-	add("hercules_potion", { {"strength", 180000.0f, 2} });
+	add("herculean_potion", { {"strength", 180000.0f, 2} });
 	add("godspeed_potion", { {"speed", 180000.0f, 2} });
 	add("flame_potion", { {"warmth", 180000.0f, 2} });
 	add("fly_potion", { {"float", 180000.0f, 2} });
